@@ -3,16 +3,22 @@
 import sys
 import rospy
 import moveit_commander
-import geometry_msgs.msg
 from tf.transformations import quaternion_from_euler
 from stockfish import Stockfish
-import math
+import queue
+import sounddevice as sd
+import vosk
+import json
+import random
+#from sensor_msgs.msg import JointState
+
 
 FLOAT_TOLERANCE_PRECISE = 1e-9
 FLOAT_TOLERANCE_LOOSE = 1e-4
 
 JOINT_MAX = []
 JOINT_MIN = []
+
 
 def initRobot(velocityScale = 1.0, accelerationScale = 1.0, maxPlanTime = 100):
     # Initialize MoveIt and ROS
@@ -32,6 +38,13 @@ def initRobot(velocityScale = 1.0, accelerationScale = 1.0, maxPlanTime = 100):
         group.set_planning_time(maxPlanTime)
 
     return group, robot, scene
+
+
+
+def getVoiceModelandQ(model_path = "/home/jshim/catkin_ws/src/my_package/src/vosk-model-small-en-us-0.15"):
+    model = vosk.Model(model_path)
+    q = queue.Queue()
+    return model, q
 
     
 
@@ -58,25 +71,66 @@ def rotateJointsAbs(group,posList = [0, -1.57, 1.57, -1.57, -1.57, 0]):
     group.clear_pose_targets()
     
 
+def audio_callback(indata, frames, time, status):
+    """Callback function to receive audio data from the microphone."""
+    if status:
+        print(status)
+    q.put(bytes(indata))
 
+def recognize_speech(model,q):
+    """Captures speech from the microphone and returns it as a string."""
+    recognized_text = ""
 
+    # Configure the microphone settings
+    with sd.RawInputStream(samplerate=16000, blocksize=8000, dtype="int16",
+                           channels=1, callback=audio_callback):
+        print("Speak into the microphone...")
 
+        recognizer = vosk.KaldiRecognizer(model, 16000)
+
+        while True:
+            data = q.get()
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                recognized_text = result["text"]
+                print("Recognized:", recognized_text)
+                return recognized_text  # Return the recognized text immediately
+
+def getRandomJointConfig(): #all joints support +-360 deg, but it raises an error for some joints
+    ls = []
+    ls.append(random.randint(-628,628)/100.0)
+    ls.append(random.randint(-314,0)/100.0)
+    ls.append(random.randint(-314,314)/100.0)
+    ls.append(random.randint(-314,314)/100.0)
+    ls.append(random.randint(-314,314)/100.0) 
+    ls.append(random.randint(-314,314)/100.0) #last writst angle max and min???
+    print(ls)
+    return ls
+
+def moveArmWithText(text):
+    if text == "rotate base":
+        rotateJointsAbs(group,posList=[6.28,0,0,0,0,0])
+    elif text == "reverse rotate":
+        rotateJointsAbs(group,posList=[-6.28,0,0,0,0,0])
+    elif text == "initialize":
+        rotateJointsAbs(group)
+    elif text == "random random random":
+        rotateJointsAbs(group,getRandomJointConfig())
+        
+    elif text == "quit":
+        return 'q'
+    return 'c'
 
 
 group, robot, scene = initRobot()
-rotateJointsAbs(group)
+model, q = getVoiceModelandQ()
 
-rotateJointsAbs(group,posList=[6.28,0,0,0,0,0])
-rotateJointsAbs(group)
-rotateJointsAbs(group,posList=[0,-2,0,0,0,0])
-rotateJointsAbs(group)
-rotateJointsAbs(group,posList=[0,0,-0.5,0,0,0])
-rotateJointsAbs(group)
-rotateJointsAbs(group,posList=[0,0,0,0.5,0,0])
-rotateJointsAbs(group)
-rotateJointsAbs(group,posList=[0,0,0,0,0.5,0])
-rotateJointsAbs(group)
-rotateJointsAbs(group,posList=[0,0,0,0,0.5,2])
+
+
+while True:
+    ret = moveArmWithText(recognize_speech(model,q))
+    if ret == 'q':
+        break
 
 
 # # Get current pose
