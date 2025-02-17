@@ -9,11 +9,16 @@ class ChessEngine:
         self.depth = max(20,depth)
         self.level = max(20,level)
         self.side = side
-        
+
+        self.board = {} #for the ease of manipulation
+        for i in range(0,8):
+            self.board[i] = []
+            
+         
         self.stockfish = Stockfish(enginePath)
         self.stockfish.set_depth(self.depth)
         self.stockfish.set_skill_level(self.level)
-        self.fenPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" # so that we can mutate
+        self.fenPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" #for other purposes. Might me removed
         self.stockfish.set_fen_position(self.fenPos) 
         
     
@@ -25,7 +30,7 @@ class ChessEngine:
         lis = self.fenPos.split(" ")
         lis = lis[0].replace(" ", "")
         lis = lis.split("/")
-        print(lis)
+        #print(lis)
         startPos = 0
 
         for i in range(0, rank-1):
@@ -33,22 +38,50 @@ class ChessEngine:
 
         return startPos, startPos + len(lis[rank-1])-1
 
-
+    def getFromTo(self,move):
+        return move[:2], move[2:]
     
-    def printBoard(self):
-        boardString = ""
+    #coord is in string
+    def chessCoord2PosonBoard(self,coord):
+
+        col = coord[0]
+        rank = int(coord[1]) - 1
+        return self.Fencol2ColOnBoard(col), rank
+        
+
+    def Fencol2ColOnBoard(self,Fencol):
+        return ord(Fencol) - 97
+    
+    def updateBoard(self):
         for r in range (1,9):
             sp, ep = self.getRankStartEndPos(r)
-            print(f"{sp,ep}")
-            rowString = ""
+            #print(f"{sp,ep}")
+            self.board[r-1] = []
             for c in range(sp,ep+1):
                 if self.fenPos[c].isdigit():
-                    for i in range(0, int(self.fenPos[c])):
-                        rowString += "* "
+                    for i in range(0, int(self.fenPos[c])): 
+                        self.board[r-1].append("*")
                 else:
-                    rowString += (self.fenPos[c] + " ")
-            boardString += (rowString +"\n") 
-        print(boardString)
+                    self.board[r-1].append(self.fenPos[c])
+    
+    
+    #moves a chess piece on board
+    #souce andd dest must be positions on the board
+    def moveSourceToDest(self,source,dest):
+        sourceCol, sourceRank = self.chessCoord2PosonBoard(source)
+        destCol, destRank = self.chessCoord2PosonBoard(dest)
+        self.board[destRank][destCol] = self.board[sourceRank][sourceCol]
+        self.board[sourceRank][sourceCol] = "*"
+    
+
+    def printBoard(self):
+        for i in range(7,-1,-1):
+            print(self.board[i])
+        print()
 
 c = ChessEngine()
+c.updateBoard()
+c.printBoard()
+print()
+c.moveSourceToDest("e2","e4")
 c.printBoard()
