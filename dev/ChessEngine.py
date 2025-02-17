@@ -73,6 +73,34 @@ class ChessEngine:
         self.board[destRank][destCol] = self.board[sourceRank][sourceCol]
         self.board[sourceRank][sourceCol] = "*"
     
+    def getFENPrefixFromBoard(self):
+        FENString = ""
+        r = 0
+        while r < 8:
+            colString = ""
+            c = 0
+            while c < 8:
+                if self.board[r][c] != "*":
+                    colString += self.board[r][c]
+                else:
+                    blankCounter = 0
+                    while c < 8 and self.board[r][c] == "*":
+                        blankCounter += 1
+                        c += 1
+                    colString += str(blankCounter)
+                    continue
+
+                c += 1
+            if r != 7:
+                FENString += (colString +"/")
+            else:
+                FENString += (colString + " ")
+            
+            r += 1
+        return FENString
+
+    
+
 
     def printBoard(self):
         for i in range(7,-1,-1):
@@ -84,4 +112,6 @@ c.updateBoard()
 c.printBoard()
 print()
 c.moveSourceToDest("e2","e4")
+c.moveSourceToDest("f2","f4")
 c.printBoard()
+print(c.getFENPrefixFromBoard())
