@@ -4,11 +4,12 @@ import re
 class ChessEngine:
 
     def __init__(self,depth = 20,
-                 level=15, side = 'w', 
+                 level = 15, side = 'w', startFirst = True, 
                  enginePath = "/home/jshim/catkin_ws/src/my_package/src/stockfish/stockfish-ubuntu-x86-64-avx512"):
         self.depth = max(20,depth)
         self.level = max(20,level)
         self.side = side
+        self.myTurn = startFirst
 
         self.board = {} #for the ease of manipulation
         for i in range(0,8):
@@ -20,7 +21,11 @@ class ChessEngine:
         self.stockfish.set_skill_level(self.level)
         self.fenPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" #for other purposes. Might me removed
         self.stockfish.set_fen_position(self.fenPos) 
-        
+        self.halfMoveClock = 0
+        self.enPassant="-"
+        self.turnClock=1
+        self.castling = "KQkq"
+        self.draw = False
     
     def setFenPos(self):
         self.stockfish.set_fen_position(self.fenPos)    
