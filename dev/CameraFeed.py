@@ -27,7 +27,7 @@ class CameraFeed:
 
 
 if __name__ == "__main__":
-    ocr = CameraFeedOCR(0)
+    ocr = CameraFeed(0)
     ocr.openCampera()
     
     while True:
