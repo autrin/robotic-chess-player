@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import sys
 
-class CameraFeedOCR:
+class CameraFeed:
     #use april tags
     def __init__(self,camID = 0):
         
