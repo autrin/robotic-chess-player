@@ -71,17 +71,32 @@ class ChessEngine:
                 else:
                     self.board[r-1].append(self.fenPos[c])
     
-    #will set self.usedCastle to true if castling can be done
-    def setCastling(self,source,dest):
-        if not self.usedCastle:
-            #if source == "e8" and dest ==
-            return
+    
+    
     
     #moves a chess piece on board
     #souce andd dest must be positions on the board
+    #return True if a move was successful
+    #return False otherwise
+    #right now, assume the opponent won't make any illegal moves
     def moveSourceToDest(self,source,dest):
-        if self.usedCastle:
-            self.IcanCastle = False
+
+        #check kingside castling
+        if not self.usedCastle and source == "e1"\
+            and dest == "g1" and self.board[0][4] == "K"\
+            and self.board[0][7] == "R":
+            if self.board[0][5] != "*" or self.board[0][6] != "*":
+                return False
+
+        #check queenside castling
+        if not self.usedCastle and source == "e1"\
+            and dest == "a1" and self.board[0][4] == "K"\
+            and self.board[0][1] == "R":
+            if self.board[0][3] != "*" or self.board[0][2] != "*":
+                return False 
+
+
+            
             
         sourceCol, sourceRank = self.chessCoord2PosonBoard(source)
         destCol, destRank = self.chessCoord2PosonBoard(dest)
