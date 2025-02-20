@@ -8,7 +8,7 @@ class CameraFeed:
     def __init__(self,camID = 0):
         self.cam = None
         self.camID = camID
-        self.aprilDetector = apriltag.Detector
+        self.aprilDetector = apriltag.Detector()
 
         
 
@@ -18,12 +18,29 @@ class CameraFeed:
             print(f"ERROR: can't open camera id={self.camID}")
             exit()
     
+    #this might be unnecessary
+    def getCenterPositionofDetection(self,detections):
+        centerMap = {}
+        for d in detections:
+            centerMap[d.tag_id] = d.center.astype(int)
+        return centerMap
+    
+    def drawCenterCircleForTags(self, frame, centers):
+        for id in centers.keys():
+            print(centers[id])
+            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
+            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
+        
+    
     def startLoop(self):
         while True:
             ret,frame = self.cam.read()
+            
+            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            detections = self.aprilDetector.detect(img=grayFrame)
+            centers = self.getCenterPositionofDetection(detections)
+            self.drawCenterCircleForTags(frame,centers)
             cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
-        
-            #print(ocr.meanbgr)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
