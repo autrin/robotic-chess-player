@@ -15,7 +15,7 @@ class ChessEngine:
         for i in range(0,8):
             self.board[i] = []
             
-         
+        
         self.stockfish = Stockfish(enginePath)
         self.stockfish.set_depth(self.depth)
         self.stockfish.set_skill_level(self.level)
@@ -25,6 +25,8 @@ class ChessEngine:
         self.enPassant="-"
         self.turnClock=1
         self.castling = "KQkq"
+        self.usedCastle = False
+        self.usedCastle = False
         self.draw = False
     
     def setFenPos(self):
@@ -50,7 +52,7 @@ class ChessEngine:
     def chessCoord2PosonBoard(self,coord):
 
         col = coord[0]
-        rank = int(coord[1]) - 1
+        rank = 8 - int(coord[1]) 
         return self.Fencol2ColOnBoard(col), rank
         
 
@@ -69,14 +71,25 @@ class ChessEngine:
                 else:
                     self.board[r-1].append(self.fenPos[c])
     
+    #will set self.usedCastle to true if castling can be done
+    def setCastling(self,source,dest):
+        if not self.usedCastle:
+            #if source == "e8" and dest ==
+            return
     
     #moves a chess piece on board
     #souce andd dest must be positions on the board
     def moveSourceToDest(self,source,dest):
+        if self.usedCastle:
+            self.IcanCastle = False
+            
         sourceCol, sourceRank = self.chessCoord2PosonBoard(source)
         destCol, destRank = self.chessCoord2PosonBoard(dest)
         self.board[destRank][destCol] = self.board[sourceRank][sourceCol]
         self.board[sourceRank][sourceCol] = "*"
+
+        #move was successful
+        self.myTurn = False
     
     def getFENPrefixFromBoard(self):
         FENString = ""
