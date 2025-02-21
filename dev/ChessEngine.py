@@ -1,11 +1,12 @@
 from stockfish import Stockfish
 import re
+import FilePathFinder
 
 class ChessEngine:
 
     def __init__(self,depth = 20,
                  level = 15, side = 'w', startFirst = True, 
-                 enginePath = "/home/jshim/catkin_ws/src/my_package/src/stockfish/stockfish-ubuntu-x86-64-avx512"):
+                 enginePath = FilePathFinder.getPath("chessEngine")):
         self.depth = max(20,depth)
         self.level = max(20,level)
         self.side = side
@@ -140,9 +141,14 @@ class ChessEngine:
             print(self.board[i])
         print()
 
+    def getAIMove(self):
+        return self.stockfish.get_best_move()
+
+
 c = ChessEngine()
 c.updateBoard()
 c.printBoard()
+#print(c.getAIMove())
 print()
 c.moveSourceToDest("e2","e4")
 c.moveSourceToDest("f2","f4")
