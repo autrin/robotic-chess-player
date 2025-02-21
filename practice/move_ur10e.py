@@ -10,6 +10,7 @@ import sounddevice as sd
 import vosk
 import json
 import random
+import dev.FilePathFinder as FilePathFinder
 #from sensor_msgs.msg import JointState
 
 
@@ -41,14 +42,14 @@ def initRobot(velocityScale = 1.0, accelerationScale = 1.0, maxPlanTime = 100):
 
 
 
-def getVoiceModelandQ(model_path = "/home/jshim/catkin_ws/src/my_package/src/vosk-model-small-en-us-0.15"):
+def getVoiceModelandQ(model_path = FilePathFinder.getPath("voiceModel")):
     model = vosk.Model(model_path)
     q = queue.Queue()
     return model, q
 
     
 
-def setChessEngine(depth,level,enginePath="/home/jshim/catkin_ws/src/my_package/src/stockfish/stockfish-ubuntu-x86-64-avx512"):
+def setChessEngine(depth,level,enginePath=FilePathFinder.getPath("chessEngine")):
     if level > 20:
         level = 20
     stockfish = Stockfish(enginePath)

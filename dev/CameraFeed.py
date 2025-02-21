@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 import apriltag
+import FilePathFinder
 
 class CameraFeed:
     #use april tags
