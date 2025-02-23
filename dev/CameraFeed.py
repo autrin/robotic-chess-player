@@ -34,7 +34,8 @@ class CameraFeed:
     
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
-    def set_chessboard_boundaries(self,frame,detections):
+    #returns a pair of 2 lists- one containing the left edges and one containing the top edges
+    def set_chessboard_boundaries(self,detections):
         
         #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
         #we will need to fill the indices in with the 3 unique tags that correspond to the edges of the board
@@ -78,7 +79,7 @@ class CameraFeed:
         topEdge7 = TL3[1] + chessSquareWidth*6
         topEdge8 = TL3[1] + chessSquareWidth*7
 
-        
+        return ([leftEdge1,leftEdge2,leftEdge3,leftEdge4,leftEdge5,leftEdge6,leftEdge7,leftEdge8][topEdge1,topEdge2,topEdge3,topEdge4,topEdge5,topEdge6,topEdge7])
 
 
         
