@@ -1,0 +1,5 @@
+robostart.sh
+runScript.sh
+stockfish
+paths.csv
+dev/__pycache__
