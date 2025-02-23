@@ -108,6 +108,7 @@ class CameraFeed:
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+
    
 
     def destroyCameraFeed(self, destroyAllWindows=True):
