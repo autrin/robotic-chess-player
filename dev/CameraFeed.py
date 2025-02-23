@@ -42,14 +42,17 @@ class CameraFeed:
         while True:
             ret,frame = self.cam.read()
             
-            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            #grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            #mask = cv2.inRange(grayFrame, 0, 100)
+            #filtered = cv2.bitwise_and(frame, frame, mask=mask)
+            #filtered = cv2.cvtColor(filtered,cv2.COLOR_BGR2GRAY)
+            adjusted = cv2.convertScaleAbs(frame, alpha=4, beta=-50)
+            adjustedG = cv2.cvtColor(adjusted,cv2.COLOR_BGR2GRAY)
+
             
-            grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            grayFrame = clahe.apply(grayFrame)
-            grayFrame = self.adjust_gamma(grayFrame)
-            
-            detections = self.aprilDetector.detect(img=grayFrame)
+
+          
+            detections = self.aprilDetector.detect(img=adjustedG)
             centers = self.getCenterPositionofDetection(detections)
             self.drawCenterCircleForTags(frame,centers)
             cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
