@@ -32,12 +32,23 @@ class CameraFeed:
             cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
             cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
         
-    
+    def adjust_gamma(self,image, gamma=1.5):
+        invGamma = 1.0 / gamma
+        table = np.array([((i / 255.0) ** invGamma) * 255
+                        for i in range(256)]).astype("uint8")
+        return cv2.LUT(image, table)
+
     def startLoop(self):
         while True:
             ret,frame = self.cam.read()
             
             grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            
+            grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
+            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+            grayFrame = clahe.apply(grayFrame)
+            grayFrame = self.adjust_gamma(grayFrame)
+            
             detections = self.aprilDetector.detect(img=grayFrame)
             centers = self.getCenterPositionofDetection(detections)
             self.drawCenterCircleForTags(frame,centers)
