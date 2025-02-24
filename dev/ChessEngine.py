@@ -22,13 +22,13 @@ class ChessEngine:
         self.stockfish.set_skill_level(self.level)
         self.fenPos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" #for other purposes. Might me removed
         self.stockfish.set_fen_position(self.fenPos) 
-        self.halfMoveClock = 0
-        self.enPassant="-"
-        self.turnClock=1
-        self.castling = "KQkq"
-        self.usedCastle = False
-        self.usedCastle = False
-        self.draw = False
+        self.halfMoveClock = 0  # Tracks 50-move rule
+        self.enPassant = "-"    # En passant target square
+        self.turnClock = 1      # Turn counter
+        self.castling = "KQkq"  # Available castling rights
+        self.usedCastle = False # Track castling
+        self.draw = False       # Check draw condition
+
     
     def setFenPos(self):
         self.stockfish.set_fen_position(self.fenPos)    
