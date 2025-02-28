@@ -13,7 +13,7 @@
 - Printed a chess board and tried the AprilTags
 - Helped teammates with Ubuntu installation
 
-## 2/22
+## 2/21
 - The basic requirement for the 1st demo is having the chess engine to work
 - Map the piece/board based on the april tags using the camera
 - Covert the data to the 2D string
