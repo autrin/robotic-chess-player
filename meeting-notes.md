@@ -1,11 +1,17 @@
+## 2/24
+- Discussed demo 1 and improved the materials of the slides
+- Practiced the presentation
+
 ## 2/23
 - Discussed the improvement of AprilTags detection
 - Worked on the Image processing code
 - Started on the demo 1 slides
 
-## 2/24
-- Discussed demo 1 and improved the materials of the slides
-- Practiced the presentation
+## 2/22
+- Discussed and worked on the board corners detection
+- Discussed how socketfish works
+- Printed a chess board and tried the AprilTags
+- Helped teammates with Ubuntu installation
 
 ## 2/22
 - The basic requirement for the 1st demo is having the chess engine to work
