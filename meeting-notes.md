@@ -1,3 +1,8 @@
+## 2/23
+- Discussed the improvement of AprilTags detection
+- Worked on the Image processing code
+- Started on the demo 1 slides
+
 ## 2/24
 - Discussed demo 1 and improved the materials of the slides
 - Practiced the presentation
