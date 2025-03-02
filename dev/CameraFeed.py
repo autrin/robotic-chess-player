@@ -12,7 +12,6 @@ class CameraFeed:
         self.aprilDetector = apriltag.Detector()
 
         
-    #just changed name from campera to camera
     def openCamera(self):
         self.cam = cv2.VideoCapture(self.camID)
         if not self.cam.isOpened():
