@@ -79,7 +79,7 @@ class CameraFeed:
         topEdge7 = TL3[1] + chessSquareWidth*6
         topEdge8 = TL3[1] + chessSquareWidth*7
 
-        return ([leftEdge1,leftEdge2,leftEdge3,leftEdge4,leftEdge5,leftEdge6,leftEdge7,leftEdge8][topEdge1,topEdge2,topEdge3,topEdge4,topEdge5,topEdge6,topEdge7])
+        return ([leftEdge1,leftEdge2,leftEdge3,leftEdge4,leftEdge5,leftEdge6,leftEdge7,leftEdge8],[topEdge1,topEdge2,topEdge3,topEdge4,topEdge5,topEdge6,topEdge7])
 
 
         
@@ -118,7 +118,7 @@ class CameraFeed:
 
 
 if __name__ == "__main__":
-    ocr = CameraFeed(0)
+    ocr = CameraFeed(1)
     ocr.openCamera()
     ocr.startLoop()
     
