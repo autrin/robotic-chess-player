@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import apriltag
 import FilePathFinder
+import math
 
 class CameraFeed:
     #use april tags
@@ -31,63 +32,80 @@ class CameraFeed:
             cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
             cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
     
+
+    def calculateEuclidianDist(self, point0, point1):
+        return int(math.sqrt((int(point0[0])-int(point1[0]))*(int(point0[0])-int(point1[0])) 
+                        + (int(point0[1])-int(point1[1]))*(int(point0[1])-int(point1[1]))))
+
+    #returns real number. Do not convert the output of this function into an int. Only convert the final coordinate
+    def calculateSlope(self, point0, point1):
+        return (point0[1] - point1[1])/(point0[0] - point1[0])
+
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
     #returns a pair of 2 lists- one containing the left edges and one containing the top edges
-    def set_chessboard_boundaries(self,detections):
-        
+    def get_chessboard_boundaries(self,detections):
+        if detections == None or len(detections) != 3:
+            return None
         #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
         #we will need to fill the indices in with the 3 unique tags that correspond to the edges of the board
-        #TL = top left apriltag, TR = top right apriltag, BL = bottom left apriltag
-        (TL1,TL2,TL3,TL4) = detections[1].corners
-        (TR1,TR2,TR3,TR4) = detections[2].corners
-        (BL1,BL2,BL3,BL4) = detections[3].corners
+        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag
+        print(detections)
+        TL0,TL1,TL2,TL3 = detections[0].corners
+        BL0,BL1,BL2,BL3 = detections[1].corners        
+        BR0,BR1,BR2,BR3 = detections[2].corners
+
+        # widthInterval = width/8
+        # heightInterval = height/8
         
-        #For corners: It looks like the tags wind counterclockwise, but I could be wrong. 
-        #this assumes that the top left of each apriltag is the first corner
-        #TL3, TR2, and BL4 are the upper left, upper right, and bottom left points that match to the corners of the chessboard
-        #I am assuming the top left pixel of the image is 0,0 : x,y
+        # hSlope = self.calculateSlope(BL1,BR0)
+        # vSlope = self.calculateSlope(TL2,BL1)
+        # hMagInverse = (math.sqrt(1+hSlope**2))
+        # vMagInverse = (math.sqrt(1+vSlope**2))
+        # horizontalUnitVect = [1/hMagInverse, hSlope/hMagInverse]
+        # verticalUnitVect = [1/vMagInverse,vSlope/vMagInverse]
 
-        boardTopWidth = TL3[0]-TR2[0] #width of the chess board in pixels(for use with calculating pixel locations of chess squares)
+        #refractoring, sorry cal
+        TL2 = [int(TL2[0]),int(TL2[1])]
+        BL1 = [int(BL1[0]),int(BL1[1])]
+        BR0 = [int(BR0[0]),int(BR0[1])]
+        return TL2, BL1, BR0
 
-        #renaming for ease of understanding
-        boardTopLeft = TL3
-        boardTopRight = TR2
-        boardBotLeft = BL4
-
-        chessSquareWidth = boardTopWidth/8 #should be int
-        #these next 8 x values are for each LEFT SIDE of the squares on the board,
-        #starting at the left edge of the chess board(1) and ending at the left edge of the rightmost square of the chess board(8)
-        leftEdge1 = TL3[0]
-        leftEdge2 = TL3[0] + chessSquareWidth
-        leftEdge3 = TL3[0] + chessSquareWidth*2
-        leftEdge4 = TL3[0] + chessSquareWidth*3
-        leftEdge5 = TL3[0] + chessSquareWidth*4
-        leftEdge6 = TL3[0] + chessSquareWidth*5
-        leftEdge7 = TL3[0] + chessSquareWidth*6
-        leftEdge8 = TL3[0] + chessSquareWidth*7
-
-        #these next 8 y values are for the TOP SIDE of the squares on the board,
-        #starting at the top edge of the chess board(1) and ending at the upper edge of the bottommost square of the chessboard(8)
-        topEdge1 = TL3[1]
-        topEdge2 = TL3[1] + chessSquareWidth
-        topEdge3 = TL3[1] + chessSquareWidth*2
-        topEdge4 = TL3[1] + chessSquareWidth*3
-        topEdge5 = TL3[1] + chessSquareWidth*4
-        topEdge6 = TL3[1] + chessSquareWidth*5
-        topEdge7 = TL3[1] + chessSquareWidth*6
-        topEdge8 = TL3[1] + chessSquareWidth*7
-
-        return ([leftEdge1,leftEdge2,leftEdge3,leftEdge4,leftEdge5,leftEdge6,leftEdge7,leftEdge8],[topEdge1,topEdge2,topEdge3,topEdge4,topEdge5,topEdge6,topEdge7])
+    def drawLine(self, frame, p0,p1):
+        cv2.line(frame, p0, p1, color=(0, 255, 0), thickness=1)
 
 
+    #Get the april tags responsible for the board corners
+    def getChessBoardCorners(self,detections):
+        ret = []
         
+        for d in detections:
+            if (d.tag_id == 0 or d.tag_id ==1 or d.tag_id ==2) and d.tag_id not in ret:
+                ret.append(d)
+        
+        #If all the corners are not in the list, detect again 
+        if len(ret) != 3:
+            print("Failed to detect all three corners, detecting april tags again")
+            return None
+        #sort the array
+        sorted(ret,key=lambda x : x.tag_id)        
+        return ret
+    
+    
+
 
     def adjust_gamma(self,image, gamma=1.5):
         invGamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** invGamma) * 255
                         for i in range(256)]).astype("uint8")
         return cv2.LUT(image, table)
+    
+    #for debugging
+    def drawAprilTagCorner(self,frame,detections,cornerPos):
+        for d in detections:
+            #print(centers[id])
+            #print(type(d.corners[cornerPos][0]))
+            cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
     def startLoop(self):
         while True:
@@ -103,6 +121,14 @@ class CameraFeed:
             detections = self.aprilDetector.detect(img=grayFrame)
             centers = self.getCenterPositionofDetection(detections)
             self.drawCenterCircleForTags(frame,centers)
+
+            cbc = self.getChessBoardCorners(detections)
+            
+            if cbc:
+                corners = self.get_chessboard_boundaries(cbc)
+                self.drawLine(frame,corners[0],corners[1])
+                self.drawLine(frame,corners[1],corners[2])
+                #self.drawAprilTagCorner(frame,detections,1)
             cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
