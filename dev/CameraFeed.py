@@ -74,63 +74,39 @@ class CameraFeed:
         BR0 = [int(BR0[0]),int(BR0[1])]
         return [TL2, BL1, BR0]
     
-    def getAxesIntervalDots(self,TL,BL,BR):
-        print(f"TL = {TL}")
+    def getAxesIntervalDots(self,TL,BL,BR,frame):
+        
         width = self.calculateEuclidianDist(BL,BR)
         height = self.calculateEuclidianDist(TL,BL)
 
-        widthInterval = width/8
-        heightInterval = height/8
+        sh,sw = frame.shape[:2]
         
-        hSlope = self.calculateSlope(BL,BR)
-        vSlope = self.calculateSlope(TL,BL)
-
-        hMagInverse = (math.sqrt(1+hSlope**2))
-        vMagInverse = (math.sqrt(1+vSlope**2))
+        x = None
+        y = None
         
-        horizontalUnitVect = [1/hMagInverse, hSlope/hMagInverse]
-        verticalUnitVect = [1/vMagInverse,vSlope/vMagInverse]
+
+
+        x = np.linspace(0,width,9)
+        y = np.linspace(0,height,9)
+        mx,my = np.meshgrid(x,y)
+
+        points = np.vstack([mx.ravel(), my.ravel()]).T
+        cspaceoriginal= np.float32([[0,0],[width-1,0],[0,height-1]])
+        cspaceNew = np.float32([BL,BR,TL])
+        M = cv2.getAffineTransform(cspaceoriginal,cspaceNew)
+        ones = np.ones((points.shape[0], 1), dtype=points.dtype)
+        #add col of ones for homogeneous eq solving
+        points_hom = np.hstack([points, ones])
+        pt = np.dot(points_hom, M.T)
         
-        hdirx = 1
-        hdiry = 1
 
-        vdirx = 1
-        vdiry = 1
+        return pt
 
-        #we start plotting the dots from BL, so the direction is important
-        if TL[0] < BL[0]:
-            vdirx = -1
-        if TL[1] < BL[1]:
-            vdiry = -1
-
-        if BR[0] < BL[0]:
-            hdirx = -1
-        if BR[1] < BL[1]:
-            vdiry = -1
-
-        hPoints = []
-        vPoints = []
-        #up to 9 because we don't have the other side
-        for dis in range(1,9):
-            h = []
-            v = []
-            
-            h.append(BL[0] +hdirx*dis*widthInterval*horizontalUnitVect[0])
-            h.append(BL[1] +hdiry*dis*widthInterval*horizontalUnitVect[1])
-            hPoints.append(h)
-            
-            v.append(BL[0] + vdirx*dis*heightInterval*verticalUnitVect[0])
-            v.append(BL[1] + vdirx*dis*heightInterval*verticalUnitVect[1])
-            vPoints.append(v)
-        
-        return hPoints, vPoints
     
-    def plotDotsOnAxes(self,frame,hPoints,vPoints):
-        for hp in hPoints:
-            cv2.circle(frame,(int(hp[0]),int(hp[1])),3,(0,0,255),-1)
+    def plotDotsOnAxes(self,frame,points):
+        for p in points:
+            cv2.circle(frame,(int(p[0]),int(p[1])),3,(0,0,255),-1)
 
-        for vp in vPoints:
-            cv2.circle(frame,(int(vp[0]),int(vp[1])),3,(0,0,255),-1)
 
 
 
@@ -193,8 +169,8 @@ class CameraFeed:
             
             if cbc:
                 corners = self.get_chessboard_boundaries(cbc)
-                hpoints,vpoints = self.getAxesIntervalDots(corners[0],corners[1],corners[2])
-                self.plotDotsOnAxes(frame,hpoints,vpoints)
+                points = self.getAxesIntervalDots(corners[0],corners[1],corners[2],frame)
+                self.plotDotsOnAxes(frame,points)
                 self.drawLine(frame,corners[0],corners[1])
                 self.drawLine(frame,corners[1],corners[2])
                 #self.drawAprilTagCorner(frame,detections,1)
