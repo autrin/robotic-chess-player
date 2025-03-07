@@ -1,9 +1,49 @@
 import chess
-
-boardState = "r1bqkb1r/pppp1Qpp/2n2n2/4p3/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"
-
-board = chess.Board(boardState)
-
+import chess.svg
+from tkinter import *
+from PIL import Image, ImageTk
 
 
-print(board.is_checkmate())
+    
+GUI = Tk()
+GUI.geometry("1000x500")
+GUI.title("Robotic Chess Player")
+
+programimage = Image.open("robo_arm.jpg")
+iconimage = ImageTk.PhotoImage(programimage)
+GUI.iconphoto(True,iconimage)
+GUI.config()
+
+#BUTTON TO PLAY/START GAME
+
+play = Button(GUI,
+                text ="Play",
+                font=('Times_New_Roman'),
+                relief=RAISED,
+                bd=5,
+                padx=10,
+                pady=10
+                )
+def startGame():
+    print("Started Game")
+
+
+    
+play.config(command=startGame)
+play.place(x=0,y=0)
+
+#BUTTON TO GO BACK TO HOME
+
+end = Button(GUI, text ="Concede",
+                font=('Times_New_Roman'),
+                relief=RAISED,
+                bd=5,
+                padx=10,
+                pady=10)
+def endGame():
+    print("Ended Game")
+
+end.config(command=endGame)
+end.place(x=300,y=0)
+
+GUI.mainloop() #opens window
