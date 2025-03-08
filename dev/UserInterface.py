@@ -5,6 +5,8 @@ from PIL import Image, ImageTk
 
 
     
+inGame = False
+
 GUI = Tk()
 GUI.geometry("1000x500")
 GUI.title("Robotic Chess Player")
@@ -26,6 +28,9 @@ play = Button(GUI,
                 )
 def startGame():
     print("Started Game")
+    inGame = True
+    play.place_forget()
+    end.place(x=300,y=0)
 
 
     
@@ -42,8 +47,10 @@ end = Button(GUI, text ="Concede",
                 pady=10)
 def endGame():
     print("Ended Game")
+    inGame = False
+    end.place_forget()
+    play.place(x=0,y=0)
 
 end.config(command=endGame)
-end.place(x=300,y=0)
 
 GUI.mainloop() #opens window
