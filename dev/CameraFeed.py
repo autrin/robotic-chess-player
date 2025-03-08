@@ -50,29 +50,20 @@ class CameraFeed:
     def get_chessboard_boundaries(self,detections):
         if detections == None or len(detections) != 3:
             return None
-        #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
-        #we will need to fill the indices in with the 3 unique tags that correspond to the edges of the board
-        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag
-        print(detections)
-        TL0,TL1,TL2,TL3 = detections[0].corners
-        BL0,BL1,BL2,BL3 = detections[1].corners        
-        BR0,BR1,BR2,BR3 = detections[2].corners
-
-        # widthInterval = width/8
-        # heightInterval = height/8
+        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
-        # hSlope = self.calculateSlope(BL1,BR0)
-        # vSlope = self.calculateSlope(TL2,BL1)
-        # hMagInverse = (math.sqrt(1+hSlope**2))
-        # vMagInverse = (math.sqrt(1+vSlope**2))
-        # horizontalUnitVect = [1/hMagInverse, hSlope/hMagInverse]
-        # verticalUnitVect = [1/vMagInverse,vSlope/vMagInverse]
-
-        #refractoring, sorry cal
-        TL2 = [int(TL2[0]),int(TL2[1])]
-        BL1 = [int(BL1[0]),int(BL1[1])]
-        BR0 = [int(BR0[0]),int(BR0[1])]
-        return [TL2, BL1, BR0]
+        TL = detections[0].corners
+        BL= detections[1].corners        
+        BR = detections[2].corners
+        TR = detections[3].corners
+        
+        TL = [int(TL[0]),int(TL[1])]
+        BL = [int(BL[0]),int(BL[1])]
+        BR = [int(BR[0]),int(BR[1])]
+        TR = [int(TR[0]), int(TR[0])]
+        return [TL, BL, BR, TR]
+    
+    
     
     def getAxesIntervalDots(self,TL,BL,BR,frame):
         
@@ -89,7 +80,7 @@ class CameraFeed:
         x = np.linspace(0,width,9)
         y = np.linspace(0,height,9)
         mx,my = np.meshgrid(x,y)
-
+        
         points = np.vstack([mx.ravel(), my.ravel()]).T
         cspaceoriginal= np.float32([[0,0],[width-1,0],[0,height-1]])
         cspaceNew = np.float32([BL,BR,TL])
