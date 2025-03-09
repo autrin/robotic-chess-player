@@ -26,24 +26,36 @@ class CameraFeed:
     
     #this might be unnecessary
     def getCenterPositionofDetection(self,detections):
+        """
+        Returns a dictionary mapping each tag’s ID to its center.
+        """
         centerMap = {}
         for d in detections:
             centerMap[d.tag_id] = d.center.astype(int) # For each tag, extracts its center coordinates (converted to integers).
         return centerMap
     
     def drawCenterCircleForTags(self, frame, centers):
-        for id in centers.keys():
+        for id in centers.keys(): # For every detected center
             print(centers[id])
             cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
             cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag’s ID next to the circle.
     
 
     def calculateEuclidianDist(self, point0, point1):
+        """
+        Computes the Euclidean distance between two 2D points.
+        Uses basic distance formula to return an integer value.
+        """
         return int(math.sqrt((int(point0[0])-int(point1[0]))*(int(point0[0])-int(point1[0])) 
                         + (int(point0[1])-int(point1[1]))*(int(point0[1])-int(point1[1]))))
 
     #returns real number. Do not convert the output of this function into an int. Only convert the final coordinate
     def calculateSlope(self, point0, point1):
+        """
+        Computes the slope (rise over run) between two points.
+        Prints x-values for debugging.
+        Returns 0 if the x difference is zero to avoid division by zero.
+        """
         print(f"p0x = {point0[0]}, p1x = {point1[0]}")
         if point0[0] - point1[0] == 0:
             return 0
