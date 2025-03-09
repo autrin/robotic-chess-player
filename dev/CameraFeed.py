@@ -16,7 +16,6 @@ class CameraFeed:
         self.cam = None
         self.camID = camID
         self.aprilDetector = apriltag.Detector()
-
         
     def openCamera(self):
         """
