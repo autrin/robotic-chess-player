@@ -171,18 +171,23 @@ class CameraFeed:
         #sort the array
         sorted(ret,key=lambda x : x.tag_id) # This does not sort in place
         return ret
-    
-    
-
 
     def adjust_gamma(self,image, gamma=1.5):
+        """
+        Adjusts the gamma of the image to correct for lighting.
+        Builds a lookup table and applies it to the image using OpenCV's cv2.LUT.
+        """
         invGamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** invGamma) * 255
                         for i in range(256)]).astype("uint8")
         return cv2.LUT(image, table)
     
     #for debugging
-    def drawAprilTagCorner(self,frame,detections,cornerPos):
+    def drawAprilTagCorner(self, frame, detections, cornerPos):
+        """
+        For debugging: draws a circle at a specified corner (cornerPos) of each detected AprilTag.
+        This helps to verify the exact locations of tag corners.
+        """
         for d in detections:
             #print(centers[id])
             #print(type(d.corners[cornerPos][0]))
