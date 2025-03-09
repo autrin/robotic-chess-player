@@ -5,6 +5,11 @@ import apriltag
 import FilePathFinder
 import math
 
+"""
+This script is designed to capture video from a camera, process the images to detect AprilTags 
+(fiducial markers), and use that information to infer the geometry of a chessboard.
+"""
+
 class CameraFeed:
     #use april tags
     def __init__(self,camID = 0):
@@ -23,14 +28,14 @@ class CameraFeed:
     def getCenterPositionofDetection(self,detections):
         centerMap = {}
         for d in detections:
-            centerMap[d.tag_id] = d.center.astype(int)
+            centerMap[d.tag_id] = d.center.astype(int) # For each tag, extracts its center coordinates (converted to integers).
         return centerMap
     
     def drawCenterCircleForTags(self, frame, centers):
         for id in centers.keys():
             print(centers[id])
-            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
-            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
+            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
+            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag’s ID next to the circle.
     
 
     def calculateEuclidianDist(self, point0, point1):
