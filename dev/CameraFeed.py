@@ -27,7 +27,7 @@ class CameraFeed:
     #this might be unnecessary
     def getCenterPositionofDetection(self,detections):
         """
-        Returns a dictionary mapping each tag’s ID to its center.
+        Returns a dictionary mapping each tag's ID to its center.
         """
         centerMap = {}
         for d in detections:
@@ -38,7 +38,7 @@ class CameraFeed:
         for id in centers.keys(): # For every detected center
             print(centers[id])
             cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
-            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag’s ID next to the circle.
+            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag's ID next to the circle.
     
 
     def calculateEuclidianDist(self, point0, point1):
@@ -136,6 +136,10 @@ class CameraFeed:
         return pt
 
     def plotDotsOnAxes(self,frame,points):
+        """
+        Draws small red dots on the frame at each point in the grid.
+        This visualization helps confirm that the chessboard's grid is correctly calculated.
+        """
         for p in points:
             cv2.circle(frame,(int(p[0]),int(p[1])),3,(0,0,255),-1)
 
