@@ -101,61 +101,43 @@ class CameraFeed:
     
     def getAxesIntervalDots(self,TL,BL,BR,frame):
         """
-        Calculates dimensions:
-
-            Width: Distance between BL (bottom-left) and BR (bottom-right).
-            Height: Distance between TL (top-left) and BL.
-
-        Creates a grid:
-
-            Uses np.linspace to create 9 evenly spaced points across the width and height.
-            Uses np.meshgrid to create a grid (representing the chessboard squares).
-
-        Transforms the grid:
-
-            Constructs an affine transformation matrix (M) to map the grid from a standard coordinate space to the actual board defined by the detected corners.
-            Applies the transformation to all grid points.
-
-        Returns the transformed points which represent the grid (or axes interval dots) on the actual chessboard.
+        - Calculates dimensions
+        - Creates a grid
+        - Transforms the grid
+        - Returns the transformed points which represent the grid (or axes interval dots) on the actual chessboard.
         """
-        width = self.calculateEuclidianDist(BL,BR)
-        height = self.calculateEuclidianDist(TL,BL)
+        width = self.calculateEuclidianDist(BL,BR) # Distance between BL (bottom-left) and BR (bottom-right).
+        height = self.calculateEuclidianDist(TL,BL) # Distance between TL (top-left) and BL.
 
         sh,sw = frame.shape[:2]
         
         x = None
         y = None
         
-
-
+        # Uses np.linspace to create 9 evenly spaced points across the width and height.
         x = np.linspace(0,width,9)
         y = np.linspace(0,height,9)
+
+        # Uses np.meshgrid to create a grid (representing the chessboard squares).
         mx,my = np.meshgrid(x,y)
 
-        points = np.vstack([mx.ravel(), my.ravel()]).T
-        cspaceoriginal= np.float32([[0,0],[width-1,0],[0,height-1]])
-        cspaceNew = np.float32([BL,BR,TL])
+        # Constructs an affine transformation matrix (M) to map the grid from a standard coordinate 
+        # space to the actual board defined by the detected corners.
+        # Applies the transformation to all grid points.
+        points = np.vstack([mx.ravel(), my.ravel()]).T # contains the grid points generated from meshgrid that need transformation
+        cspaceoriginal= np.float32([[0,0],[width-1,0],[0,height-1]]) # defines three points in the standard coordinate space: origin, bottom-right, and top-left
+        cspaceNew = np.float32([BL,BR,TL]) # defines the corresponding actual points on the detected board (BL, BR, TL)
         M = cv2.getAffineTransform(cspaceoriginal,cspaceNew)
         ones = np.ones((points.shape[0], 1), dtype=points.dtype)
         #add col of ones for homogeneous eq solving
         points_hom = np.hstack([points, ones])
         pt = np.dot(points_hom, M.T)
         
-
-
         return pt
 
-    
     def plotDotsOnAxes(self,frame,points):
         for p in points:
             cv2.circle(frame,(int(p[0]),int(p[1])),3,(0,0,255),-1)
-
-
-
-
-
-
-
 
     def drawLine(self, frame, p0,p1):
         cv2.line(frame, p0, p1, color=(0, 255, 0), thickness=1)
