@@ -19,6 +19,10 @@ class CameraFeed:
 
         
     def openCamera(self):
+        """
+        Opens the camera using the specified camera ID.
+        Checks if the camera stream is available; if not, prints an error and exits.
+        """
         self.cam = cv2.VideoCapture(self.camID)
         if not self.cam.isOpened():
             print(f"ERROR: can't open camera id={self.camID}")
@@ -194,6 +198,9 @@ class CameraFeed:
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
     def startLoop(self):
+        """
+        The main loop.
+        """
         while True:
             # * Frame Capture & Preprocessing *
             ret,frame = self.cam.read() # Captures a frame from the camera.
@@ -231,10 +238,12 @@ class CameraFeed:
                 break
 
     def destroyCameraFeed(self, destroyAllWindows=True):
+        """
+        Clean-Up Function
+        """
         self.cam.release()
-        if destroyAllWindows:
+        if destroyAllWindows: # Optionally closes all OpenCV windows.
             cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     ocr = CameraFeed(1)
@@ -242,4 +251,3 @@ if __name__ == "__main__":
     ocr.startLoop()
     
     ocr.destroyCameraFeed()
-    
