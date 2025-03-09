@@ -153,6 +153,11 @@ class CameraFeed:
 
     #Get the april tags responsible for the board corners
     def getChessBoardCorners(self,detections):
+        """
+        Filters the detected AprilTags to find those with IDs 0, 1, and 2.
+        These are assumed to be the corners of the chessboard.
+        If fewer than 3 are found, it prints a warning and returns None.
+        """
         ret = []
         
         for d in detections:
