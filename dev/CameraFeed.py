@@ -63,8 +63,16 @@ class CameraFeed:
 
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
-    #returns a pair of 2 lists- one containing the left edges and one containing the top edges
     def get_chessboard_boundaries(self,detections):
+        """
+        Assumes three specific AprilTags (with IDs 0, 1, and 2) represent the three corners of the chessboard:
+
+        TL2: A corner from the top-left tag.
+        BL1: A corner from the bottom-left tag.
+        BR0: A corner from the bottom-right tag.
+
+        Returns these three points as the boundaries used for further calculations.
+        """
         if detections == None or len(detections) != 3:
             return None
         #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
@@ -92,7 +100,24 @@ class CameraFeed:
         return [TL2, BL1, BR0]
     
     def getAxesIntervalDots(self,TL,BL,BR,frame):
-        
+        """
+        Calculates dimensions:
+
+            Width: Distance between BL (bottom-left) and BR (bottom-right).
+            Height: Distance between TL (top-left) and BL.
+
+        Creates a grid:
+
+            Uses np.linspace to create 9 evenly spaced points across the width and height.
+            Uses np.meshgrid to create a grid (representing the chessboard squares).
+
+        Transforms the grid:
+
+            Constructs an affine transformation matrix (M) to map the grid from a standard coordinate space to the actual board defined by the detected corners.
+            Applies the transformation to all grid points.
+
+        Returns the transformed points which represent the grid (or axes interval dots) on the actual chessboard.
+        """
         width = self.calculateEuclidianDist(BL,BR)
         height = self.calculateEuclidianDist(TL,BL)
 
