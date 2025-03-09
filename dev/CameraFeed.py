@@ -144,6 +144,10 @@ class CameraFeed:
             cv2.circle(frame,(int(p[0]),int(p[1])),3,(0,0,255),-1)
 
     def drawLine(self, frame, p0,p1):
+        """
+        Draws a green line between two given points on the frame.
+        Useful for visualizing board boundaries or axes.
+        """
         cv2.line(frame, p0, p1, color=(0, 255, 0), thickness=1)
 
 
