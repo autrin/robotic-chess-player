@@ -164,7 +164,7 @@ class CameraFeed:
             print("Failed to detect all three corners, detecting april tags again")
             return None
         #sort the array
-        sorted(ret,key=lambda x : x.tag_id)        
+        sorted(ret,key=lambda x : x.tag_id) # This does not sort in place
         return ret
     
     
