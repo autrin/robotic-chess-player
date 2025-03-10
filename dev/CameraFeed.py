@@ -5,6 +5,11 @@ import apriltag
 import FilePathFinder
 import math
 
+"""
+This script is designed to capture video from a camera, process the images to detect AprilTags 
+(fiducial markers), and use that information to infer the geometry of a chessboard.
+"""
+
 class CameraFeed:
     #use april tags
     def __init__(self,camID = 0):
@@ -25,6 +30,10 @@ class CameraFeed:
 
         
     def openCamera(self):
+        """
+        Opens the camera using the specified camera ID.
+        Checks if the camera stream is available; if not, prints an error and exits.
+        """
         self.cam = cv2.VideoCapture(self.camID)
         if not self.cam.isOpened():
             print(f"ERROR: can't open camera id={self.camID}")
@@ -32,24 +41,36 @@ class CameraFeed:
     
     #this might be unnecessary
     def getCenterPositionofDetection(self,detections):
+        """
+        Returns a dictionary mapping each tag's ID to its center.
+        """
         centerMap = {}
         for d in detections:
-            centerMap[d.tag_id] = d.center.astype(int)
+            centerMap[d.tag_id] = d.center.astype(int) # For each tag, extracts its center coordinates (converted to integers).
         return centerMap
     
     def drawCenterCircleForTags(self, frame, centers):
-        for id in centers.keys():
+        for id in centers.keys(): # For every detected center
             print(centers[id])
-            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
-            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
+            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
+            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag's ID next to the circle.
     
 
     def calculateEuclidianDist(self, point0, point1):
+        """
+        Computes the Euclidean distance between two 2D points.
+        Uses basic distance formula to return an integer value.
+        """
         return int(math.sqrt((int(point0[0])-int(point1[0]))*(int(point0[0])-int(point1[0])) 
                         + (int(point0[1])-int(point1[1]))*(int(point0[1])-int(point1[1]))))
 
     #returns real number. Do not convert the output of this function into an int. Only convert the final coordinate
     def calculateSlope(self, point0, point1):
+        """
+        Computes the slope (rise over run) between two points.
+        Prints x-values for debugging.
+        Returns 0 if the x difference is zero to avoid division by zero.
+        """
         print(f"p0x = {point0[0]}, p1x = {point1[0]}")
         if point0[0] - point1[0] == 0:
             return 0
@@ -57,7 +78,6 @@ class CameraFeed:
 
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
-    #returns a pair of 2 lists- one containing the left edges and one containing the top edges
     def get_chessboard_boundaries(self,detections):
         if detections == None or len(detections) != 4:
             return None
@@ -103,6 +123,8 @@ class CameraFeed:
 
         x = np.linspace(0,width,9)
         y = np.linspace(0,height,9)
+
+        # Uses np.meshgrid to create a grid (representing the chessboard squares).
         mx,my = np.meshgrid(x,y)
         
     
@@ -116,19 +138,21 @@ class CameraFeed:
                 y = int(my[i, j]) + TL[1]
                 cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
 
-
-
-
-
-
-
-
     def drawLine(self, frame, p0,p1):
+        """
+        Draws a green line between two given points on the frame.
+        Useful for visualizing board boundaries or axes.
+        """
         cv2.line(frame, p0, p1, color=(0, 255, 0), thickness=1)
 
 
     #Get the april tags responsible for the board corners
     def getChessBoardCorners(self,detections):
+        """
+        Filters the detected AprilTags to find those with IDs 0, 1, and 2.
+        These are assumed to be the corners of the chessboard.
+        If fewer than 3 are found, it prints a warning and returns None.
+        """
         ret = []
         
         for d in detections:
@@ -141,18 +165,23 @@ class CameraFeed:
         #sort the array
         ret = sorted(ret,key=lambda x : x.tag_id)        
         return ret
-    
-    
-
 
     def adjust_gamma(self,image, gamma=1.5):
+        """
+        Adjusts the gamma of the image to correct for lighting.
+        Builds a lookup table and applies it to the image using OpenCV's cv2.LUT.
+        """
         invGamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** invGamma) * 255
                         for i in range(256)]).astype("uint8")
         return cv2.LUT(image, table)
     
     #for debugging
-    def drawAprilTagCorner(self,frame,detections,cornerPos):
+    def drawAprilTagCorner(self, frame, detections, cornerPos):
+        """
+        For debugging: draws a circle at a specified corner (cornerPos) of each detected AprilTag.
+        This helps to verify the exact locations of tag corners.
+        """
         for d in detections:
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
@@ -172,6 +201,9 @@ class CameraFeed:
                 print("DRAWING")
             
     def startLoop(self):
+        """
+        The main loop.
+        """
         while True:
             ret,frame = self.cam.read()
             
@@ -198,10 +230,12 @@ class CameraFeed:
    
 
     def destroyCameraFeed(self, destroyAllWindows=True):
+        """
+        Clean-Up Function
+        """
         self.cam.release()
-        if destroyAllWindows:
+        if destroyAllWindows: # Optionally closes all OpenCV windows.
             cv2.destroyAllWindows()
-
 
 if __name__ == "__main__":
     ocr = CameraFeed(1)
@@ -209,4 +243,3 @@ if __name__ == "__main__":
     ocr.startLoop()
     
     ocr.destroyCameraFeed()
-    
