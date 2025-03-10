@@ -100,7 +100,7 @@ class ChessEngine:
             not self.usedCastle
             and source == "e1"
             and dest == "a1"
-            and self.board[0][4] == "K"
+            and self.board[0][4] == "Q"
             and self.board[0][1] == "R"
         ):
             if self.board[0][3] != "*" or self.board[0][2] != "*":
@@ -110,11 +110,13 @@ class ChessEngine:
         destCol, destRank = self.chessCoord2PosonBoard(dest)
         self.board[destRank][destCol] = self.board[sourceRank][sourceCol]
         self.board[sourceRank][sourceCol] = "*"
-
+        self.turnClock += 1
+        self.side = 'w' if self.side == 'b' else 'b'
         # move was successful
         self.myTurn = False
+    
 
-    def getFENPrefixFromBoard(self):
+    def getFENStringFromBoard(self):
         FENString = ""
         r = 0
         while r < 8:
@@ -135,9 +137,10 @@ class ChessEngine:
             if r != 7:
                 FENString += colString + "/"
             else:
-                FENString += colString + " "
+                FENString += colString
 
             r += 1
+        FENString = FENString + " " + self.side + " " + self.castling + " - " + str(self.halfMoveClock) + " " + str(self.turnClock)
         return FENString
 
     def printBoard(self):
@@ -147,14 +150,33 @@ class ChessEngine:
 
     def getAIMove(self):
         return self.stockfish.get_best_move()
+    
+    def stockFishMove(self):
+        self.updateBoard()
+        fr,to = self.getFromTo(self.getAIMove())
+        self.moveSourceToDest(fr, to)
+        self.fenPos = self.getFENStringFromBoard()
+        self.updateBoard()
+    
+    def opponentMove(self, fr, to):
+        self.updateBoard()
+        self.moveSourceToDest(fr, to)
+        self.fenPos = self.getFENStringFromBoard()
+        self.updateBoard()
+        self.setFenPos(self.fenPos)
+    
+        
+
 
 
 c = ChessEngine()
 c.updateBoard()
 c.printBoard()
-# print(c.getAIMove())
+#print(c.getAIMove())
 print()
-c.moveSourceToDest("e2", "e4")
-c.moveSourceToDest("f2", "f4")
+#c.moveSourceToDest("e2", "e4")
+c.updateBoard()
+fr,to = c.getFromTo(c.getAIMove())
+c.moveSourceToDest(fr, to)
 c.printBoard()
-print(c.getFENPrefixFromBoard())
+print(c.getFENStringFromBoard())
