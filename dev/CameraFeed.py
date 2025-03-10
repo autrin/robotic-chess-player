@@ -201,40 +201,34 @@ class CameraFeed:
         The main loop.
         """
         while True:
-            # * Frame Capture & Preprocessing *
-            ret,frame = self.cam.read() # Captures a frame from the camera.
+            ret,frame = self.cam.read()
             
-            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY) # Converts it to grayscale.
+            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             
-            # Applies histogram equalization and CLAHE for contrast enhancement.
             grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
             clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
             grayFrame = clahe.apply(grayFrame)
-            
-            # Adjusts gamma to refine brightness.
             grayFrame = self.adjust_gamma(grayFrame)
             
-            # * Detection & Visualization *
-            detections = self.aprilDetector.detect(img=grayFrame) # Runs the AprilTag detector on the processed frame.
-            centers = self.getCenterPositionofDetection(detections) # Extracts centers
-            self.drawCenterCircleForTags(frame,centers) # Draws circles and tag IDs on the original frame
+            detections = self.aprilDetector.detect(img=grayFrame)
+            centers = self.getCenterPositionofDetection(detections)
+            self.drawCenterCircleForTags(frame,centers)
 
-            # * Chessboard Processing *
-            cbc = self.getChessBoardCorners(detections) # Attempts to get the chessboard corners (expected from tags with IDs 0, 1, 2).
+            cbc = self.getChessBoardCorners(detections)
             
             if cbc:
-                # If found, it computes boundaries and then uses an affine transformation to calculate grid points across the board.
                 corners = self.get_chessboard_boundaries(cbc)
                 points = self.getAxesIntervalDots(corners[0],corners[1],corners[2],frame)
-                # Plots these grid points and draws lines between key corners.
                 self.plotDotsOnAxes(frame,points)
                 self.drawLine(frame,corners[0],corners[1])
                 self.drawLine(frame,corners[1],corners[2])
                 #self.drawAprilTagCorner(frame,detections,1)
-            # * Display & Termination *
-            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame) # Displays the processed frame in a window.
-            if cv2.waitKey(1) & 0xFF == ord('q'): # Exits the loop if the user presses the 'q' key.
+            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+
+   
 
     def destroyCameraFeed(self, destroyAllWindows=True):
         """
