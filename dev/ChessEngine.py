@@ -2,6 +2,21 @@ from stockfish import Stockfish
 import re
 import FilePathFinder
 
+"""
+Purpose:
+    The script wraps Stockfish (a strong open-source chess engine) with additional functionality that:
+        Maintains an internal board representation.
+        Converts between standard chess notation (like FEN and algebraic coordinates) and its internal structure.
+        Executes moves on the internal board.
+        Retrieves the engine's best move.
+
+Key Components:
+    Initialization: Set engine parameters, board state, and other game-related variables.
+    Board Representation: Convert the board state from a FEN string into a manipulable internal structure.
+    Move Execution: Apply moves (including simple checks for castling) and update the board.
+    FEN Generation: Rebuild the board part of the FEN string from the internal state.
+    Stockfish Interaction: Query Stockfish for the best move given the current position.
+"""
 
 class ChessEngine:
 
@@ -13,11 +28,22 @@ class ChessEngine:
         startFirst=True,
         enginePath=FilePathFinder.getPath("chessEngine"),
     ):
+        """
+        Parameters:
+        - depth: The search depth for Stockfish; the code ensures it's at least 20.
+        - level: The skill level for Stockfish (also forced to be at least 20).
+        - side: Which side the engine plays, 'w' for white or 'b' for black.
+        - startFirst: Boolean indicating whether the engine moves first.
+        - enginePath: The file path to the Stockfish executable; retrieved from a helper module.
+
+        """
         self.depth = max(20, depth)
         self.level = max(20, level)
         self.side = side
         self.myTurn = startFirst
-
+        
+        # A dictionary self.board is created with keys 0 to 7 (representing rows) where each key holds a 
+        # list (which will store the row’s content).
         self.board = {}  # for the ease of manipulation
         for i in range(0, 8):
             self.board[i] = []
