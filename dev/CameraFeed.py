@@ -16,6 +16,18 @@ class CameraFeed:
         self.cam = None
         self.camID = camID
         self.aprilDetector = apriltag.Detector()
+        self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
+        #self.referenceImage = self.convertToTagDetectableImage(self.referenceImage)
+
+    def convertToTagDetectableImage(self, image):
+        grayFrame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        grayFrame = clahe.apply(grayFrame)
+        grayFrame = self.adjust_gamma(grayFrame)
+        return grayFrame
+
+
         
     def openCamera(self):
         """
@@ -67,84 +79,64 @@ class CameraFeed:
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
     def get_chessboard_boundaries(self,detections):
-        """
-        Assumes three specific AprilTags (with IDs 0, 1, and 2) represent the three corners of the chessboard:
-
-        TL2: A corner from the top-left tag.
-        BL1: A corner from the bottom-left tag.
-        BR0: A corner from the bottom-right tag.
-
-        Returns these three points as the boundaries used for further calculations.
-        """
-        if detections == None or len(detections) != 3:
+        if detections == None or len(detections) != 4:
             return None
-        #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
-        #we will need to fill the indices in with the 3 unique tags that correspond to the edges of the board
-        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag
-        print(detections)
-        TL0,TL1,TL2,TL3 = detections[0].corners
-        BL0,BL1,BL2,BL3 = detections[1].corners        
-        BR0,BR1,BR2,BR3 = detections[2].corners
-
-        # widthInterval = width/8
-        # heightInterval = height/8
+        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
-        # hSlope = self.calculateSlope(BL1,BR0)
-        # vSlope = self.calculateSlope(TL2,BL1)
-        # hMagInverse = (math.sqrt(1+hSlope**2))
-        # vMagInverse = (math.sqrt(1+vSlope**2))
-        # horizontalUnitVect = [1/hMagInverse, hSlope/hMagInverse]
-        # verticalUnitVect = [1/vMagInverse,vSlope/vMagInverse]
-
-        #refractoring, sorry cal
-        TL2 = [int(TL2[0]),int(TL2[1])]
-        BL1 = [int(BL1[0]),int(BL1[1])]
-        BR0 = [int(BR0[0]),int(BR0[1])]
-        return [TL2, BL1, BR0]
+        TL = detections[0].corners
+        BL= detections[1].corners        
+        BR = detections[2].corners
+        TR = detections[3].corners
+        
+        TL = [int(TL[2][0]),int(TL[2][1])]
+        BL = [int(BL[1][0]),int(BL[1][1])]
+        BR = [int(BR[0][0]),int(BR[0][1])]
+        TR = [int(TR[3][0]), int(TR[3][1])]
+        return [TL, BL, BR, TR]
     
-    def getAxesIntervalDots(self,TL,BL,BR,frame):
-        """
-        - Calculates dimensions
-        - Creates a grid
-        - Transforms the grid
-        - Returns the transformed points which represent the grid (or axes interval dots) on the actual chessboard.
-        """
-        width = self.calculateEuclidianDist(BL,BR) # Distance between BL (bottom-left) and BR (bottom-right).
-        height = self.calculateEuclidianDist(TL,BL) # Distance between TL (top-left) and BL.
+    def getHomoGraphicAppliedImage(self,sourceImage,fourPoints, refImg = None, ow = 900, oh = 800):
+        if not refImg:
+            refImg = self.referenceImage
+        
+        refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
+        refImgDetections = self.aprilDetector.detect(img=refdi)
+        #cv2.imshow(f"warped",refdi)
+        #return None
+        if not refImgDetections:
+            return None
+        
+        refImgPoints = self.get_chessboard_boundaries(refImgDetections)
+        
+        if not refImgPoints:
+            return None
+        
+        cv2.imshow(f"warped",refdi)
+        source = np.float32(fourPoints)
+        ref = np.float32(refImgPoints)
+        print(f"source == {source}")
+        mat = cv2.getPerspectiveTransform(source,ref)
+        return cv2.warpPerspective(sourceImage,mat,(ow,oh))
+    
+    def getAxesIntervalDots(self,TL,BL,BR):
+        width = self.calculateEuclidianDist(BL,BR)
+        height = self.calculateEuclidianDist(TL,BL)
 
-        sh,sw = frame.shape[:2]
-        
-        x = None
-        y = None
-        
-        # Uses np.linspace to create 9 evenly spaced points across the width and height.
         x = np.linspace(0,width,9)
         y = np.linspace(0,height,9)
 
         # Uses np.meshgrid to create a grid (representing the chessboard squares).
         mx,my = np.meshgrid(x,y)
-
-        # Constructs an affine transformation matrix (M) to map the grid from a standard coordinate 
-        # space to the actual board defined by the detected corners.
-        # Applies the transformation to all grid points.
-        points = np.vstack([mx.ravel(), my.ravel()]).T # contains the grid points generated from meshgrid that need transformation
-        cspaceoriginal= np.float32([[0,0],[width-1,0],[0,height-1]]) # defines three points in the standard coordinate space: origin, bottom-right, and top-left
-        cspaceNew = np.float32([BL,BR,TL]) # defines the corresponding actual points on the detected board (BL, BR, TL)
-        M = cv2.getAffineTransform(cspaceoriginal,cspaceNew)
-        ones = np.ones((points.shape[0], 1), dtype=points.dtype)
-        #add col of ones for homogeneous eq solving
-        points_hom = np.hstack([points, ones])
-        pt = np.dot(points_hom, M.T)
         
-        return pt
+    
+        return mx, my
 
-    def plotDotsOnAxes(self,frame,points):
-        """
-        Draws small red dots on the frame at each point in the grid.
-        This visualization helps confirm that the chessboard's grid is correctly calculated.
-        """
-        for p in points:
-            cv2.circle(frame,(int(p[0]),int(p[1])),3,(0,0,255),-1)
+    
+    def plotDotsOnAxes(self,frame,mx,my,TL):
+        for i in range(my.shape[0]):
+            for j in range(mx.shape[1]):
+                x = int(mx[i, j]) + TL[0]
+                y = int(my[i, j]) + TL[1]
+                cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
 
     def drawLine(self, frame, p0,p1):
         """
@@ -164,15 +156,14 @@ class CameraFeed:
         ret = []
         
         for d in detections:
-            if (d.tag_id == 0 or d.tag_id ==1 or d.tag_id ==2) and d.tag_id not in ret:
+            if (d.tag_id == 0 or d.tag_id ==1 or d.tag_id ==2 or d.tag_id == 3) and d.tag_id not in ret:
                 ret.append(d)
-        
-        #If all the corners are not in the list, detect again 
-        if len(ret) != 3:
-            print("Failed to detect all three corners, detecting april tags again")
+         
+        if len(ret) != 4:
+            print("Failed to detect all four corners, detecting april tags again")
             return None
         #sort the array
-        sorted(ret,key=lambda x : x.tag_id) # This does not sort in place
+        ret = sorted(ret,key=lambda x : x.tag_id)        
         return ret
 
     def adjust_gamma(self,image, gamma=1.5):
@@ -192,49 +183,51 @@ class CameraFeed:
         This helps to verify the exact locations of tag corners.
         """
         for d in detections:
-            #print(centers[id])
-            #print(type(d.corners[cornerPos][0]))
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
+    def drawBordersandDots(self,frame,detections,grayFrame=None):
+            if grayFrame is None:
+                grayFrame = frame
+
+            centers = self.getCenterPositionofDetection(detections)
+            self.drawCenterCircleForTags(frame,centers)
+            cbc = self.getChessBoardCorners(detections)
+            if cbc:
+                corners = self.get_chessboard_boundaries(cbc)
+                mx,my = self.getAxesIntervalDots(corners[0],corners[1],corners[2])
+                self.plotDotsOnAxes(frame,mx,my,corners[0])
+                self.drawLine(frame,corners[0],corners[1])
+                self.drawLine(frame,corners[1],corners[2])
+                print("DRAWING")
+            
     def startLoop(self):
         """
         The main loop.
         """
         while True:
-            # * Frame Capture & Preprocessing *
-            ret,frame = self.cam.read() # Captures a frame from the camera.
+            ret,frame = self.cam.read()
             
-            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY) # Converts it to grayscale.
+            grayFrame = self.convertToTagDetectableImage(frame)
+            detections = self.aprilDetector.detect(img=grayFrame)
+            #self.drawBordersandDots(frame,detections,grayFrame)
             
-            # Applies histogram equalization and CLAHE for contrast enhancement.
-            grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            grayFrame = clahe.apply(grayFrame)
-            
-            # Adjusts gamma to refine brightness.
-            grayFrame = self.adjust_gamma(grayFrame)
-            
-            # * Detection & Visualization *
-            detections = self.aprilDetector.detect(img=grayFrame) # Runs the AprilTag detector on the processed frame.
-            centers = self.getCenterPositionofDetection(detections) # Extracts centers
-            self.drawCenterCircleForTags(frame,centers) # Draws circles and tag IDs on the original frame
+            if detections:
+                fp = self.get_chessboard_boundaries(detections)
+                if fp:
+                    warpedFrame = self.getHomoGraphicAppliedImage(grayFrame,fp)
+                    if warpedFrame is not None:
+                        detections = self.aprilDetector.detect(img=warpedFrame)
+                        warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+                        self.drawBordersandDots(warpedFrame,detections)
+                        cv2.imshow(f"warped",warpedFrame)
 
-            # * Chessboard Processing *
-            cbc = self.getChessBoardCorners(detections) # Attempts to get the chessboard corners (expected from tags with IDs 0, 1, 2).
-            
-            if cbc:
-                # If found, it computes boundaries and then uses an affine transformation to calculate grid points across the board.
-                corners = self.get_chessboard_boundaries(cbc)
-                points = self.getAxesIntervalDots(corners[0],corners[1],corners[2],frame)
-                # Plots these grid points and draws lines between key corners.
-                self.plotDotsOnAxes(frame,points)
-                self.drawLine(frame,corners[0],corners[1])
-                self.drawLine(frame,corners[1],corners[2])
-                #self.drawAprilTagCorner(frame,detections,1)
-            # * Display & Termination *
-            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame) # Displays the processed frame in a window.
-            if cv2.waitKey(1) & 0xFF == ord('q'): # Exits the loop if the user presses the 'q' key.
+
+            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+
+
+   
 
     def destroyCameraFeed(self, destroyAllWindows=True):
         """
