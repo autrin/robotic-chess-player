@@ -7,3 +7,9 @@ def talker():
   rospy.init_node('talker', anonymous=True) # name of the node is talker
                                             # anonymous makes the name unique by adding random numbers to the end of the name
   
+  rate = rospy.Rate(10) # 10hz is the speed of the data publishing to the topic
+                        # "we should expect to go through the loop 10 times per second (as long as our processing time does 
+                        # not exceed 1/10th of a second"
+  while not rospy.is_shutdown():
+    # movement logics probably
+    
