@@ -5,14 +5,26 @@ from PIL import Image, ImageTk
 import os
 import tksvg
 from io import BytesIO
-
+import copy
 import cairosvg
+import time
 
-
-
+global GUI 
 inGame = False
+class boardInfo:
+    def __init__(self,displayed_board,fen_string):
+        self.board=Canvas(GUI,width=500,height=500,bg="white")
+        self.boardImage=displayed_board
+        self.fen = fen_string
+    def UpdateFen(self,fen_new):
+        self.fen=fen_new
+    def UpdateBoardImage(self,image_new):
+        self.boardImage=image_new
+    def DisplayBoard(self):
+        self.board.pack()
+        self.board.create_image(250,250,image=self.boardImage)
 
-
+        
 
 GUI = Tk()
 GUI.geometry("1000x500")
@@ -22,8 +34,26 @@ programimage = Image.open("robo_arm.jpg")
 iconimage = ImageTk.PhotoImage(programimage)
 GUI.iconphoto(True,iconimage)
 GUI.config()
-
-
+#takes FEN string and returns board with that string
+def getBoard(FEN):
+    retBoard = chess.Board(FEN)
+    return retBoard
+#takes board and returns the image to be displayed
+def getDisplayBoard(boardVal):
+    print("Getting Display Board")
+    chessBoardSvg = chess.svg.board(boardVal,size=500)
+    pngdata = BytesIO()
+    cairosvg.svg2png(bytestring=chessBoardSvg.encode('utf-8'), write_to=pngdata) 
+    pngdata.seek(0)
+    image = Image.open(pngdata)
+    return ImageTk.PhotoImage(image)
+    
+print("Printing Chess Board")
+#set default board
+boarddata = getBoard("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
+displayedboard = getDisplayBoard(boarddata)
+Board = boardInfo(displayedboard,"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
+Board.DisplayBoard()
 
 #BUTTON TO PLAY/START GAME
 play = Button(GUI,
@@ -34,7 +64,6 @@ play = Button(GUI,
                 padx=10,
                 pady=10
                 )
-
 #BUTTON TO GO BACK TO HOME
 end = Button(GUI, text ="Concede",
                 font=('Times_New_Roman'),
@@ -42,37 +71,76 @@ end = Button(GUI, text ="Concede",
                 bd=5,
                 padx=10,
                 pady=10)
+#BUTTON TO END TURN
+endTurn = Button(GUI,
+                text ="End Turn",
+                font=('Times_New_Roman'),
+                relief=RAISED,
+                bd=5,
+                padx=10,
+                pady=10
+                )
+#sets inGame to true and shows stuff
 def startGame():
     print("Started Game")
     inGame = True
     play.place_forget()
-    end.place(x=300,y=0)
-
+    endTurn.place(x=0,y=200)
+    end.place(x=0,y=0)
 
 play.config(command=startGame)
 play.place(x=0,y=0)
 
-
+#sets InGame to false and hides stuff
 def endGame():
     print("Ended Game")
     inGame = False
     end.place_forget()
+    endTurn.place_forget()
     play.place(x=0,y=0)
 
-    
-    
-
-print("Printing Chess Board")
-board = chess.Board("8/8/8/8/4N3/8/8/8 w - - 0 1")
-chessBoardSvg = chess.svg.board(board,size=500)
-pngdata = BytesIO()
-cairosvg.svg2png(bytestring=chessBoardSvg.encode('utf-8'), write_to=pngdata) 
-pngdata.seek(0)
-image = Image.open(pngdata)
-displayedboard = ImageTk.PhotoImage(image)
-boardDraw = Canvas(GUI,width=500,height=500,bg="white")
-boardDraw.pack()
-boardDraw.create_image(250,250,image=displayedboard)
-
 end.config(command=endGame)
+
+#majority of code for getting data from arm will be in this method.
+def finishTurn():
+    print("Turn Over")
+    CurBoardFEN = Board.fen
+    #set new board
+    board2 = getBoard(CurBoardFEN)
+    for move in board2.legal_moves:
+        board2.push(move)
+        break
+    
+    Board.fen=board2.board_fen()
+    newBoard = getDisplayBoard(board2)
+    Board.UpdateBoardImage(newBoard)
+
+    Board.DisplayBoard()
+endTurn.config(command= finishTurn)
+
+
+
+
+def turnBoardIntoImage(board):
+    chessBoardSvg = chess.svg.board(board,size=500)
+    pngdata = BytesIO()
+    cairosvg.svg2png(bytestring=chessBoardSvg.encode('utf-8'), write_to=pngdata) 
+    pngdata.seek(0)
+    image = Image.open(pngdata)
+    displayedboard = ImageTk.PhotoImage(image)
+    return displayedboard
+
+#given two board states with a difference of one move, returns that move.
+def getMoveFromTwoBoardStates(state1,state2):
+    state1copy = copy.copy(state1)
+    movefound = 0
+    for move in state1copy.legal_moves:
+        state1copy.push(move)
+        if state1copy.board_fen()== state2.board_fen():
+            movefound=move
+        state1copy.pop(move)
+    return movefound
+
+
+
 GUI.mainloop() #opens window
