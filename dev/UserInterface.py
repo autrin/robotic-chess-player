@@ -39,9 +39,13 @@ def getBoard(FEN):
     retBoard = chess.Board(FEN)
     return retBoard
 #takes board and returns the image to be displayed
-def getDisplayBoard(boardVal):
+def getDisplayBoard(boardVal,arrowsVal = "hi"):
     print("Getting Display Board")
-    chessBoardSvg = chess.svg.board(boardVal,size=500)
+    chessBoardSvg = 0
+    if arrowsVal == "hi":
+        chessBoardSvg = chess.svg.board(boardVal,size=500)
+    else:
+        chessBoardSvg = chess.svg.board(boardVal,size=500,arrows = arrowsVal)
     pngdata = BytesIO()
     cairosvg.svg2png(bytestring=chessBoardSvg.encode('utf-8'), write_to=pngdata) 
     pngdata.seek(0)
@@ -98,22 +102,37 @@ def endGame():
     end.place_forget()
     endTurn.place_forget()
     play.place(x=0,y=0)
-
+    
 end.config(command=endGame)
 
 #majority of code for getting data from arm will be in this method.
 def finishTurn():
     print("Turn Over")
     CurBoardFEN = Board.fen
+    startsquare = 0
+    endsquare = 0
+    newMove = 0
     #set new board
-    board2 = getBoard(CurBoardFEN)
+    board2 = chess.Board(CurBoardFEN)
+    boardTemp = board2.copy()
     for move in board2.legal_moves:
-        board2.push(move)
+        startsquare = move.from_square
+        endsquare = move.to_square
+        newMove = move
+        board2.turn
         break
-    
+    #set main Board's FEN to the current board FEN after the new move
+    board2.push(newMove)
     Board.fen=board2.board_fen()
-    newBoard = getDisplayBoard(board2)
-    Board.UpdateBoardImage(newBoard)
+    
+    #create a board that is the same as before the move, but with an arrow pointing from the piece to be moved's start location to its end location.
+    arrowImage = getDisplayBoard(boardTemp,arrowsVal=[chess.svg.Arrow(startsquare,endsquare)])
+    Board.UpdateBoardImage(arrowImage)
+    Board.DisplayBoard()
+    GUI.update()
+    GUI.after(1000)
+    newBoardImage = getDisplayBoard(board2)
+    Board.UpdateBoardImage(newBoardImage)
 
     Board.DisplayBoard()
 endTurn.config(command= finishTurn)
