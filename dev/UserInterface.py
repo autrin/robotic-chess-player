@@ -11,19 +11,26 @@ import time
 
 global GUI 
 inGame = False
+#wrapper that contains all board information, including fen
 class boardInfo:
-    def __init__(self,displayed_board,fen_string):
-        self.board=Canvas(GUI,width=500,height=500,bg="white")
+    def __init__(self,displayed_board,fen_string,chess_board):
+        self.display=Canvas(GUI,width=500,height=500,bg="white")
         self.boardImage=displayed_board
         self.fen = fen_string
+        self.chessBoard = chess_board
     def UpdateFen(self,fen_new):
         self.fen=fen_new
-    def UpdateBoardImage(self,image_new):
+    def GetFen(self):
+        return self.fen
+    def SetBoardImage(self,image_new):
         self.boardImage=image_new
+    def GetBoardImage(self):
+        return self.boardImage
     def DisplayBoard(self):
-        self.board.pack()
-        self.board.create_image(250,250,image=self.boardImage)
-
+        self.display.pack()
+        self.display.create_image(250,250,image=self.boardImage)
+    def GetBoard(self):
+        return self.chessBoard
         
 
 GUI = Tk()
@@ -40,7 +47,6 @@ def getBoard(FEN):
     return retBoard
 #takes board and returns the image to be displayed
 def getDisplayBoard(boardVal,arrowsVal = "hi"):
-    print("Getting Display Board")
     chessBoardSvg = 0
     if arrowsVal == "hi":
         chessBoardSvg = chess.svg.board(boardVal,size=500)
@@ -52,11 +58,10 @@ def getDisplayBoard(boardVal,arrowsVal = "hi"):
     image = Image.open(pngdata)
     return ImageTk.PhotoImage(image)
     
-print("Printing Chess Board")
 #set default board
 boarddata = getBoard("rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
 displayedboard = getDisplayBoard(boarddata)
-Board = boardInfo(displayedboard,"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2")
+Board = boardInfo(displayedboard,"rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2",boarddata)
 Board.DisplayBoard()
 
 #BUTTON TO PLAY/START GAME
@@ -102,38 +107,40 @@ def endGame():
     end.place_forget()
     endTurn.place_forget()
     play.place(x=0,y=0)
-    
+    chess.Board.reset(Board.board)
 end.config(command=endGame)
 
 #majority of code for getting data from arm will be in this method.
 def finishTurn():
-    print("Turn Over")
+
     CurBoardFEN = Board.fen
     startsquare = 0
     endsquare = 0
     newMove = 0
     #set new board
-    board2 = chess.Board(CurBoardFEN)
-    boardTemp = board2.copy()
-    for move in board2.legal_moves:
+    boardTemp = chess.Board(CurBoardFEN)
+    for move in boardTemp.legal_moves:
         startsquare = move.from_square
         endsquare = move.to_square
         newMove = move
-        board2.turn
         break
-    #set main Board's FEN to the current board FEN after the new move
-    board2.push(newMove)
-    Board.fen=board2.board_fen()
-    
-    #create a board that is the same as before the move, but with an arrow pointing from the piece to be moved's start location to its end location.
+    #update screen with board displaying arrow for next move.
     arrowImage = getDisplayBoard(boardTemp,arrowsVal=[chess.svg.Arrow(startsquare,endsquare)])
-    Board.UpdateBoardImage(arrowImage)
+    Board.SetBoardImage(arrowImage)
     Board.DisplayBoard()
+
+    
+    #update the screen instantly and wait a bit to display the move.
     GUI.update()
     GUI.after(1000)
-    newBoardImage = getDisplayBoard(board2)
-    Board.UpdateBoardImage(newBoardImage)
 
+
+    #set temp Board's FEN to the current board FEN after the new move
+    boardTemp.push(newMove)
+    Board.fen=boardTemp.board_fen()
+    #update screen with board displaying last move
+    newBoardImage = getDisplayBoard(boardTemp)
+    Board.SetBoardImage(newBoardImage)
     Board.DisplayBoard()
 endTurn.config(command= finishTurn)
 
