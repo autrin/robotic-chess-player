@@ -18,7 +18,7 @@ Key Components:
     Stockfish Interaction: Query Stockfish for the best move given the current position.
 """
 
-class ChessEngine:
+class ChessEngineClass:
 
     def __init__(
         self,
@@ -60,7 +60,7 @@ class ChessEngine:
         if move in self.board.legal_moves():
             self.board.push_uci(move)
             self.FEN = self.board.fen()
-            return self.stockfish.get_best_move()
+    
         
 
     
@@ -70,7 +70,7 @@ class ChessEngine:
         
 
 if __name__ == "__main__":
-    c = ChessEngine()
+    c = ChessEngineClass()
     print(c.FEN)
     print(c.makeAIMove())
     print(c.FEN)
