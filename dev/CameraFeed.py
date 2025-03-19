@@ -10,14 +10,18 @@ This script is designed to capture video from a camera, process the images to de
 (fiducial markers), and use that information to infer the geometry of a chessboard.
 """
 
-class CameraFeed:
+class CameraFeedClass:
     #use april tags
     def __init__(self,camID = 0):
         self.cam = None
         self.camID = camID
-        self.aprilDetector = apriltag.Detector()
+        self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+        self.myChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
+        self.oppChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag16h5"))
         self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
-        #self.referenceImage = self.convertToTagDetectableImage(self.referenceImage)
+        self.chessBoardVertices = [] 
+        self.chessBoardResetCounter = 150
+        self.chessBoardResetCounterThreshold = 150       
 
     def convertToTagDetectableImage(self, image):
         grayFrame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
@@ -131,12 +135,22 @@ class CameraFeed:
         return mx, my
 
     
-    def plotDotsOnAxes(self,frame,mx,my,TL):
+    def plotBoardDots(self,frame,mx,my,TL):
+        if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+                self.chessBoardVertices = []
         for i in range(my.shape[0]):
             for j in range(mx.shape[1]):
                 x = int(mx[i, j]) + TL[0]
                 y = int(my[i, j]) + TL[1]
+                if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+                    self.chessBoardVertices.append([x,y])
+            
                 cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
+        if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+            #self.chessBoardResetCounter = 0
+            print("reset counter disabled")
+        else:
+            self.chessBoardResetCounter += 1
 
     def drawLine(self, frame, p0,p1):
         """
@@ -195,36 +209,34 @@ class CameraFeed:
             if cbc:
                 corners = self.get_chessboard_boundaries(cbc)
                 mx,my = self.getAxesIntervalDots(corners[0],corners[1],corners[2])
-                self.plotDotsOnAxes(frame,mx,my,corners[0])
+                self.plotBoardDots(frame,mx,my,corners[0])
                 self.drawLine(frame,corners[0],corners[1])
                 self.drawLine(frame,corners[1],corners[2])
                 print("DRAWING")
+
+    # moved to GamePlay.py 
+    # def startLoop(self):
+    #     while True:
+    #         ret,frame = self.cam.read()
             
-    def startLoop(self):
-        """
-        The main loop.
-        """
-        while True:
-            ret,frame = self.cam.read()
+    #         grayFrame = self.convertToTagDetectableImage(frame)
+    #         detections = self.aprilDetector.detect(img=grayFrame)
+    #         #self.drawBordersandDots(frame,detections,grayFrame)
             
-            grayFrame = self.convertToTagDetectableImage(frame)
-            detections = self.aprilDetector.detect(img=grayFrame)
-            #self.drawBordersandDots(frame,detections,grayFrame)
-            
-            if detections:
-                fp = self.get_chessboard_boundaries(detections)
-                if fp:
-                    warpedFrame = self.getHomoGraphicAppliedImage(grayFrame,fp)
-                    if warpedFrame is not None:
-                        detections = self.aprilDetector.detect(img=warpedFrame)
-                        warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
-                        self.drawBordersandDots(warpedFrame,detections)
-                        cv2.imshow(f"warped",warpedFrame)
+    #         if detections:
+    #             fp = self.get_chessboard_boundaries(detections)
+    #             if fp:
+    #                 warpedFrame = self.getHomoGraphicAppliedImage(grayFrame,fp)
+    #                 if warpedFrame is not None:
+    #                     detections = self.aprilDetector.detect(img=warpedFrame)
+    #                     warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+    #                     self.drawBordersandDots(warpedFrame,detections)
+    #                     cv2.imshow(f"warped",warpedFrame)
 
 
-            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+    #         cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
+    #         if cv2.waitKey(1) & 0xFF == ord('q'):
+    #             break
 
 
    
@@ -238,8 +250,8 @@ class CameraFeed:
             cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    ocr = CameraFeed(1)
-    ocr.openCamera()
-    ocr.startLoop()
-    
-    ocr.destroyCameraFeed()
+    #ocr = CameraFeed(1)
+    #ocr.openCamera()
+    #ocr.startLoop()
+    print("CameraFeed.py")
+    #ocr.destroyCameraFeed()
