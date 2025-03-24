@@ -20,6 +20,7 @@ class CameraFeedClass:
         self.oppChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag16h5"))
         self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
         self.chessBoardVertices = [] 
+        self.chessBoardCells = []
         self.chessBoardResetCounter = 150
         self.chessBoardResetCounterThreshold = 150       
 
@@ -144,13 +145,42 @@ class CameraFeedClass:
                 y = int(my[i, j]) + TL[1]
                 if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
                     self.chessBoardVertices.append([x,y])
-            
                 cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
+        
         if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+            self.chessBoardCells = []
+            #print(len(self.chessBoardVertices))
+            skipCounter = 0
+
+            for index in range(0,71):
+                if skipCounter == 8:
+                    skipCounter = 0
+                    continue
+                self.chessBoardCells.append({"BL": [self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]],
+                                            "BR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
+                                            "TL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
+                                            "TR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
+                skipCounter += 1
+
+            print(len(self.chessBoardCells))
             #self.chessBoardResetCounter = 0
             print("reset counter disabled")
+            
         else:
             self.chessBoardResetCounter += 1
+        
+    def getCellPosofPiece(self, pieceCenterX, pieceCenterY):
+        if len(self.chessBoardCells) > 0:
+            counter = 0
+            for cell in self.chessBoardCells:
+                if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
+                    cell["BL"][1] <= pieceCenterY and cell["TL"][1] <= pieceCenterY:
+                    return counter
+                counter += 1
+        
+        return -1
+
+       
 
     def drawLine(self, frame, p0,p1):
         """
