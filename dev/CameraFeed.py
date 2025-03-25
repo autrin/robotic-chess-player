@@ -19,6 +19,7 @@ class CameraFeedClass:
         self.myChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
         self.oppChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag16h5"))
         self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
+        self.hasBeenCalibrated = False
         self.chessBoardVertices = [] 
         self.chessBoardCells = []
         self.chessBoardResetCounter = 150
@@ -137,37 +138,71 @@ class CameraFeedClass:
 
     
     def plotBoardDots(self,frame,mx,my,TL):
-        if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
-                self.chessBoardVertices = []
+        #if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+        #        self.chessBoardVertices = []
+        counter = 0
         for i in range(my.shape[0]):
             for j in range(mx.shape[1]):
                 x = int(mx[i, j]) + TL[0]
                 y = int(my[i, j]) + TL[1]
-                if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+                if not self.hasBeenCalibrated:
                     self.chessBoardVertices.append([x,y])
+                else:
+                    self.chessBoardVertices[counter][0] = x
+                    self.chessBoardVertices[counter][1] = y
+
+                counter += 1
+
                 cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
         
-        if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
-            self.chessBoardCells = []
-            #print(len(self.chessBoardVertices))
-            skipCounter = 0
+        #if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+        #self.chessBoardCells = []
+        #print(len(self.chessBoardVertices))
+        skipCounter = 0
+        counter = 0
+        for index in range(0,71):
+            if skipCounter == 8:
+                skipCounter = 0
+                continue
 
-            for index in range(0,71):
-                if skipCounter == 8:
-                    skipCounter = 0
-                    continue
+            if not self.hasBeenCalibrated:
                 self.chessBoardCells.append({"BL": [self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]],
-                                            "BR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
-                                            "TL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
-                                            "TR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
-                skipCounter += 1
-
-            print(len(self.chessBoardCells))
-            #self.chessBoardResetCounter = 0
-            print("reset counter disabled")
+                                        "BR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
+                                        "TL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
+                                        "TR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
+                 
+            else:
+                self.chessBoardCells[counter]["BL"]=[self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]]
+                self.chessBoardCells[counter]["BR"]=[self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]]
+                self.chessBoardCells[counter]["TL"]=[self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]]
+                self.chessBoardCells[counter]["TR"]=[self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]
+                 
+            counter += 1
+            skipCounter += 1
             
-        else:
-            self.chessBoardResetCounter += 1
+        if not self.hasBeenCalibrated:
+            self.hasBeenCalibrated = True
+        
+        counter = 0
+        for entry in self.chessBoardCells:
+            print(f"cell{counter}")
+            t = entry["BL"]
+            print(f"BL={t}")
+            t = entry["BR"]
+            print(f"BR={t}")
+            t = entry["TL"]
+            print(f"TL={t}")
+            t = entry["TR"]
+            print(f"TR={t}")
+            print()
+            counter += 1
+        
+
+        #print(len(self.chessBoardCells))
+        #self.chessBoardResetCounter = 0
+        #print("reset counter disabled")
+            
+       
         
     def getCellPosofPiece(self, pieceCenterX, pieceCenterY):
         if len(self.chessBoardCells) > 0:
