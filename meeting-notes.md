@@ -1,3 +1,8 @@
+## 3/26
+- we need :main.py to combine the arm and camera
+-          simulated chess movement
+-          
+
 ## 2/24
 - Discussed demo 1 and improved the materials of the slides
 - Practiced the presentation
