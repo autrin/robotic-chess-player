@@ -66,7 +66,7 @@ class GamePlayClass:
                 oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
                 return oldCellString+newCellString
-
+        return None
 
 
 
@@ -136,14 +136,18 @@ class GamePlayClass:
                 if fp:
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
                     if warpedFrame is not None:
+                        warpedFrame = warpedFrame[fp[0][1]:fp[1][1], fp[0][0]:fp[3][0]]
                         myPieceDetections = self.camera.myChessPieceDetector.detect(img=warpedFrame)
                         oppPieceDetections = self.camera.oppChessPieceDetector.detect(img=warpedFrame)
                         if myPieceDetections and oppPieceDetections:
-                                
                                 cornerDetections = self.camera.aprilDetector.detect(img=warpedFrame)
                                 warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
                                 self.camera.drawBordersandDots(warpedFrame,cornerDetections)
-                                self.camera.drawPieces(warpedFrame,oppPieceDetections,myPieceDetections,self)
+                                self.camera.drawPieces(warpedFrame,oppPieceDetections,myPieceDetections,self,fp)
+                                movestr = self.getOppMoveFromVisual(oppPieceDetections)
+                                if movestr != None:
+                                    print(movestr)
+                                    #exit()
                                 cv2.imshow(f"warped",warpedFrame)
                                 
                 cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
