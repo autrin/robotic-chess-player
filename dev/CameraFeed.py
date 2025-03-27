@@ -105,6 +105,7 @@ class CameraFeedClass:
             refImg = self.referenceImage
         
         refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
+        refdi = cv2.resize(refdi, (0, 0), fx = 0.6, fy = 0.6)
         refImgDetections = self.aprilDetector.detect(img=refdi)
         #cv2.imshow(f"warped",refdi)
         #return None
@@ -116,7 +117,7 @@ class CameraFeedClass:
         if not refImgPoints:
             return None
         
-        cv2.imshow(f"warped",refdi)
+        #cv2.imshow(f"warped",refdi)
         source = np.float32(fourPoints)
         ref = np.float32(refImgPoints)
         print(f"source == {source}")
@@ -263,6 +264,24 @@ class CameraFeedClass:
         """
         for d in detections:
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
+
+    def drawPieces(self,frame,oppDetections, myDetections,callerClass):
+        oppCenters = self.getCenterPositionofDetection(oppDetections)
+        print(str(oppCenters))
+        for oc in oppCenters.keys():
+            print(oc)
+            cv2.circle(frame,tuple(oppCenters[oc]),3,(255,0,0),2)
+            cv2.putText(frame,callerClass.tagIDToOppPieces[oc%16][0],
+                        tuple(oppCenters[oc]),cv2.FONT_HERSHEY_PLAIN, 
+                        2,(0,0,255),2)
+            
+        myCenters = self.getCenterPositionofDetection(myDetections)
+        for mc in myCenters:
+            cv2.circle(frame,tuple(myCenters[mc]),3,(0,255,),2)
+            cv2.putText(frame,callerClass.tagIDToMyPieces[mc%16][0],
+                        tuple(myCenters[mc]),cv2.FONT_HERSHEY_PLAIN, 
+                        2,(0,255,0),2)
+        
 
     def drawBordersandDots(self,frame,detections,grayFrame=None):
             if grayFrame is None:
