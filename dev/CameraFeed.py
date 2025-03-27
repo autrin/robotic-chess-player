@@ -265,11 +265,18 @@ class CameraFeedClass:
         for d in detections:
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
-    def drawPieces(self,frame,oppDetections, myDetections,callerClass):
+    def drawPieces(self,frame,oppDetections, myDetections,callerClass,fp):
         oppCenters = self.getCenterPositionofDetection(oppDetections)
-        print(str(oppCenters))
         for oc in oppCenters.keys():
-            print(oc)
+            continueFlag = False
+            for f in fp:
+                if oppCenters[oc][0] == f[0] or oppCenters[oc][1] == f[1]:
+                    continueFlag = True
+                    print("found")
+                    exit() #why this not working 
+                    break
+            if continueFlag:
+                continue
             cv2.circle(frame,tuple(oppCenters[oc]),3,(255,0,0),2)
             cv2.putText(frame,callerClass.tagIDToOppPieces[oc%16][0],
                         tuple(oppCenters[oc]),cv2.FONT_HERSHEY_PLAIN, 
