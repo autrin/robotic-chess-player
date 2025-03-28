@@ -11,22 +11,22 @@ class GamePlayClass:
         
         #tagID: [pieceType,cellPos] pieceType == "x" if captured
         self.tagIDBlackPieces = { 
-            0 : ['p',8],
-            1 : ['p',9],
-            2 : ['p',10],
-            3 : ['p',11],
-            4 : ['p',12],
-            5 : ['p',13],
-            6 : ['p',14],
-            7 : ['p',15],
-            8 : ['r',0],
-            9 : ['n',1],
-            10 : ['b',2],
-            11 : ['q',3],
-            12 : ['k',4],
-            13 : ['b',5],
-            14 : ['n',6],
-            15 : ['r',7]
+            4 : ['p',8],
+            5 : ['p',9],
+            6 : ['p',10],
+            7 : ['p',11],
+            8 : ['p',12],
+            9 : ['p',13],
+            10 : ['p',14],
+            11 : ['p',15],
+            12 : ['r',0],
+            13 : ['n',1],
+            14 : ['b',2],
+            15 : ['q',3],
+            16 : ['k',4],
+            17 : ['b',5],
+            18 : ['n',6],
+            19 : ['r',7]
         }
         self.tagIDWhitePieces = { 
             0 : ['P',48],
@@ -48,7 +48,9 @@ class GamePlayClass:
         }
         self.tagIDToMyPieces = None
         self.tagIDToOppPieces = None
-        #self.homographyCorners = None
+        self.turn = "ai"
+        self.myPieceDetections = None
+        self.oppPieceDetections = None
     
     def cellPosToChessCellPos(self,num):
         col = num%8
@@ -66,8 +68,17 @@ class GamePlayClass:
             #print(newPos)
             #print([int(op.center[0]),int(op.center[1])])
             #exit()
-            if self.tagIDToOppPieces[op.tag_id%16][1] != newPos:
-                oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id%16][1])
+            if self.tagIDToOppPieces[op.tag_id][1] != newPos:
+                oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id][1])
+                newCellString = self.cellPosToChessCellPos(newPos)
+                return oldCellString+newCellString
+        return None
+
+    def getMyMoveFromVisual(self,myPieces):
+        for mp in myPieces:
+            newPos = self.camera.getCellPosofPiece(int(mp.center[0]),int(mp.center[1]))
+            if self.tagIDToMyPieces[mp.tag_id%16][1] != newPos:
+                oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id%16][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
                 return oldCellString+newCellString
         return None
@@ -112,17 +123,34 @@ class GamePlayClass:
                 self.chessEngine.side = "w"
                 self.tagIDToMyPieces = self.tagIDWhitePieces
                 self.tagIDToOppPieces = self.tagIDBlackPieces
+                self.turn = "ai"
+                self.myPieceDetections = self.camera.whiteChessPieceDetector
+                self.oppPieceDetections = self.camera.blackChessPieceDetector
                 break
             elif whoGoesFirst == "human":
                 self.chessEngine.side = "b"
                 self.tagIDToOppPieces = self.tagIDWhitePieces
                 self.tagIDToMyPieces = self.tagIDBlackPieces
+                self.turn = "human"
+                self.oppPieceDetections = self.camera.whiteChessPieceDetector 
+                self.myPieceDetections = self.camera.blackChessPieceDetector
+                
 
                 break
             else:
                 print("invalid input, try again\n")
 
-
+    def mask4Corners(self, gfCopy,cornerDetections):
+        cv2.rectangle(gfCopy, (int(cornerDetections[0].corners[0][0]), int(cornerDetections[0].corners[0][1])), 
+                                  (int(cornerDetections[0].corners[2][0]), int(cornerDetections[0].corners[2][1])), (255,0,0), -1)           
+        cv2.rectangle(gfCopy, (int(cornerDetections[1].corners[0][0]), int(cornerDetections[1].corners[0][1])), 
+                        (int(cornerDetections[1].corners[2][0]), int(cornerDetections[1].corners[2][1])), (255,0,0), -1)
+        cv2.rectangle(gfCopy, (int(cornerDetections[2].corners[0][0]), int(cornerDetections[2].corners[0][1])), 
+                        (int(cornerDetections[2].corners[2][0]), int(cornerDetections[2].corners[2][1])), (255,0,0), -1)
+        cv2.rectangle(gfCopy, (int(cornerDetections[3].corners[0][0]), int(cornerDetections[3].corners[0][1])), 
+                        (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255,0,0), -1)
+                    
+        
     def play(self):
         
         
@@ -141,20 +169,12 @@ class GamePlayClass:
                 if fp:
                     gfCopy = grayFrame.copy()
                     
-
-                    cv2.rectangle(gfCopy, (int(cornerDetections[0].corners[0][0]), int(cornerDetections[0].corners[0][1])), 
-                                  (int(cornerDetections[0].corners[2][0]), int(cornerDetections[0].corners[2][1])), (255,0,0), -1)
-                    
-                    cv2.rectangle(gfCopy, (int(cornerDetections[1].corners[0][0]), int(cornerDetections[1].corners[0][1])), 
-                                  (int(cornerDetections[1].corners[2][0]), int(cornerDetections[1].corners[2][1])), (255,0,0), -1)
-                    cv2.rectangle(gfCopy, (int(cornerDetections[2].corners[0][0]), int(cornerDetections[2].corners[0][1])), 
-                                  (int(cornerDetections[2].corners[2][0]), int(cornerDetections[2].corners[2][1])), (255,0,0), -1)
-                    cv2.rectangle(gfCopy, (int(cornerDetections[3].corners[0][0]), int(cornerDetections[3].corners[0][1])), 
-                                  (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255,0,0), -1)
-                    
+                    self.mask4Corners(gfCopy,cornerDetections)
+                   
 
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
                     wfCopy = self.camera.getHomoGraphicAppliedImage(gfCopy,fp)
+                    
                     if warpedFrame is not None:
 
                         
@@ -163,17 +183,19 @@ class GamePlayClass:
                         
                         if fp2:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
-                            myPieceDetections = self.camera.myChessPieceDetector.detect(img=wfCopy)
-                            oppPieceDetections = self.camera.oppChessPieceDetector.detect(img=wfCopy)
+                            myPieceDetections = self.myPieceDetections.detect(img=wfCopy)
+                            oppPieceDetections = self.oppPieceDetections.detect(img=wfCopy)
 
                             warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
                             if myPieceDetections and oppPieceDetections:
-                                self.camera.drawPieces(warpedFrame,oppPieceDetections,myPieceDetections,self,fp)
-                                movestr = self.getOppMoveFromVisual(oppPieceDetections)
-                                if movestr != None:
-                                    print(movestr)
-                                    #exit()
-                                cv2.imshow(f"warped",warpedFrame)
+                                self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
+                                #if self.turn == "ai":
+                                #    move = input("")
+                                oppMovestr = self.getOppMoveFromVisual(oppPieceDetections)
+                                if oppMovestr != None:
+                                    print(oppMovestr)
+                                    exit() #will exit if there is a difference (for debugging)
+                                cv2.imshow(f"warped",wfCopy)
                                     
                 cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
