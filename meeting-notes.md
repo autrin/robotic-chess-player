@@ -1,3 +1,14 @@
+## 3/26
+- we need :
+-          main.py to combine the arm and camera
+-          simulated chess movement
+
+## 3/11:
+- There can be a 3 positions for the robot: high, low, and backup positions. 
+- There will also be some space between the chess pieace and the board when the gripper is trying to put the piece on the bard for safety. 
+- Also every 1-5 mins the gripper goes off so we have to start it again. 
+- The gripper is Robotic hand E. We can also use more than 1 camera. 
+
 ## 2/24
 - Discussed demo 1 and improved the materials of the slides
 - Practiced the presentation
