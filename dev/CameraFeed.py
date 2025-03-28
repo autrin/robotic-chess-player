@@ -16,8 +16,8 @@ class CameraFeedClass:
         self.cam = None
         self.camID = camID
         self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
-        self.myChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
-        self.oppChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag16h5"))
+        self.whiteChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
+        self.blackChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
         self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
         self.hasBeenCalibrated = False
         self.chessBoardVertices = [] 
@@ -57,7 +57,7 @@ class CameraFeedClass:
     
     def drawCenterCircleForTags(self, frame, centers):
         for id in centers.keys(): # For every detected center
-            print(centers[id])
+            #print(centers[id])
             cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
             cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag's ID next to the circle.
     
@@ -77,7 +77,7 @@ class CameraFeedClass:
         Prints x-values for debugging.
         Returns 0 if the x difference is zero to avoid division by zero.
         """
-        print(f"p0x = {point0[0]}, p1x = {point1[0]}")
+        #print(f"p0x = {point0[0]}, p1x = {point1[0]}")
         if point0[0] - point1[0] == 0:
             return 0
         return (point0[1] - point1[1])/(point0[0] - point1[0])
@@ -85,8 +85,18 @@ class CameraFeedClass:
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
     def get_chessboard_boundaries(self,detections):
-        if detections is None or len(detections) != 4:
+        if detections is None:
             return None
+        
+        idCounter = 0
+        for d in detections:
+            id = d.tag_id
+            if id == 0 or id == 1 or id == 2 or id == 3:
+                idCounter += 1
+        #print(idCounter)
+        if idCounter != 4:
+            return None
+        
         #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
         TL = detections[0].corners
@@ -120,7 +130,7 @@ class CameraFeedClass:
         #cv2.imshow(f"warped",refdi)
         source = np.float32(fourPoints)
         ref = np.float32(refImgPoints)
-        print(f"source == {source}")
+        #print(f"source == {source}")
         mat = cv2.getPerspectiveTransform(source,ref)
         return cv2.warpPerspective(sourceImage,mat,(ow,oh))
     
@@ -186,16 +196,16 @@ class CameraFeedClass:
         
         counter = 0
         for entry in self.chessBoardCells:
-            print(f"cell{counter}")
-            t = entry["BL"]
-            print(f"BL={t}")
-            t = entry["BR"]
-            print(f"BR={t}")
-            t = entry["TL"]
-            print(f"TL={t}")
-            t = entry["TR"]
-            print(f"TR={t}")
-            print()
+            #print(f"cell{counter}")
+            #t = entry["BL"]
+            #print(f"BL={t}")
+            #t = entry["BR"]
+            #print(f"BR={t}")
+            #t = entry["TL"]
+            #print(f"TL={t}")
+            #t = entry["TR"]
+            #print(f"TR={t}")
+            #print()
             counter += 1
         
 
@@ -280,7 +290,7 @@ class CameraFeedClass:
             if continueFlag:
                 continue
             cv2.circle(frame,tuple(oppCenters[oc]),3,(255,0,0),2)
-            cv2.putText(frame,callerClass.tagIDToOppPieces[oc%16][0],
+            cv2.putText(frame,callerClass.tagIDToOppPieces[oc][0],
                         tuple(oppCenters[oc]),cv2.FONT_HERSHEY_PLAIN, 
                         2,(0,0,255),2)
             
@@ -305,7 +315,7 @@ class CameraFeedClass:
                 self.plotBoardDots(frame,mx,my,corners[0])
                 self.drawLine(frame,corners[0],corners[1])
                 self.drawLine(frame,corners[1],corners[2])
-                print("DRAWING")
+                #print("DRAWING")
 
     # moved to GamePlay.py 
     # def startLoop(self):
