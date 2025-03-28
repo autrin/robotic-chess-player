@@ -1,3 +1,6 @@
+import ChessEngine, GamePlay, ChessEngine, CameraFeed
+import rospy
+
 """
 Acts as the central coordinator. This node will:
   Receive the current board state from the vision system.
@@ -8,3 +11,13 @@ Acts as the central coordinator. This node will:
   Command the gripper (Robotic Hand E) to open/close and include logic for reinitialization if it shuts off.
   Integrate an emergency stop mechanism.
 """
+
+def main():
+    rospy.init_node('main_integration_node', anonymous=True)
+    # now the node is registered and we can create publisher and subscribers, etc.
+    rospy.loginfo("Main integration node has been initialized.")
+
+    # the node's logic goes here
+    rospy.spin() # keeps the node from exiting until shutdown.
+if __name__ == '__main__':
+  main()
