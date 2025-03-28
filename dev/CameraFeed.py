@@ -85,7 +85,7 @@ class CameraFeedClass:
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
     def get_chessboard_boundaries(self,detections):
-        if detections == None or len(detections) != 4:
+        if detections is None or len(detections) != 4:
             return None
         #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
@@ -167,16 +167,16 @@ class CameraFeedClass:
                 continue
 
             if not self.hasBeenCalibrated:
-                self.chessBoardCells.append({"BL": [self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]],
-                                        "BR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
-                                        "TL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
-                                        "TR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
+                self.chessBoardCells.append({"TL": [self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]],
+                                        "TR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
+                                        "BL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
+                                        "BR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
                  
             else:
-                self.chessBoardCells[counter]["BL"]=[self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]]
-                self.chessBoardCells[counter]["BR"]=[self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]]
-                self.chessBoardCells[counter]["TL"]=[self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]]
-                self.chessBoardCells[counter]["TR"]=[self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]
+                self.chessBoardCells[counter]["TL"]=[self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]]
+                self.chessBoardCells[counter]["TR"]=[self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]]
+                self.chessBoardCells[counter]["BL"]=[self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]]
+                self.chessBoardCells[counter]["BR"]=[self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]
                  
             counter += 1
             skipCounter += 1
@@ -208,11 +208,13 @@ class CameraFeedClass:
     def getCellPosofPiece(self, pieceCenterX, pieceCenterY):
         if len(self.chessBoardCells) > 0:
             counter = 0
-            for cell in self.chessBoardCells:
+            for c in range(0,len(self.chessBoardCells)):
+                cell = self.chessBoardCells[c]
+               
                 if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
-                    cell["BL"][1] <= pieceCenterY and cell["TL"][1] <= pieceCenterY:
-                    return counter
-                counter += 1
+                    cell["BL"][1] >= pieceCenterY and cell["TL"][1] <= pieceCenterY:
+                    return c
+                
         
         return -1
 
@@ -272,8 +274,8 @@ class CameraFeedClass:
             for f in fp:
                 if oppCenters[oc][0] == f[0] or oppCenters[oc][1] == f[1]:
                     continueFlag = True
-                    print("found")
-                    exit() #why this not working 
+                    #print("found")
+                    #exit() #why this not working 
                     break
             if continueFlag:
                 continue
