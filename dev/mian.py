@@ -28,7 +28,10 @@ def main():
     gameplay = GamePlayClass()
     arm_control = UR10eControl()
     chess_engine = ChessEngineClass()
-    
+
+    # fen_string = gameplay.getFENStringFromVision() # Get a board state from vision # TODO
+    # rospy.loginfo(f"Current FEN: {fen_string}")
+
     rospy.spin() # keeps the node from exiting until shutdown.
 if __name__ == '__main__':
   main()
