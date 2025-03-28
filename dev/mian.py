@@ -1,5 +1,11 @@
-import ChessEngine, GamePlay, ChessEngine, CameraFeed
+#!/usr/bin/env python3
 import rospy
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
+from GamePlay import GamePlayClass
+from practice.ur10e_pick_and_drop import UR10eControl
+from ChessEngine import ChessEngineClass
 
 """
 Acts as the central coordinator. This node will:
@@ -18,6 +24,11 @@ def main():
     rospy.loginfo("Main integration node has been initialized.")
 
     # the node's logic goes here
+    # Instantiate the modules:
+    gameplay = GamePlayClass()
+    arm_control = UR10eControl()
+    chess_engine = ChessEngineClass()
+    
     rospy.spin() # keeps the node from exiting until shutdown.
 if __name__ == '__main__':
   main()
