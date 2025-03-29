@@ -53,7 +53,7 @@ class ChessEngineClass:
         move = self.stockfish.get_best_move()
         self.board.push_uci(move)
         self.FEN = self.board.fen()
-        return self.stockfish.get_best_move()
+        return move
     
     #assume that the opponent will make the right movements
     def makeOppMove(self,move):
