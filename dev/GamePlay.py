@@ -156,8 +156,9 @@ class GamePlayClass:
         
         #self.calibrate()
         self.determine_side()
-
         self.camera.openCamera()
+        aiMoved = False
+        oppMoved = False
         while True:
             ret,frame = self.camera.cam.read()
             grayFrame = self.camera.convertToTagDetectableImage(frame)
@@ -189,12 +190,21 @@ class GamePlayClass:
                             warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
                             if myPieceDetections and oppPieceDetections:
                                 self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
-                                #if self.turn == "ai":
-                                #    move = input("")
-                                oppMovestr = self.getOppMoveFromVisual(oppPieceDetections)
-                                if oppMovestr != None:
-                                    print(oppMovestr)
-                                    exit() #will exit if there is a difference (for debugging)
+                                
+                                if self.turn == "ai":
+                                    if not aiMoved:
+                                        move = self.chessEngine.makeAIMove()
+                                        aiMoved = True
+
+                                    moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
+                                    
+                                    if moveFromVisual != None and move == moveFromVisual: #add promotion rule as well?
+                                        aiMoved = False
+                                        self.turn = "human"
+                                        print("AI move validated: " + moveFromVisual)
+                                        
+                                        exit() #will exit if there is a difference (for debugging)
+
                                 cv2.imshow(f"warped",wfCopy)
                                     
                 cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
