@@ -57,8 +57,9 @@ class ChessEngineClass:
     
     #assume that the opponent will make the right movements
     def makeOppMove(self,move):
-        if move in self.board.legal_moves():
-            self.board.push_uci(move)
+        move = chess.Move.from_uci(move)
+        if move in self.board.legal_moves:
+            self.board.push(move)
             self.FEN = self.board.fen()
     
         
