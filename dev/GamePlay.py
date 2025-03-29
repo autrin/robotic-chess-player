@@ -63,11 +63,6 @@ class GamePlayClass:
     def getOppMoveFromVisual(self,oppPieces):
         for op in oppPieces:
             newPos = self.camera.getCellPosofPiece(int(op.center[0]),int(op.center[1]))
-            #position has changed, assume only one piece gets to move
-            #print(f"opp={op.tag_id}")
-            #print(newPos)
-            #print([int(op.center[0]),int(op.center[1])])
-            #exit()
             if self.tagIDToOppPieces[op.tag_id][1] != newPos:
                 oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
@@ -152,13 +147,12 @@ class GamePlayClass:
                     
         
     def play(self):
-        
-        
         #self.calibrate()
         self.determine_side()
         self.camera.openCamera()
         aiMoved = False
-        oppMoved = False
+        oppMoved = None
+        move = None
         while True:
             ret,frame = self.camera.cam.read()
             grayFrame = self.camera.convertToTagDetectableImage(frame)
@@ -192,19 +186,30 @@ class GamePlayClass:
                                 self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
                                 
                                 if self.turn == "ai":
+                                    
                                     if not aiMoved:
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
-
+                                    else:
+                                        print("AI's desired move: " + move)
                                     moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
-                                    
-                                    if moveFromVisual != None and move == moveFromVisual: #add promotion rule as well?
+                                    if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
                                         aiMoved = False
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
-                                        
-                                        exit() #will exit if there is a difference (for debugging)
-
+                                        move = None
+                                        #exit() #will exit if there is a difference (for debugging)
+                                
+                                elif self.turn == "human": 
+                                    #oppMoved = input("type \"a\" after making a move")
+                                    move = self.getOppMoveFromVisual(oppPieceDetections)
+                                    print("opp move??: " + str(move))
+                                    if move is not None:
+                                        self.chessEngine.makeOppMove(move)
+                                        self.turn = "ai"
+                                        print("opp move: " + move)
+                                        move = None
+                            
                                 cv2.imshow(f"warped",wfCopy)
                                     
                 cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
