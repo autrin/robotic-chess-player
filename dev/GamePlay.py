@@ -52,6 +52,11 @@ class GamePlayClass:
         self.myPieceDetections = None
         self.oppPieceDetections = None
     
+    def chessCellPosToCellPos(self,st):
+        rank = (int(st[1])-1)*10
+        col = ord(st[0])
+        return rank + col 
+
     def cellPosToChessCellPos(self,num):
         col = num%8
         col = chr(ord('a') + col)
@@ -71,6 +76,8 @@ class GamePlayClass:
 
     def getMyMoveFromVisual(self,myPieces):
         for mp in myPieces:
+            if self.tagIDToMyPieces[mp.tag_id][0] == "x": #ignore captured pieces
+                continue
             newPos = self.camera.getCellPosofPiece(int(mp.center[0]),int(mp.center[1]))
             if self.tagIDToMyPieces[mp.tag_id%16][1] != newPos:
                 oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id%16][1])
@@ -144,8 +151,13 @@ class GamePlayClass:
                         (int(cornerDetections[2].corners[2][0]), int(cornerDetections[2].corners[2][1])), (255,0,0), -1)
         cv2.rectangle(gfCopy, (int(cornerDetections[3].corners[0][0]), int(cornerDetections[3].corners[0][1])), 
                         (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255,0,0), -1)
-                    
-        
+
+    def markCaptured(self,side,dest):
+        cellNum = self.chessCellPosToCellPos(dest[2:])
+        if side == "ai":
+            for k in self.tagIDToOppPieces.keys():
+                print("TODO")
+    
     def play(self):
         #self.calibrate()
         self.determine_side()
