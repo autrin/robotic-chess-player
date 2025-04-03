@@ -44,6 +44,7 @@ class ChessEngineClass:
         self.stockfish.set_skill_level(self.level)
         self.FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
         self.board = chess.Board(self.FEN)
+        self.chess = chess
 
     def getFromTo(self, move):
         return move[:2], move[2:]
