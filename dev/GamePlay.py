@@ -152,11 +152,32 @@ class GamePlayClass:
         cv2.rectangle(gfCopy, (int(cornerDetections[3].corners[0][0]), int(cornerDetections[3].corners[0][1])), 
                         (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255,0,0), -1)
 
-    def markCaptured(self,side,dest):
-        cellNum = self.chessCellPosToCellPos(dest[2:])
-        if side == "ai":
-            for k in self.tagIDToOppPieces.keys():
-                print("TODO")
+    #is this really needed?
+    #en-passant rule
+    #Not really needed
+    # def markCaptured(self,side,dest):
+    #     cellNum = self.chessCellPosToCellPos(dest)
+    #     if side == "ai":
+    #         ep_square = self.chessEngine.board.ep_square
+    #         if ep_square is not None:
+    #             cell_name = self.chess.square_name(ep_square)
+
+    #         for k in self.tagIDToOppPieces.keys():
+    #             if dest == cell_name and\
+    #                self.cellPosToChessCellPos(self.tagIDToOppPieces[k][1])[1:]:
+
+    #             if self.tagIDToOppPieces[k][1] == cellNum:
+    #                 self.tagIDToOppPieces[k][0] = "x"
+    #                 return
+                
+            
+
+    #     else:
+    #         for k in self.tagIDToMyPieces.keys():
+    #             if self.tagIDToMyPieces[k][1] == cellNum:
+    #                 self.tagIDToMyPieces[k][0] = "x"
+    #                 return
+
     
     def play(self):
         #self.calibrate()
@@ -204,12 +225,14 @@ class GamePlayClass:
                                         aiMoved = True
                                     else:
                                         print("AI's desired move: " + move)
+                                    #self.markCaptured("ai",move[2:])
                                     moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
                                         aiMoved = False
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
                                         move = None
+                                        
                                         #exit() #will exit if there is a difference (for debugging)
                                 
                                 elif self.turn == "human": 
@@ -218,6 +241,7 @@ class GamePlayClass:
                                     print("opp move??: " + str(move))
                                     if move is not None:
                                         self.chessEngine.makeOppMove(move)
+                                        #self.markCaptured("human",move[2:])
                                         self.turn = "ai"
                                         print("opp move: " + move)
                                         move = None
