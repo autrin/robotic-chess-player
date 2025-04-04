@@ -44,6 +44,7 @@ class ChessEngineClass:
         self.stockfish.set_skill_level(self.level)
         self.FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
         self.board = chess.Board(self.FEN)
+        self.chess = chess
 
     def getFromTo(self, move):
         return move[:2], move[2:]
@@ -53,12 +54,13 @@ class ChessEngineClass:
         move = self.stockfish.get_best_move()
         self.board.push_uci(move)
         self.FEN = self.board.fen()
-        return self.stockfish.get_best_move()
+        return move
     
     #assume that the opponent will make the right movements
     def makeOppMove(self,move):
-        if move in self.board.legal_moves():
-            self.board.push_uci(move)
+        move = chess.Move.from_uci(move)
+        if move in self.board.legal_moves:
+            self.board.push(move)
             self.FEN = self.board.fen()
     
         
