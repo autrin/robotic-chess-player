@@ -5,6 +5,7 @@ import apriltag
 import FilePathFinder
 import math
 
+
 """
 This script is designed to capture video from a camera, process the images to detect AprilTags 
 (fiducial markers), and use that information to infer the geometry of a chessboard.
@@ -23,7 +24,7 @@ class CameraFeedClass:
         self.chessBoardVertices = [] 
         self.chessBoardCells = []
         self.chessBoardResetCounter = 150
-        self.chessBoardResetCounterThreshold = 150       
+        self.chessBoardResetCounterThreshold = 150    
 
     def convertToTagDetectableImage(self, image):
         grayFrame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
