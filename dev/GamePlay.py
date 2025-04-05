@@ -2,6 +2,8 @@ import FilePathFinder
 from CameraFeed import CameraFeedClass
 from ChessEngine import ChessEngineClass
 import cv2
+import mss
+import numpy as np
 #bridge between camera and chess engine
 class GamePlayClass:
     def __init__(self):
@@ -71,6 +73,7 @@ class GamePlayClass:
             if self.tagIDToOppPieces[op.tag_id][1] != newPos:
                 oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
+                self.tagIDToOppPieces[op.tag_id][1] = newPos
                 return oldCellString+newCellString
         return None
 
@@ -82,6 +85,7 @@ class GamePlayClass:
             if self.tagIDToMyPieces[mp.tag_id%16][1] != newPos:
                 oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id%16][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
+                self.tagIDToMyPieces[mp.tag_id%16][1] = newPos
                 return oldCellString+newCellString
         return None
 
@@ -179,16 +183,36 @@ class GamePlayClass:
     #                 return
 
     
-    def play(self):
+    def play(self,computerScreen=False):
         #self.calibrate()
         self.determine_side()
         self.camera.openCamera()
         aiMoved = False
         oppMoved = None
         move = None
+        sct = None
+        #moniotr = None 
+        region = None
+       
+        if computerScreen:
+            sct = mss.mss()
+            #monitor = sct.monitors[1]
+            region = {"top": 0, "left": 600, "width": 1200, "height": 1200}
+
         while True:
-            ret,frame = self.camera.cam.read()
-            grayFrame = self.camera.convertToTagDetectableImage(frame)
+            frame = None
+            if not computerScreen:
+                ret,frame = self.camera.cam.read() #for webcam
+            else:
+                screenshot = sct.grab(region)
+                frame = np.array(screenshot)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+
+            grayFrame = None
+            if not computerScreen:
+                grayFrame = self.camera.convertToTagDetectableImage(frame)
+            else: #computer screen, no need for 
+                grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             cornerDetections = self.camera.aprilDetector.detect(img=grayFrame)
             
             #Every programmer's dream: just nest everything
@@ -208,13 +232,14 @@ class GamePlayClass:
                         
                         cornerDetections2 = self.camera.aprilDetector.detect(img=warpedFrame)
                         fp2 = self.camera.get_chessboard_boundaries(cornerDetections2)
-                        
+                        #wfCopy = warpedFrame #dbg
                         if fp2:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
                             myPieceDetections = self.myPieceDetections.detect(img=wfCopy)
                             oppPieceDetections = self.oppPieceDetections.detect(img=wfCopy)
 
-                            warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+                            #warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+                            wfCopy = cv2.cvtColor(wfCopy,cv2.COLOR_GRAY2BGR)
                             if myPieceDetections and oppPieceDetections:
                                 self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
                                 
@@ -225,6 +250,8 @@ class GamePlayClass:
                                         aiMoved = True
                                     else:
                                         print("AI's desired move: " + move)
+
+                                        
                                     #self.markCaptured("ai",move[2:])
                                     moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
@@ -251,8 +278,11 @@ class GamePlayClass:
                 cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+            
         self.camera.destroyCameraFeed()
+        if computerScreen:
+            sct.close()
 
 if __name__ == "__main__":
     gp = GamePlayClass()
-    gp.play()
+    gp.play(True)
