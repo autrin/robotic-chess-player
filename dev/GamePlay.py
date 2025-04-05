@@ -193,6 +193,7 @@ class GamePlayClass:
         sct = None
         #moniotr = None 
         region = None
+        byPass = False
        
         if computerScreen:
             sct = mss.mss()
@@ -244,7 +245,7 @@ class GamePlayClass:
                                 self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
                                 
                                 if self.turn == "ai":
-                                    
+                                    byPass = False #human move needs to be captured after ai's move
                                     if not aiMoved:
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
@@ -265,7 +266,9 @@ class GamePlayClass:
                                 elif self.turn == "human": 
                                     #oppMoved = input("type \"a\" after making a move")
                                     move = self.getOppMoveFromVisual(oppPieceDetections)
-                                    print("opp move??: " + str(move))
+                                    if not byPass:
+                                        input("press enter to register opp move")
+                                        byPass = True
                                     if move is not None:
                                         self.chessEngine.makeOppMove(move)
                                         #self.markCaptured("human",move[2:])
