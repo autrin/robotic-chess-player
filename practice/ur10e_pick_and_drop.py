@@ -127,10 +127,6 @@ class UR10eControl:
 
         rospy.loginfo("Pick-and-drop routine complete.")
 
-
-
-
-
 if __name__ == "__main__":
     robot = UR10eControl()
 
@@ -142,8 +138,7 @@ if __name__ == "__main__":
     # robot.move_wrist_to_position(0.5, 0.2)
     # robot.move_wrist_vertical(-0.6)
     # robot.move_wrist_vertical(0.6)
-    
-    
+
     # robot.move_wrist_to_position(0.2, 0.5)
     
     robot.move_piece(0.5, 0.2, 0.2, 0.5)

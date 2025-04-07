@@ -1,0 +1,6 @@
+<robot name="ur10e">
+  <group name="gripper">
+    <joint name="hande_left_finger_joint" />
+  </group>
+  <end_effector name="robotiq_hande" parent_link="tool0" group="gripper"/>
+</robot>
