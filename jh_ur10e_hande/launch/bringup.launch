@@ -1,9 +1,0 @@
-<launch>
-  <!-- Load the combined URDF -->
-  <param name="robot_description"
-         command="$(find xacro)/xacro '$(find jh_ur10e_hande)/urdf/ur10e_hande.urdf.xacro'" />
-
-  <include file="$(find ur_gazebo)/launch/ur10e_bringup.launch">
-    <!-- forward args like paused, limited, etc -->
-  </include>
-</launch>
