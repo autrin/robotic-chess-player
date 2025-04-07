@@ -1,0 +1,22 @@
+<launch>
+  <arg name="paused" default="false"/>
+  <arg name="use_sim_time" default="true"/>
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find jh_ur10e_hande)/urdf/ur10e_hande.urdf.xacro'" />
+
+  <rosparam file="$(find jh_ur10e_hande)/config/jh_ur10e_hande_controllers.yaml" command="load"/>
+
+  <include file="$(find ur_gazebo)/launch/ur10e_bringup.launch">
+    <arg name="paused" value="$(arg paused)" />
+    <arg name="use_sim_time" value="$(arg use_sim_time)" />
+  </include>
+
+  <!-- Spawn the Hand-E controller -->
+  <node name="controller_spawner_hande"
+        pkg="controller_manager"
+        type="spawner"
+        respawn="false"
+        output="screen"
+        args="hande_gripper_controller" />
+</launch>
