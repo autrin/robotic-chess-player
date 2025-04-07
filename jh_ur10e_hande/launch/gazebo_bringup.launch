@@ -1,0 +1,40 @@
+<launch>
+  <arg name="paused" default="false"/>
+  <arg name="gui" default="true"/>
+  <arg name="x" default="0"/>
+  <arg name="y" default="0"/>
+  <arg name="z" default="0"/>
+  <arg name="tf_pub_rate" default="500.0"/>
+
+  <param name="robot_description"
+         command="$(find xacro)/xacro '$(find jh_ur10e_hande)/urdf/ur10e_hande.urdf.xacro'" />
+
+  <rosparam file="$(find jh_ur10e_hande)/config/jh_ur10e_hande_controllers.yaml" command="load"/>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="gui" value="$(arg gui)"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="world_name" value="$(find gazebo_ros)/worlds/empty.world"/>
+  </include>
+
+  <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
+        args="-param robot_description -urdf -model ur10e_hande -x $(arg x) -y $(arg y) -z $(arg z)"
+        output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="$(arg tf_pub_rate)" />
+  </node>
+
+  <node name="controller_spawner_main"
+        pkg="controller_manager"
+        type="spawner"
+        args="joint_state_controller eff_joint_traj_controller"
+        output="screen"/>
+
+  <node name="controller_spawner_hande"
+        pkg="controller_manager"
+        type="spawner"
+        args="hande_gripper_controller"
+        output="screen"/>
+</launch>

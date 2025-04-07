@@ -1,93 +1,106 @@
 # sd02_joseph-hoane_1
 
-
-
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+## Setup
+If you are using an external catkin workspace, skip to the next section
+### ROS Noetic python dependencies
+Go inside catwin_ws, and create a new python virtual environment that inherits site packages:
 ```
-cd existing_repo
-git remote add origin https://git.las.iastate.edu/SeniorDesignComS/2025s/402c/sd02_joseph-hoane_1.git
-git branch -M main
-git push -uf origin main
+virtualenv venv --system-site-packages
 ```
 
-## Integrate with your tools
+You can now use the virtual environment with your IDE by pointing to `catkin_ws/src/venv/bin/python`. Or manually source it:
+```
+source catkin_ws/src/venv/bin/activate
+```
 
-- [ ] [Set up project integrations](https://git.las.iastate.edu/SeniorDesignComS/2025s/402c/sd02_joseph-hoane_1/-/settings/integrations)
+Alternatively, you can create a symlink in the project root that points to the catkin virtual environment after creating it, and use it from project root:
+```
+ln -s catkin_ws/src/venv ./venv
+```
 
-## Collaborate with your team
+If using PyCharm, optionally also add `opt/ros/noetic/lib/python3/dist-packages` as another content root in Project Structure.
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
 
-## Test and Deploy
+### Add robot descriptor for UR10e + Robotiq Hand-E gripper to workspace
+`jh_ur10e_hande` is a our custom package that describes a system that consists of a Robotiq Hand-E gripped attached as an end-effector to a Universal Robotics UR10e arm. 
+It can be found in the project root and is symbolically linked to `catkin_ws/src/jh_ur10e_hande`. Make sure this symbolic link exists, if not, then create it with:
+```
+ln -s jh_ur10e_hande/ catkin_ws/src/jh_ur10e_hande
+```
 
-Use the built-in continuous integration in GitLab.
+Then remember to load the environment before usage:
+```
+cd catkin_ws
+catkin_make
+source devel/setup.bash
+```
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
 
-***
+## Setup ONLY IF USING external catkin workspace
+### ROS Noetic python dependencies
+Locate your catkin workspace directory (e.g. `~/catkin_ws`), we refer to this as <CATKIN WORKSPACE>
 
-# Editing this README
+Create a new virtual environment that inherits site packages:
+```
+virtualenv venv --system-site-packages
+```
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+You can now use the virtual environment with your IDE by pointing to `<CATKIN WORKSPACE>/src/venv/bin/python`. Or manually source it:
+```
+source <CATKIN WORKSPACE>/src/venv/bin/activate
+```
 
-## Suggestions for a good README
+### Add and install Robotiq Hand-E gripper descriptors
+We will use descriptors from [https://github.com/cambel/robotiq.git].
+```
+cd <CATKIN_WORKSPACE>
+git clone https://github.com/cambel/robotiq.git
+rosdep update
+rosdep install --from-paths robotiq --ignore-src -y
+```
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+Remember to reload the environment:
+```
+cd <CATKIN_WORKSPACE>
+catkin_make
+source devel/setup.bash
+```
 
-## Name
-Choose a self-explaining name for your project.
+### Add robot descriptor for UR10e + Robotiq Hand-E gripper to workspace:
+Create a symlink from the `jh_ur10e_hande` package in the project to your catkin workspace:
+```
+ln -s <PATH TO THIS REPOSITORY>/jh_ur10e_hande <CATKIN WORKSPACE>/SRC/jh_ur10e_hande
+```
+Then rebuild the workspace:
+```
+cd <CATKIN WORKSPACE>
+catkin_make
+```
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
-
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
-
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
-
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
 
 ## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### Launch
+- Gazebo: robot with gripper and joint controllers
+```
+# Base command
+roslaunch jh_ur10e_hande gazebo_bringup.launch
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+# Or launch inside a screen task
+screen -S rl -dm bash -c "roslaunch jh_ur10e_hande gazebo_bringup.launch"
+```
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- MoveIt: with overridden robot description and SRDF
+```
+# Base command
+roslaunch jh_ur10e_hande moveit_planning_execution.launch
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+# Or launch inside a screen task
+screen -S rgz -dm bash -c "roslaunch jh_ur10e_hande moveit_planning_execution.launch"
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+- *Note: if running on WSL, run this command first to allow `screen` to work*
+```
+sudo /etc/init.d/screen-cleanup start
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
