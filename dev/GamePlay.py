@@ -277,10 +277,11 @@ class GamePlayClass:
                                         move = None
                             
                                 cv2.imshow(f"warped",wfCopy)
-                                    
-                cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
+                        cv2.imshow(f"wf",warpedFrame)                
+                #cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+            cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
             
         self.camera.destroyCameraFeed()
         if computerScreen:
