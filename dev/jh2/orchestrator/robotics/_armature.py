@@ -20,7 +20,7 @@ class Armature:
         self.arm.set_pose_reference_frame("base_link")
         self.arm.allow_replanning(True)
 
-    def move_to_posture(self, posture: JointVector):
+    def apply_joint_vector(self, posture: JointVector):
         self.arm.set_joint_value_target(posture.as_tuple())
         success = self.arm.go(wait=True)
 

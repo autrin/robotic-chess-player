@@ -1,14 +1,15 @@
 from typing import List
 
-from jh2.orchestrator.action._action import Action
+from jh2.orchestrator.action._abstract_action import AbstractAction
 
 
 class ActionChain:
     def __init__(self):
-        self.actions: List[Action] = []
+        self.actions: List[AbstractAction] = []
         pass
 
-    def append(self, action: Action):
+
+    def then(self, action: AbstractAction):
         self.actions.append(action)
         return self
 
