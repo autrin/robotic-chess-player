@@ -29,4 +29,19 @@ catkin_make
 
 ## Usage
 
-###
+### Launch
+- Gazebo: robot with gripper and joint controllers
+```
+screen -S rl -dm bash -c "roslaunch jh_ur10e_hande gazebo_bringup.launch"
+```
+
+- MoveIt: with overridden robot description and SRDF
+```
+screen -S rgz -dm bash -c "roslaunch jh_ur10e_hande moveit_planning_execution.launch"
+``
+
+- *Note: if running on WSL, run this command first to allow `screen` to work*
+```
+sudo /etc/init.d/screen-cleanup start
+```
+
