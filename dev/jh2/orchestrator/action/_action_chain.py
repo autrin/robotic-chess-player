@@ -1,6 +1,6 @@
 from typing import List
 
-from jh2.controls.orchestrator.action._action import Action
+from jh2.orchestrator.action._action import Action
 
 
 class ActionChain:
