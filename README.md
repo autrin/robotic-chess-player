@@ -3,15 +3,32 @@
 ## Setup
 
 ### ROS Noetic dependencies
-- Locate your catkin workspace directory (e.g. `~/catkin_ws`), we refer to this as <CATKIN WORKSPACE>
+Locate your catkin workspace directory (e.g. `~/catkin_ws`), we refer to this as <CATKIN WORKSPACE>
 
-- Create a new virtual environment that inherits site packages:
+Create a new virtual environment that inherits site packages:
 ```
 virtualenv venv --system-site-packages
 ```
-- You can now use the virtual environment with your IDE by pointing to `<CATKIN WORKSPACE>/src/venv/bin/python`. Or manually source it:
+
+You can now use the virtual environment with your IDE by pointing to `<CATKIN WORKSPACE>/src/venv/bin/python`. Or manually source it:
 ```
 source <CATKIN WORKSPACE>/src/venv/bin/activate
+```
+
+### Add and install Robotiq Hand-E gripper descriptors
+We will use descriptors from [https://github.com/cambel/robotiq.git].
+```
+cd <CATKIN_WORKSPACE>
+git clone https://github.com/cambel/robotiq.git
+rosdep update
+rosdep install --from-paths robotiq --ignore-src -y
+```
+
+Remember to reload the environment:
+```
+cd <CATKIN_WORKSPACE>
+catkin_make
+source devel/setup.bash
 ```
 
 ### Add robot descriptor for UR10e + Robotiq Hand-E gripper to workspace:
