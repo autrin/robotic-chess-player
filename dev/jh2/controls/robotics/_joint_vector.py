@@ -4,7 +4,7 @@ from typing import Tuple
 
 
 @dataclass(frozen=True)
-class Posture:
+class JointVector:
     shoulder_pan: float
     shoulder_lift: float
     elbow: float
@@ -26,4 +26,4 @@ class Posture:
     def from_list(joint_list):
         if len(joint_list) != 6:
             raise ValueError("UR10e has exactly 6 joints.")
-        return Posture(*joint_list)
+        return JointVector(*joint_list)
