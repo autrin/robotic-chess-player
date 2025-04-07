@@ -6,14 +6,11 @@
   <arg name="z" default="0"/>
   <arg name="tf_pub_rate" default="500.0"/>
 
-  <!-- Load your combined URDF (UR10e + Hand-E) -->
   <param name="robot_description"
          command="$(find xacro)/xacro '$(find jh_ur10e_hande)/urdf/ur10e_hande.urdf.xacro'" />
 
-  <!-- Load your controllers -->
   <rosparam file="$(find jh_ur10e_hande)/config/jh_ur10e_hande_controllers.yaml" command="load"/>
 
-  <!-- Gazebo world -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="paused" value="$(arg paused)"/>
     <arg name="gui" value="$(arg gui)"/>
@@ -21,17 +18,14 @@
     <arg name="world_name" value="$(find gazebo_ros)/worlds/empty.world"/>
   </include>
 
-  <!-- Spawn your robot -->
   <node name="spawn_urdf" pkg="gazebo_ros" type="spawn_model"
         args="-param robot_description -urdf -model ur10e_hande -x $(arg x) -y $(arg y) -z $(arg z)"
         output="screen" />
 
-  <!-- Joint state publisher -->
   <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
     <param name="publish_frequency" type="double" value="$(arg tf_pub_rate)" />
   </node>
 
-  <!-- Controller spawners -->
   <node name="controller_spawner_main"
         pkg="controller_manager"
         type="spawner"
