@@ -38,7 +38,7 @@ source devel/setup.bash
 
 ## Setup ONLY IF USING external catkin workspace
 ### ROS Noetic python dependencies
-Locate your catkin workspace directory (e.g. `~/catkin_ws`), we refer to this as <CATKIN WORKSPACE>
+Locate your catkin workspace directory (e.g. `~/catkin_ws`), we refer to this as \<CATKIN WORKSPACE\>
 
 Create a new virtual environment that inherits site packages:
 ```
