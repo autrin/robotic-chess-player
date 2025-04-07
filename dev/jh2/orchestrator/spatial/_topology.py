@@ -1,7 +1,6 @@
 from typing import List, Dict
-import numpy as np
 
-from jh2.controls.spatial._waypoint import Waypoint
+from jh2.orchestrator.spatial._waypoint import Waypoint
 
 
 class Topology:
