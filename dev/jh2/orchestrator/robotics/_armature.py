@@ -10,7 +10,7 @@ from ._joint_vector import JointVector
 class Armature:
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
-        rospy.init_node(ROS_NODE_NAME, anonymous=True)
+        rospy.init_node(UR10E_ARM_NODE_NAME, anonymous=True)
 
         self.arm: moveit_commander.move_group.MoveGroupCommander
         self.arm = moveit_commander.MoveGroupCommander(ARMATURE_CMDR_GRP_NAME)
