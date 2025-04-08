@@ -42,7 +42,7 @@ class ChessEngineClass:
         self.stockfish = Stockfish(enginePath)
         self.stockfish.set_depth(self.depth)
         self.stockfish.set_skill_level(self.level)
-        self.FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
+        self.FEN = "rn1qk1nr/8/8/8/8/8/8/RNQ1K1NR w KQkq - 0 1" #<--for demo2 #"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
         self.board = chess.Board(self.FEN)
         self.chess = chess
 
