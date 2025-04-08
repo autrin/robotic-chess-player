@@ -10,6 +10,8 @@
          command="$(find xacro)/xacro '$(find jh_ur10e_hande)/urdf/ur10e_hande.urdf.xacro'" />
 
   <rosparam file="$(find jh_ur10e_hande)/config/jh_ur10e_hande_controllers.yaml" command="load"/>
+  <rosparam file="$(find jh_ur10e_hande)/config/pid_gains.yaml" command="load"/>
+
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="paused" value="$(arg paused)"/>
