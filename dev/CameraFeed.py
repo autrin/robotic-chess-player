@@ -116,7 +116,7 @@ class CameraFeedClass:
             refImg = self.referenceImage
         
         refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
-        refdi = cv2.resize(refdi, (0, 0), fx = 0.6, fy = 0.6)
+        refdi = cv2.resize(refdi, (0, 0), fx = 0.4, fy = 0.4)
         refImgDetections = self.aprilDetector.detect(img=refdi)
         #cv2.imshow(f"warped",refdi)
         #return None

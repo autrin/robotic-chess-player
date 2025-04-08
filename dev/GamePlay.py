@@ -12,47 +12,86 @@ class GamePlayClass:
         #assume robot will always play white by default
         
         #tagID: [pieceType,cellPos] pieceType == "x" if captured
+        # self.tagIDBlackPieces = { 
+        #     4 : ['p',8],
+        #     5 : ['p',9],
+        #     6 : ['p',10],
+        #     7 : ['p',11],
+        #     8 : ['p',12],
+        #     9 : ['p',13],
+        #     10 : ['p',14],
+        #     11 : ['p',15],
+        #     12 : ['r',0],
+        #     13 : ['n',1],
+        #     14 : ['b',2],
+        #     15 : ['q',3],
+        #     16 : ['k',4],
+        #     17 : ['b',5],
+        #     18 : ['n',6],
+        #     19 : ['r',7]
+        # }
+        # self.tagIDWhitePieces = { 
+        #     0 : ['P',48],
+        #     1 : ['P',49],
+        #     2 : ['P',50],
+        #     3 : ['P',51],
+        #     4 : ['P',52],
+        #     5 : ['P',53],
+        #     6 : ['P',54],
+        #     7 : ['P',55],
+        #     8 : ['R',56],
+        #     9 : ['N',57],
+        #     10 : ['B',58],
+        #     11 : ['Q',59],
+        #     12 : ['K',60],
+        #     13 : ['B',61],
+        #     14 : ['N',62],
+        #     15 : ['R',63]
+        # }
+        # For demo2
         self.tagIDBlackPieces = { 
-            4 : ['p',8],
-            5 : ['p',9],
-            6 : ['p',10],
-            7 : ['p',11],
-            8 : ['p',12],
-            9 : ['p',13],
-            10 : ['p',14],
-            11 : ['p',15],
+            4 : ['p',-1],
+            5 : ['p',-1],
+            6 : ['p',-1],
+            7 : ['p',-1],
+            8 : ['p',-1],
+            9 : ['p',-1],
+            10 : ['p',-1],
+            11 : ['p',-1],
             12 : ['r',0],
             13 : ['n',1],
-            14 : ['b',2],
+            14 : ['b',-1],
             15 : ['q',3],
             16 : ['k',4],
-            17 : ['b',5],
+            17 : ['b',-1],
             18 : ['n',6],
             19 : ['r',7]
         }
         self.tagIDWhitePieces = { 
-            0 : ['P',48],
-            1 : ['P',49],
-            2 : ['P',50],
-            3 : ['P',51],
-            4 : ['P',52],
-            5 : ['P',53],
-            6 : ['P',54],
-            7 : ['P',55],
+            0 : ['P',-1],
+            1 : ['P',-1],
+            2 : ['P',-1],
+            3 : ['P',-1],
+            4 : ['P',-1],
+            5 : ['P',-1],
+            6 : ['P',-1],
+            7 : ['P',-1],
             8 : ['R',56],
             9 : ['N',57],
-            10 : ['B',58],
-            11 : ['Q',59],
+            10 : ['B',-1],
+            11 : ['Q',58],
             12 : ['K',60],
-            13 : ['B',61],
+            13 : ['B',-1],
             14 : ['N',62],
             15 : ['R',63]
         }
+
         self.tagIDToMyPieces = None
         self.tagIDToOppPieces = None
         self.turn = "ai"
         self.myPieceDetections = None
         self.oppPieceDetections = None
+        self.HTfp = None
     
     def chessCellPosToCellPos(self,st):
         rank = (int(st[1])-1)*10
@@ -92,21 +131,43 @@ class GamePlayClass:
 
 
 
-    def calibrate(self):
+    def calibrate(self,computerScreen):
         self.camera.openCamera()
         calibrated = False
+        sct = None
+        #moniotr = None 
+        region = None
+       
+        if computerScreen:
+            sct = mss.mss()
+            #monitor = sct.monitors[1]
+            region = {"top": 0, "left": 600, "width": 1200, "height": 1200}
+
+
         while True:
-            ret,frame = self.camera.cam.read()
+            frame = None
+            if not computerScreen:
+                ret,frame = self.camera.cam.read() #for webcam
+            else:
+                screenshot = sct.grab(region)
+                frame = np.array(screenshot)
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+
+            grayFrame = None
+            if not computerScreen:
+                grayFrame = self.camera.convertToTagDetectableImage(frame)
+            else: #computer screen, no need for 
+                grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             
-            grayFrame = self.camera.convertToTagDetectableImage(frame)
+            #grayFrame = self.camera.convertToTagDetectableImage(frame)
             detections = self.camera.aprilDetector.detect(img=grayFrame)
             #self.drawBordersandDots(frame,detections,grayFrame)
             
             if detections:
-                fp = self.camera.get_chessboard_boundaries(detections)
+                self.HTfp = self.camera.get_chessboard_boundaries(detections)
                 
-                if fp:
-                    warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
+                if self.HTfp:
+                    warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,self.HTfp)
                     #warpedFrame = cv2.resize(warpedFrame, (0, 0), fx = 0.1, fy = 0.1)
                     if warpedFrame is not None:
                         detections = self.camera.aprilDetector.detect(img=warpedFrame)
@@ -184,7 +245,7 @@ class GamePlayClass:
 
     
     def play(self,computerScreen=False):
-        #self.calibrate()
+        self.calibrate(computerScreen)
         self.determine_side()
         self.camera.openCamera()
         aiMoved = False
