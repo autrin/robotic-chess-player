@@ -31,6 +31,15 @@ pos_joint_traj_controller:
     - wrist_1_joint
     - wrist_2_joint
     - wrist_3_joint
+  constraints:
+    goal_time: 0.6
+    stopped_velocity_tolerance: 0.05
+    shoulder_pan_joint: { trajectory: 0.1, goal: 0.1 }
+    shoulder_lift_joint: { trajectory: 0.1, goal: 0.1 }
+    elbow_joint: { trajectory: 0.1, goal: 0.1 }
+    wrist_1_joint: { trajectory: 0.1, goal: 0.1 }
+    wrist_2_joint: { trajectory: 0.1, goal: 0.1 }
+    wrist_3_joint: { trajectory: 0.1, goal: 0.1 }
 
 hande_gripper_controller:
   type: position_controllers/GripperActionController
@@ -41,12 +50,11 @@ hande_gripper_controller:
   stall_velocity_threshold: 0.001
   stall_timeout: 1.0
 
-gazebo_ros_control:
-  pid_gains:
-    shoulder_pan_joint:       {p: 15.0, i: 0.0, d: 10.0}
-    shoulder_lift_joint:      {p: 15.0, i: 0.0, d: 10.0}
-    elbow_joint:              {p: 15.0, i: 0.0, d: 10.0}
-    wrist_1_joint:            {p: 5.0, i: 0.0, d: 5.0}
-    wrist_2_joint:            {p: 5.0, i: 0.0, d: 5.0}
-    wrist_3_joint:            {p: 5.0, i: 0.0, d: 5.0}
-    hande_left_finger_joint:  {p: 2.0,  i: 0.001, d: 5.0}
+#gazebo_ros_control:
+#  pid_gains:
+#    shoulder_pan_joint: { p: 20000, d: 100, i: 10 }
+#    shoulder_lift_joint: { p: 20000, d: 100, i: 20 }
+#    elbow_joint: { p: 10000,  d: 100, i: 10 }
+#    wrist_1_joint: { p: 500, d: 1, i: 1, }
+#    wrist_2_joint: { p: 500, d: 1, i: 1, }
+#    wrist_3_joint: { p: 10, d: 0.1, i: 0, }
