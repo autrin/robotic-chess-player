@@ -2,9 +2,9 @@
 
 ## Setup
 
-If you are using an external catkin workspace, skip to the next section
-
 ### ROS Noetic python dependencies
+
+*At this point, if you are using an external catkin workspace, skip to the next section*
 
 Go inside catwin_ws, and create a new python virtual environment that inherits site packages:
 
@@ -102,6 +102,13 @@ Then rebuild the workspace:
 ```
 cd <CATKIN WORKSPACE>
 catkin_make
+```
+
+### Install `jh1` as a python library
+In your virtual environment, run:
+```
+pip install -e ./dev
+
 ```
 
 ## Usage

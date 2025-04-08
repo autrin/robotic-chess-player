@@ -1,7 +1,7 @@
 import rospy
 from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
-from jh2.orchestrator.robotics import Armature
-from jh2.orchestrator.robotics._constants import *
+from jh1.orchestrator.robotics import Armature
+from jh1.orchestrator.robotics._constants import *
 
 
 class Effector:

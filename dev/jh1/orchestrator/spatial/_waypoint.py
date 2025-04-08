@@ -1,4 +1,4 @@
-from jh2.typealias import *
+from jh1.typealias import *
 
 
 class Waypoint:

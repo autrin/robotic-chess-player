@@ -1,4 +1,4 @@
-from jh2.orchestrator.robotics import Armature, Effector
+from jh1.orchestrator.robotics import Armature, Effector
 
 
 class Orchestrator:
