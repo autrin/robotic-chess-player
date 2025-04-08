@@ -10,7 +10,7 @@ from ._joint_vector import JointVector
 class Armature:
     def __init__(self):
         moveit_commander.roscpp_initialize(sys.argv)
-        rospy.init_node(ROS_NODE_NAME, anonymous=True)
+        rospy.init_node(UR10E_ARM_NODE_NAME, anonymous=True)
 
         self.arm: moveit_commander.move_group.MoveGroupCommander
         self.arm = moveit_commander.MoveGroupCommander(ARMATURE_CMDR_GRP_NAME)
@@ -20,7 +20,7 @@ class Armature:
         self.arm.set_pose_reference_frame("base_link")
         self.arm.allow_replanning(True)
 
-    def move_to_posture(self, posture: JointVector):
+    def apply_joint_vector(self, posture: JointVector):
         self.arm.set_joint_value_target(posture.as_tuple())
         success = self.arm.go(wait=True)
 
