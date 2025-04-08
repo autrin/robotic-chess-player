@@ -31,8 +31,9 @@
   <node name="controller_spawner_main"
         pkg="controller_manager"
         type="spawner"
-        args="joint_state_controller eff_joint_traj_controller"
+        args="joint_state_controller pos_joint_traj_controller"
         output="screen"/>
+
 
   <node name="controller_spawner_hande"
         pkg="controller_manager"
