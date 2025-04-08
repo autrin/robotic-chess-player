@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.spatial.transform import Rotation
 
-from jh2.typealias import Vec2, Vec3
+from jh1.typealias import Vec2, Vec3
 
 
 class Transform3D:
