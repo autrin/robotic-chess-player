@@ -41,7 +41,14 @@ symbolic link exists, if not, then create it with:
 ```
 ln -s /path/to/project_root/jh_ur10e_hande/ catkin_ws/src/jh_ur10e_hande
 ```
-Note that the source path must be absolute in this case. 
+
+Note that the source path must be absolute in this case.
+
+The Hand-E gripper uses a GripperActionController, which needs to be installed:
+
+```
+sudo apt install ros-noetic-gripper-action-controller
+```
 
 Then remember to load the environment before usage:
 
@@ -105,7 +112,9 @@ catkin_make
 ```
 
 ### Install `jh1` as a python library
+
 In your virtual environment, run:
+
 ```
 pip install -e ./dev
 
