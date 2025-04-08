@@ -142,6 +142,20 @@ class GamePlayClass:
         rank = str(8 - num//8)
         return col+rank
 
+    # def chessCellPosToCellPos(self,cell):
+    #     # cell is a string like "a8" or "e4"
+    #     col_index = ord(cell[0]) - ord('a')       # Map 'a'-'h' to 0-7
+    #     row_index = 8 - int(cell[1])              # Map rank '8'-'1' to 0-7
+    #     return row_index * 8 + col_index
+
+    # def cellPosToChessCellPos(self,num):
+    #     # num is an integer between 0 and 63
+    #     row_index = num // 8                      # Row index 0-7 (0 is top row)
+    #     col_index = num % 8                       # Column index 0-7 (0 is left column)
+    #     file = chr(ord('a') + col_index)          # Convert column index back to letter
+    #     rank = str(8 - row_index)                 # Convert row index back to chess rank
+    #     return file + rank
+
     #need castling, en-passant, promotion
     #focus on the base cases for now
     def getOppMoveFromVisual(self,oppPieces):
