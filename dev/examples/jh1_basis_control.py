@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import rospy
 
-from jh2.orchestrator.robotics import Armature, Effector, JointVector
+from jh1.orchestrator.robotics import Armature, Effector, JointVector
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
     )
     robot.apply_joint_vector(reset_joint_vec)
 
-    # First pick and place
+    # First pick and place 
     pick_and_place(robot, gripper, pick_x=0.5, pick_y=0.2, drop_x=0.2, drop_y=0.5)
 
     # Second pick and place
