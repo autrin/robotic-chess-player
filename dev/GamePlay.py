@@ -13,85 +13,122 @@ class GamePlayClass:
         #assume robot will always play white by default
         
         #tagID: [pieceType,cellPos] pieceType == "x" if captured
-        # self.tagIDBlackPieces = { 
-        #     4 : ['p',8],
-        #     5 : ['p',9],
-        #     6 : ['p',10],
-        #     7 : ['p',11],
-        #     8 : ['p',12],
-        #     9 : ['p',13],
-        #     10 : ['p',14],
-        #     11 : ['p',15],
-        #     12 : ['r',0],
-        #     13 : ['n',1],
-        #     14 : ['b',2],
-        #     15 : ['q',3],
-        #     16 : ['k',4],
-        #     17 : ['b',5],
-        #     18 : ['n',6],
-        #     19 : ['r',7]
-        # }
-        # self.tagIDWhitePieces = { 
-        #     0 : ['P',48],
-        #     1 : ['P',49],
-        #     2 : ['P',50],
-        #     3 : ['P',51],
-        #     4 : ['P',52],
-        #     5 : ['P',53],
-        #     6 : ['P',54],
-        #     7 : ['P',55],
-        #     8 : ['R',56],
-        #     9 : ['N',57],
-        #     10 : ['B',58],
-        #     11 : ['Q',59],
-        #     12 : ['K',60],
-        #     13 : ['B',61],
-        #     14 : ['N',62],
-        #     15 : ['R',63]
-        # }
-        # For demo2
         self.tagIDBlackPieces = { 
-            4 : ['p',-1],
-            5 : ['p',-1],
-            6 : ['p',-1],
-            7 : ['p',-1],
-            8 : ['p',-1],
-            9 : ['p',-1],
-            10 : ['p',-1],
-            11 : ['p',-1],
-            12 : ['r',-1],
-            13 : ['n',-1],
-            14 : ['b',-1],
+            4 : ['p',8],
+            5 : ['p',9],
+            6 : ['p',10],
+            7 : ['p',11],
+            8 : ['p',12],
+            9 : ['p',13],
+            10 : ['p',14],
+            11 : ['p',15],
+            12 : ['r',0],
+            13 : ['n',1],
+            14 : ['b',2],
             15 : ['q',3],
-            16 : ['k',6],
-            17 : ['b',-1],
-            18 : ['n',-1],
-            19 : ['r',-1]
+            16 : ['k',4],
+            17 : ['b',5],
+            18 : ['n',6],
+            19 : ['r',7]
         }
         self.tagIDWhitePieces = { 
-            0 : ['P',-1],
-            1 : ['P',-1],
-            2 : ['P',-1],
-            3 : ['P',-1],
-            4 : ['P',-1],
-            5 : ['P',-1],
-            6 : ['P',-1],
-            7 : ['P',-1],
-            8 : ['R',-1],
-            9 : ['N',-1],
-            10 : ['B',-1],
-            12 : ['Q',57],
-            11 : ['K',60],
-            13 : ['B',-1],
-            14 : ['N',-1],
-            15 : ['R',-1]
+            0 : ['P',48],
+            1 : ['P',49],
+            2 : ['P',50],
+            3 : ['P',51],
+            4 : ['P',52],
+            5 : ['P',53],
+            6 : ['P',54],
+            7 : ['P',55],
+            8 : ['R',56],
+            9 : ['N',57],
+            10 : ['B',58],
+            11 : ['Q',59],
+            12 : ['K',60],
+            13 : ['B',61],
+            14 : ['N',62],
+            15 : ['R',63]
         }
+        # For demo2
+        # self.tagIDBlackPieces = { 
+        #     4 : ['p',-1],
+        #     5 : ['p',-1],
+        #     6 : ['p',-1],
+        #     7 : ['p',-1],
+        #     8 : ['p',-1],
+        #     9 : ['p',-1],
+        #     10 : ['p',-1],
+        #     11 : ['p',-1],
+        #     12 : ['r',-1],
+        #     13 : ['n',-1],
+        #     14 : ['b',-1],
+        #     15 : ['q',-1],
+        #     16 : ['k',-1],
+        #     17 : ['b',-1],
+        #     18 : ['n',-1],
+        #     19 : ['r',-1]
+        # }
+        # self.tagIDWhitePieces = { 
+        #     0 : ['P',-1],
+        #     1 : ['P',-1],
+        #     2 : ['P',-1],
+        #     3 : ['P',-1],
+        #     4 : ['P',-1],
+        #     5 : ['P',-1],
+        #     6 : ['P',-1],
+        #     7 : ['P',-1],
+        #     8 : ['R',-1],
+        #     9 : ['N',-1],
+        #     10 : ['B',-1],
+        #     12 : ['Q',-1],
+        #     11 : ['K',-1],
+        #     13 : ['B',-1],
+        #     14 : ['N',-1],
+        #     15 : ['R',-1]
+        # }
 
-        self.tagIDToMyPieces = None
-        self.tagIDToOppPieces = None
+        # self.tagIDBlackPieces = { 
+        #     4 : ['p',48],
+        #     5 : ['p',49],
+        #     6 : ['p',50],
+        #     7 : ['p',51],
+        #     8 : ['p',52],
+        #     9 : ['p',53],
+        #     10 : ['p',54],
+        #     11 : ['p',55],
+        #     12 : ['r',56],
+        #     13 : ['n',57],
+        #     14 : ['b',58],
+        #     15 : ['q',59],
+        #     16 : ['k',60],
+        #     17 : ['b',61],
+        #     18 : ['n',62],
+        #     19 : ['r',63]
+        # }
+        # self.tagIDWhitePieces = { 
+        #     0 : ['P',8],
+        #     1 : ['P',9],
+        #     2 : ['P',10],
+        #     3 : ['P',11],
+        #     4 : ['P',12],
+        #     5 : ['P',13],
+        #     6 : ['P',14],
+        #     7 : ['P',15],
+        #     8 : ['R',0],
+        #     9 : ['N',1],
+        #     10 : ['B',2],
+        #     11 : ['Q',3],
+        #     12 : ['K',4],
+        #     13 : ['B',5],
+        #     14 : ['N',6],
+        #     15 : ['R',7]
+        # }
+
+        #self.tagIDToMyPieces = self.tagIDBlackPieces
+        #self.tagIDToOppPieces = self.tagIDWhitePieces
         self.turn = "ai"
-        self.myPieceDetections = None
-        self.oppPieceDetections = None
+        self.myPieceDetections = self.tagIDWhitePieces
+        self.oppPieceDetections = self.tagIDBlackPieces
         self.HTfp = None
     
     def chessCellPosToCellPos(self,st):
@@ -122,12 +159,17 @@ class GamePlayClass:
             if self.tagIDToMyPieces[mp.tag_id][0] == "x": #ignore captured pieces
                 continue
             newPos = self.camera.getCellPosofPiece(int(mp.center[0]),int(mp.center[1]))
-            if self.tagIDToMyPieces[mp.tag_id%16][1] != newPos:
-                oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id%16][1])
+            if self.tagIDToMyPieces[mp.tag_id][1] != newPos:
+                oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id][1])
                 newCellString = self.cellPosToChessCellPos(newPos)
-                self.tagIDToMyPieces[mp.tag_id%16][1] = newPos
+                self.tagIDToMyPieces[mp.tag_id][1] = newPos
                 return oldCellString+newCellString
         return None
+    
+    def calibratePieces(self,myPieces, oppPieces):
+        self.getMyMoveFromVisual(myPieces)
+        self.getOppMoveFromVisual(oppPieces)
+
 
 
     #def markPieces(self,cells):
@@ -170,7 +212,7 @@ class GamePlayClass:
                 
                 if self.HTfp:
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,self.HTfp)
-                    #warpedFrame = cv2.resize(warpedFrame, (0, 0), fx = 0.1, fy = 0.1)
+                    
                     if warpedFrame is not None:
                         detections = self.camera.aprilDetector.detect(img=warpedFrame)
                         warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
