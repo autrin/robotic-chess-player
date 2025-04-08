@@ -298,7 +298,7 @@ class CameraFeedClass:
         myCenters = self.getCenterPositionofDetection(myDetections)
         for mc in myCenters:
             cv2.circle(frame,tuple(myCenters[mc]),3,(0,255,0),2)
-            cv2.putText(frame,callerClass.tagIDToMyPieces[mc%16][0],
+            cv2.putText(frame,callerClass.tagIDToMyPieces[mc][0],
                         tuple(myCenters[mc]),cv2.FONT_HERSHEY_PLAIN, 
                         2,(0,255,0),2)
         

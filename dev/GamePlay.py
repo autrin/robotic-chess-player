@@ -3,6 +3,7 @@ from CameraFeed import CameraFeedClass
 from ChessEngine import ChessEngineClass
 import cv2
 import mss
+import time
 import numpy as np
 #bridge between camera and chess engine
 class GamePlayClass:
@@ -58,14 +59,14 @@ class GamePlayClass:
             9 : ['p',-1],
             10 : ['p',-1],
             11 : ['p',-1],
-            12 : ['r',0],
-            13 : ['n',1],
+            12 : ['r',-1],
+            13 : ['n',-1],
             14 : ['b',-1],
             15 : ['q',3],
-            16 : ['k',4],
+            16 : ['k',6],
             17 : ['b',-1],
-            18 : ['n',6],
-            19 : ['r',7]
+            18 : ['n',-1],
+            19 : ['r',-1]
         }
         self.tagIDWhitePieces = { 
             0 : ['P',-1],
@@ -76,14 +77,14 @@ class GamePlayClass:
             5 : ['P',-1],
             6 : ['P',-1],
             7 : ['P',-1],
-            8 : ['R',56],
-            9 : ['N',57],
+            8 : ['R',-1],
+            9 : ['N',-1],
             10 : ['B',-1],
-            11 : ['Q',58],
-            12 : ['K',60],
+            12 : ['Q',57],
+            11 : ['K',60],
             13 : ['B',-1],
-            14 : ['N',62],
-            15 : ['R',63]
+            14 : ['N',-1],
+            15 : ['R',-1]
         }
 
         self.tagIDToMyPieces = None
@@ -129,6 +130,7 @@ class GamePlayClass:
         return None
 
 
+    #def markPieces(self,cells):
 
 
     def calibrate(self,computerScreen):
@@ -271,10 +273,11 @@ class GamePlayClass:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
             grayFrame = None
-            if not computerScreen:
-                grayFrame = self.camera.convertToTagDetectableImage(frame)
-            else: #computer screen, no need for 
-                grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            #if not computerScreen:
+            #    grayFrame = self.camera.convertToTagDetectableImage(frame)
+            #else: #computer screen, no need for 
+            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            
             cornerDetections = self.camera.aprilDetector.detect(img=grayFrame)
             
             #Every programmer's dream: just nest everything
@@ -308,10 +311,12 @@ class GamePlayClass:
                                 if self.turn == "ai":
                                     byPass = False #human move needs to be captured after ai's move
                                     if not aiMoved:
+                                        print(self.chessEngine.FEN)
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
                                     else:
                                         print("AI's desired move: " + move)
+                                        #print(self.chessEngine.FEN)
 
                                         
                                     #self.markCaptured("ai",move[2:])
@@ -321,6 +326,7 @@ class GamePlayClass:
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
                                         move = None
+
                                         
                                         #exit() #will exit if there is a difference (for debugging)
                                 
@@ -332,9 +338,11 @@ class GamePlayClass:
                                         byPass = True
                                     if move is not None:
                                         self.chessEngine.makeOppMove(move)
+                                        print(self.chessEngine.FEN)
                                         #self.markCaptured("human",move[2:])
                                         self.turn = "ai"
                                         print("opp move: " + move)
+                                        #time.sleep(1)
                                         move = None
                             
                                 cv2.imshow(f"warped",wfCopy)
