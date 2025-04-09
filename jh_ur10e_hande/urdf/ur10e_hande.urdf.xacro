@@ -6,7 +6,15 @@
   <xacro:include filename="$(find robotiq_description)/urdf/robotiq_hande_gripper.urdf.xacro"/>
 
   <xacro:robotiq_hande_gripper prefix="" parent="tool0">
-    <origin xyz="0 0 0.01" rpy="0 0 0"/>
+    <origin xyz="0 0 0.005" rpy="0 0 0"/>
   </xacro:robotiq_hande_gripper>
+  <gazebo>
+    <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+      <robotNamespace>/</robotNamespace>
+    </plugin>
+  </gazebo>
 
+  <gazebo reference="base_link">
+    <static>true</static>
+  </gazebo>
 </robot>
