@@ -3,17 +3,44 @@ import cv2
 import numpy as np
 import apriltag
 import FilePathFinder
+import math
 
-class CameraFeed:
+
+"""
+This script is designed to capture video from a camera, process the images to detect AprilTags 
+(fiducial markers), and use that information to infer the geometry of a chessboard.
+"""
+
+class CameraFeedClass:
     #use april tags
     def __init__(self,camID = 0):
         self.cam = None
         self.camID = camID
-        self.aprilDetector = apriltag.Detector()
+        self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+        self.whiteChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
+        self.blackChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+        self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
+        self.hasBeenCalibrated = False
+        self.chessBoardVertices = [] 
+        self.chessBoardCells = []
+        self.chessBoardResetCounter = 150
+        self.chessBoardResetCounterThreshold = 150    
+
+    def convertToTagDetectableImage(self, image):
+        grayFrame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
+        grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        grayFrame = clahe.apply(grayFrame)
+        grayFrame = self.adjust_gamma(grayFrame)
+        return grayFrame
+
 
         
-    #just changed name from campera to camera
     def openCamera(self):
+        """
+        Opens the camera using the specified camera ID.
+        Checks if the camera stream is available; if not, prints an error and exits.
+        """
         self.cam = cv2.VideoCapture(self.camID)
         if not self.cam.isOpened():
             print(f"ERROR: can't open camera id={self.camID}")
@@ -21,105 +48,314 @@ class CameraFeed:
     
     #this might be unnecessary
     def getCenterPositionofDetection(self,detections):
+        """
+        Returns a dictionary mapping each tag's ID to its center.
+        """
         centerMap = {}
         for d in detections:
-            centerMap[d.tag_id] = d.center.astype(int)
+            centerMap[d.tag_id] = d.center.astype(int) # For each tag, extracts its center coordinates (converted to integers).
         return centerMap
     
     def drawCenterCircleForTags(self, frame, centers):
-        for id in centers.keys():
-            print(centers[id])
-            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2)
-            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2)
+        for id in centers.keys(): # For every detected center
+            #print(centers[id])
+            cv2.circle(frame,tuple(centers[id]),3,(0,0,255),2) # Draws a small red circle on the frame at that position.
+            cv2.putText(frame,str(id),tuple(centers[id]),cv2.FONT_HERSHEY_PLAIN, 2,(0,0,255),2) # Puts the tag's ID next to the circle.
     
+
+    def calculateEuclidianDist(self, point0, point1):
+        """
+        Computes the Euclidean distance between two 2D points.
+        Uses basic distance formula to return an integer value.
+        """
+        return int(math.sqrt((int(point0[0])-int(point1[0]))*(int(point0[0])-int(point1[0])) 
+                        + (int(point0[1])-int(point1[1]))*(int(point0[1])-int(point1[1]))))
+
+    #returns real number. Do not convert the output of this function into an int. Only convert the final coordinate
+    def calculateSlope(self, point0, point1):
+        """
+        Computes the slope (rise over run) between two points.
+        Prints x-values for debugging.
+        Returns 0 if the x difference is zero to avoid division by zero.
+        """
+        #print(f"p0x = {point0[0]}, p1x = {point1[0]}")
+        if point0[0] - point1[0] == 0:
+            return 0
+        return (point0[1] - point1[1])/(point0[0] - point1[0])
+
     #logic for setting the boundaries of both the outer chess board and each square within the board
     #inputs might be off
-    #returns a pair of 2 lists- one containing the left edges and one containing the top edges
-    def set_chessboard_boundaries(self,detections):
+    def get_chessboard_boundaries(self,detections):
+        if detections is None:
+            return None
         
-        #within the detections[] array, 1,2, and 3 are all just arbitrary. As such, 
-        #we will need to fill the indices in with the 3 unique tags that correspond to the edges of the board
-        #TL = top left apriltag, TR = top right apriltag, BL = bottom left apriltag
-        (TL1,TL2,TL3,TL4) = detections[1].corners
-        (TR1,TR2,TR3,TR4) = detections[2].corners
-        (BL1,BL2,BL3,BL4) = detections[3].corners
+        idCounter = 0
+        for d in detections:
+            id = d.tag_id
+            if id == 0 or id == 1 or id == 2 or id == 3:
+                idCounter += 1
+        #print(idCounter)
+        if idCounter != 4:
+            return None
         
-        #For corners: It looks like the tags wind counterclockwise, but I could be wrong. 
-        #this assumes that the top left of each apriltag is the first corner
-        #TL3, TR2, and BL4 are the upper left, upper right, and bottom left points that match to the corners of the chessboard
-        #I am assuming the top left pixel of the image is 0,0 : x,y
-
-        boardTopWidth = TL3[0]-TR2[0] #width of the chess board in pixels(for use with calculating pixel locations of chess squares)
-
-        #renaming for ease of understanding
-        boardTopLeft = TL3
-        boardTopRight = TR2
-        boardBotLeft = BL4
-
-        chessSquareWidth = boardTopWidth/8 #should be int
-        #these next 8 x values are for each LEFT SIDE of the squares on the board,
-        #starting at the left edge of the chess board(1) and ending at the left edge of the rightmost square of the chess board(8)
-        leftEdge1 = TL3[0]
-        leftEdge2 = TL3[0] + chessSquareWidth
-        leftEdge3 = TL3[0] + chessSquareWidth*2
-        leftEdge4 = TL3[0] + chessSquareWidth*3
-        leftEdge5 = TL3[0] + chessSquareWidth*4
-        leftEdge6 = TL3[0] + chessSquareWidth*5
-        leftEdge7 = TL3[0] + chessSquareWidth*6
-        leftEdge8 = TL3[0] + chessSquareWidth*7
-
-        #these next 8 y values are for the TOP SIDE of the squares on the board,
-        #starting at the top edge of the chess board(1) and ending at the upper edge of the bottommost square of the chessboard(8)
-        topEdge1 = TL3[1]
-        topEdge2 = TL3[1] + chessSquareWidth
-        topEdge3 = TL3[1] + chessSquareWidth*2
-        topEdge4 = TL3[1] + chessSquareWidth*3
-        topEdge5 = TL3[1] + chessSquareWidth*4
-        topEdge6 = TL3[1] + chessSquareWidth*5
-        topEdge7 = TL3[1] + chessSquareWidth*6
-        topEdge8 = TL3[1] + chessSquareWidth*7
-
-        return ([leftEdge1,leftEdge2,leftEdge3,leftEdge4,leftEdge5,leftEdge6,leftEdge7,leftEdge8][topEdge1,topEdge2,topEdge3,topEdge4,topEdge5,topEdge6,topEdge7])
-
-
+        #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
+        TL = detections[0].corners
+        BL= detections[1].corners        
+        BR = detections[2].corners
+        TR = detections[3].corners
+        
+        TL = [int(TL[2][0]),int(TL[2][1])]
+        BL = [int(BL[1][0]),int(BL[1][1])]
+        BR = [int(BR[0][0]),int(BR[0][1])]
+        TR = [int(TR[3][0]), int(TR[3][1])]
+        return [TL, BL, BR, TR]
+    
+    def getHomoGraphicAppliedImage(self,sourceImage,fourPoints, refImg = None, ow = 900, oh = 800):
+        if not refImg:
+            refImg = self.referenceImage
+        
+        refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
+        refdi = cv2.resize(refdi, (0, 0), fx = 0.6, fy = 0.6)
+        refImgDetections = self.aprilDetector.detect(img=refdi)
+        #cv2.imshow(f"warped",refdi)
+        #return None
+        if not refImgDetections:
+            return None
+        
+        refImgPoints = self.get_chessboard_boundaries(refImgDetections)
+        
+        if not refImgPoints:
+            return None
+        
+        #cv2.imshow(f"warped",refdi)
+        source = np.float32(fourPoints)
+        ref = np.float32(refImgPoints)
+        #print(f"source == {source}")
+        mat = cv2.getPerspectiveTransform(source,ref)
+        return cv2.warpPerspective(sourceImage,mat,(ow,oh))
+    
+    def getAxesIntervalDots(self,TL,BL,BR):
+        width = self.calculateEuclidianDist(BL,BR)
+        height = self.calculateEuclidianDist(TL,BL)
+
+        x = np.linspace(0,width,9)
+        y = np.linspace(0,height,9)
+
+        # Uses np.meshgrid to create a grid (representing the chessboard squares).
+        mx,my = np.meshgrid(x,y)
+        
+    
+        return mx, my
+
+    
+    def plotBoardDots(self,frame,mx,my,TL):
+        #if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+        #        self.chessBoardVertices = []
+        counter = 0
+        for i in range(my.shape[0]):
+            for j in range(mx.shape[1]):
+                x = int(mx[i, j]) + TL[0]
+                y = int(my[i, j]) + TL[1]
+                if not self.hasBeenCalibrated:
+                    self.chessBoardVertices.append([x,y])
+                else:
+                    self.chessBoardVertices[counter][0] = x
+                    self.chessBoardVertices[counter][1] = y
+
+                counter += 1
+
+                cv2.circle(frame, (x, y), 3,(0, 0, 255), -1)
+        
+        #if self.chessBoardResetCounter == self.chessBoardResetCounterThreshold:
+        #self.chessBoardCells = []
+        #print(len(self.chessBoardVertices))
+        skipCounter = 0
+        counter = 0
+        for index in range(0,71):
+            if skipCounter == 8:
+                skipCounter = 0
+                continue
+
+            if not self.hasBeenCalibrated:
+                self.chessBoardCells.append({"TL": [self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]],
+                                        "TR": [self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]],
+                                        "BL": [self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]],
+                                        "BR": [self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]})
+                 
+            else:
+                self.chessBoardCells[counter]["TL"]=[self.chessBoardVertices[index][0],self.chessBoardVertices[index][1]]
+                self.chessBoardCells[counter]["TR"]=[self.chessBoardVertices[index+1][0],self.chessBoardVertices[index+1][1]]
+                self.chessBoardCells[counter]["BL"]=[self.chessBoardVertices[index+9][0],self.chessBoardVertices[index+9][1]]
+                self.chessBoardCells[counter]["BR"]=[self.chessBoardVertices[index+10][0],self.chessBoardVertices[index+10][1]]
+                 
+            counter += 1
+            skipCounter += 1
+            
+        if not self.hasBeenCalibrated:
+            self.hasBeenCalibrated = True
+        
+        counter = 0
+        for entry in self.chessBoardCells:
+            #print(f"cell{counter}")
+            #t = entry["BL"]
+            #print(f"BL={t}")
+            #t = entry["BR"]
+            #print(f"BR={t}")
+            #t = entry["TL"]
+            #print(f"TL={t}")
+            #t = entry["TR"]
+            #print(f"TR={t}")
+            #print()
+            counter += 1
+        
+
+        #print(len(self.chessBoardCells))
+        #self.chessBoardResetCounter = 0
+        #print("reset counter disabled")
+            
+       
+        
+    def getCellPosofPiece(self, pieceCenterX, pieceCenterY):
+        if len(self.chessBoardCells) > 0:
+            counter = 0
+            for c in range(0,len(self.chessBoardCells)):
+                cell = self.chessBoardCells[c]
+               
+                if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
+                    cell["BL"][1] >= pieceCenterY and cell["TL"][1] <= pieceCenterY:
+                    return c
+                
+        
+        return -1
+
+       
+
+    def drawLine(self, frame, p0,p1):
+        """
+        Draws a green line between two given points on the frame.
+        Useful for visualizing board boundaries or axes.
+        """
+        cv2.line(frame, p0, p1, color=(0, 255, 0), thickness=1)
+
+
+    #Get the april tags responsible for the board corners
+    def getChessBoardCorners(self,detections):
+        """
+        Filters the detected AprilTags to find those with IDs 0, 1, and 2.
+        These are assumed to be the corners of the chessboard.
+        If fewer than 3 are found, it prints a warning and returns None.
+        """
+        ret = []
+        
+        for d in detections:
+            if (d.tag_id == 0 or d.tag_id ==1 or d.tag_id ==2 or d.tag_id == 3) and d.tag_id not in ret:
+                ret.append(d)
+         
+        if len(ret) != 4:
+            print("Failed to detect all four corners, detecting april tags again")
+            return None
+        #sort the array
+        ret = sorted(ret,key=lambda x : x.tag_id)        
+        return ret
 
     def adjust_gamma(self,image, gamma=1.5):
+        """
+        Adjusts the gamma of the image to correct for lighting.
+        Builds a lookup table and applies it to the image using OpenCV's cv2.LUT.
+        """
         invGamma = 1.0 / gamma
         table = np.array([((i / 255.0) ** invGamma) * 255
                         for i in range(256)]).astype("uint8")
         return cv2.LUT(image, table)
+    
+    #for debugging
+    def drawAprilTagCorner(self, frame, detections, cornerPos):
+        """
+        For debugging: draws a circle at a specified corner (cornerPos) of each detected AprilTag.
+        This helps to verify the exact locations of tag corners.
+        """
+        for d in detections:
+            cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
-    def startLoop(self):
-        while True:
-            ret,frame = self.cam.read()
+    def drawPieces(self,frame,oppDetections, myDetections,callerClass,fp):
+        oppCenters = self.getCenterPositionofDetection(oppDetections)
+        for oc in oppCenters.keys():
+            continueFlag = False
+            for f in fp:
+                if oppCenters[oc][0] == f[0] or oppCenters[oc][1] == f[1]:
+                    continueFlag = True
+                    #print("found")
+                    #exit() #why this not working 
+                    break
+            if continueFlag:
+                continue
+            cv2.circle(frame,tuple(oppCenters[oc]),3,(255,0,0),2)
+            cv2.putText(frame,callerClass.tagIDToOppPieces[oc][0],
+                        tuple(oppCenters[oc]),cv2.FONT_HERSHEY_PLAIN, 
+                        2,(0,0,255),2)
             
-            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
-            
-            grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            grayFrame = clahe.apply(grayFrame)
-            grayFrame = self.adjust_gamma(grayFrame)
-            
-            detections = self.aprilDetector.detect(img=grayFrame)
+        myCenters = self.getCenterPositionofDetection(myDetections)
+        for mc in myCenters:
+            cv2.circle(frame,tuple(myCenters[mc]),3,(0,255,0),2)
+            cv2.putText(frame,callerClass.tagIDToMyPieces[mc%16][0],
+                        tuple(myCenters[mc]),cv2.FONT_HERSHEY_PLAIN, 
+                        2,(0,255,0),2)
+        
+
+    def drawBordersandDots(self,frame,detections,grayFrame=None):
+            if grayFrame is None:
+                grayFrame = frame
+
             centers = self.getCenterPositionofDetection(detections)
             self.drawCenterCircleForTags(frame,centers)
-            cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            cbc = self.getChessBoardCorners(detections)
+            if cbc:
+                corners = self.get_chessboard_boundaries(cbc)
+                mx,my = self.getAxesIntervalDots(corners[0],corners[1],corners[2])
+                self.plotBoardDots(frame,mx,my,corners[0])
+                self.drawLine(frame,corners[0],corners[1])
+                self.drawLine(frame,corners[1],corners[2])
+                #print("DRAWING")
+
+    # moved to GamePlay.py 
+    # def startLoop(self):
+    #     while True:
+    #         ret,frame = self.cam.read()
+            
+    #         grayFrame = self.convertToTagDetectableImage(frame)
+    #         detections = self.aprilDetector.detect(img=grayFrame)
+    #         #self.drawBordersandDots(frame,detections,grayFrame)
+            
+    #         if detections:
+    #             fp = self.get_chessboard_boundaries(detections)
+    #             if fp:
+    #                 warpedFrame = self.getHomoGraphicAppliedImage(grayFrame,fp)
+    #                 if warpedFrame is not None:
+    #                     detections = self.aprilDetector.detect(img=warpedFrame)
+    #                     warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+    #                     self.drawBordersandDots(warpedFrame,detections)
+    #                     cv2.imshow(f"warped",warpedFrame)
+
+
+    #         cv2.imshow(f"FEED Cam-ID = {self.camID}",frame)
+    #         if cv2.waitKey(1) & 0xFF == ord('q'):
+    #             break
+
 
    
 
     def destroyCameraFeed(self, destroyAllWindows=True):
+        """
+        Clean-Up Function
+        """
         self.cam.release()
-        if destroyAllWindows:
+        if destroyAllWindows: # Optionally closes all OpenCV windows.
             cv2.destroyAllWindows()
 
-
 if __name__ == "__main__":
-    ocr = CameraFeed(0)
-    ocr.openCamera()
-    ocr.startLoop()
-    
-    ocr.destroyCameraFeed()
-    
+    #ocr = CameraFeed(1)
+    #ocr.openCamera()
+    #ocr.startLoop()
+    print("CameraFeed.py")
+    #ocr.destroyCameraFeed()

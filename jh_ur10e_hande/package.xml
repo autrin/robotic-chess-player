@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>jh_ur10e_hande</name>
+  <version>0.0.0</version>
+  <description>The jh_ur10e_hande package</description>
+
+  <maintainer email="thanhm@iastate.edu">Thanh Mai</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>urdf</build_depend>
+  <build_depend>xacro</build_depend>
+  <build_export_depend>rospy</build_export_depend>
+  <build_export_depend>urdf</build_export_depend>
+  <build_export_depend>xacro</build_export_depend>
+  <exec_depend>rospy</exec_depend>
+  <exec_depend>urdf</exec_depend>
+  <exec_depend>xacro</exec_depend>
+
+  <depend>ur_description</depend>
+  <depend>robotiq_description</depend>
+
+  <export>
+  </export>
+</package>
