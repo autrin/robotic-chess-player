@@ -12,20 +12,45 @@ This script is designed to capture video from a camera, process the images to de
 """
 
 class CameraFeedClass:
-    #use april tags
-    def __init__(self,camID = 0):
+    #use april tags, mode := paper | block
+    def __init__(self,camID = 0,mode="paper"):
         self.cam = None
         self.camID = camID
-        self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
-        self.whiteChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
-        self.blackChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+        self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
+        #self.whiteChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
+        #self.blackChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
+        self.PieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9")) 
+        self.mode = mode
+        
         self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
         self.hasBeenCalibrated = False
         self.chessBoardVertices = [] 
         self.chessBoardCells = []
         self.chessBoardResetCounter = 150
-        self.chessBoardResetCounterThreshold = 150    
+        self.chessBoardResetCounterThreshold = 150  
+        self.previosBoard = [
+            list("rnbqkbnr"),
+            list("pppppppp"),
+            list("........"),
+            list("........"),
+            list("........"),
+            list("........"),
+            list("PPPPPPPP"),
+            list("RNBQKBNR")
+        ] 
 
+        self.currentBoard = [
+            list("rnbqkbnr"),
+            list("pppppppp"),
+            list("........"),
+            list("........"),
+            list("........"),
+            list("........"),
+            list("PPPPPPPP"),
+            list("RNBQKBNR")
+        ]  
+
+    
     def convertToTagDetectableImage(self, image):
         grayFrame = cv2.cvtColor(image,cv2.COLOR_BGR2GRAY)
         grayFrame = cv2.equalizeHist(grayFrame) #Boost contrast
@@ -100,10 +125,10 @@ class CameraFeedClass:
         
         #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
-        TL = detections[0].corners
-        BL= detections[1].corners        
-        BR = detections[2].corners
-        TR = detections[3].corners
+        TL = detections[3].corners
+        BL= detections[0].corners        
+        BR = detections[1].corners
+        TR = detections[2].corners
         
         TL = [int(TL[2][0]),int(TL[2][1])]
         BL = [int(BL[1][0]),int(BL[1][1])]
@@ -116,7 +141,7 @@ class CameraFeedClass:
             refImg = self.referenceImage
         
         refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
-        refdi = cv2.resize(refdi, (0, 0), fx = 0.6, fy = 0.6)
+        refdi = cv2.resize(refdi, (0, 0), fx = 0.4, fy = 0.4) #0.4
         refImgDetections = self.aprilDetector.detect(img=refdi)
         #cv2.imshow(f"warped",refdi)
         #return None
@@ -215,19 +240,23 @@ class CameraFeedClass:
         #print("reset counter disabled")
             
        
-        
-    def getCellPosofPiece(self, pieceCenterX, pieceCenterY):
-        if len(self.chessBoardCells) > 0:
-            counter = 0
+    #marks pieces on the currentboard
+    def markPieces(self, pieces, caller):
+        if len(self.chessBoardCells) > 0 and len(pieces) > 0:
             for c in range(0,len(self.chessBoardCells)):
-                cell = self.chessBoardCells[c]
-               
-                if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
-                    cell["BL"][1] >= pieceCenterY and cell["TL"][1] <= pieceCenterY:
-                    return c
-                
+                marked = False
+                for piece in pieces:
+                    pieceCenterX, pieceCenterY = piece.center.astype(int)
+                    cell = self.chessBoardCells[c]
+                    if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
+                        cell["BL"][1] >= pieceCenterY and cell["TL"][1] <= pieceCenterY:
+                        self.currentBoard[c//8][c%8] = caller.pieceMap[piece.tag_id]
+                        marked = True
+                if not marked:
+                    self.currentBoard[c//8][c%8] = '.'
+
+                    
         
-        return -1
 
        
 
@@ -249,8 +278,15 @@ class CameraFeedClass:
         ret = []
         
         for d in detections:
-            if (d.tag_id == 0 or d.tag_id ==1 or d.tag_id ==2 or d.tag_id == 3) and d.tag_id not in ret:
-                ret.append(d)
+            if self.mode == "paper" and \
+                (d.tag_id == 1 or d.tag_id == 2 or d.tag_id == 3 or d.tag_id == 4)\
+                and d.tag_id not in ret:
+                    ret.append(d)
+            elif self.mode == "block":
+                if (d.tag_id == 5 or d.tag_id == 6 or d.tag_id == 7 or d.tag_id == 8)\
+                and d.tag_id not in ret:
+                    ret.append(d)
+
          
         if len(ret) != 4:
             print("Failed to detect all four corners, detecting april tags again")
@@ -278,29 +314,27 @@ class CameraFeedClass:
         for d in detections:
             cv2.circle(frame,(int(d.corners[cornerPos][0]),int(d.corners[cornerPos][1])),3,(255,0,255),2)
 
-    def drawPieces(self,frame,oppDetections, myDetections,callerClass,fp):
-        oppCenters = self.getCenterPositionofDetection(oppDetections)
-        for oc in oppCenters.keys():
-            continueFlag = False
+    def drawPieces(self,frame,pieces,callerClass,fp):
+        
+        for pc in pieces:
+            cx,cy = pc.center.astype(int)
             for f in fp:
-                if oppCenters[oc][0] == f[0] or oppCenters[oc][1] == f[1]:
+                if cx <= f[0][0] or cx >= f[3][0] or cy <= f[0][1] or cy >= f[1][1]:
                     continueFlag = True
-                    #print("found")
-                    #exit() #why this not working 
                     break
             if continueFlag:
                 continue
-            cv2.circle(frame,tuple(oppCenters[oc]),3,(255,0,0),2)
-            cv2.putText(frame,callerClass.tagIDToOppPieces[oc][0],
-                        tuple(oppCenters[oc]),cv2.FONT_HERSHEY_PLAIN, 
-                        2,(0,0,255),2)
+
+            color = (0,255,0)
+            if pc.tag_id >= 20 and pc.tag_id <= 25:
+                color = (0,0,255)
             
-        myCenters = self.getCenterPositionofDetection(myDetections)
-        for mc in myCenters:
-            cv2.circle(frame,tuple(myCenters[mc]),3,(0,255,0),2)
-            cv2.putText(frame,callerClass.tagIDToMyPieces[mc%16][0],
-                        tuple(myCenters[mc]),cv2.FONT_HERSHEY_PLAIN, 
-                        2,(0,255,0),2)
+            cv2.circle(frame,cx,cy,3,color,2)
+            cv2.putText(frame,callerClass.pieceMap[pc.tag_id],
+                        cx,cy,cv2.FONT_HERSHEY_PLAIN, 
+                        2,color,2)
+            
+        
         
 
     def drawBordersandDots(self,frame,detections,grayFrame=None):
