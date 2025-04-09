@@ -13,119 +13,37 @@ class GamePlayClass:
         #assume robot will always play white by default
         
         #tagID: [pieceType,cellPos] pieceType == "x" if captured
-        self.tagIDBlackPieces = { 
-            4 : ['p',8],
-            5 : ['p',9],
-            6 : ['p',10],
-            7 : ['p',11],
-            8 : ['p',12],
-            9 : ['p',13],
-            10 : ['p',14],
-            11 : ['p',15],
-            12 : ['r',0],
-            13 : ['n',1],
-            14 : ['b',2],
-            15 : ['q',3],
-            16 : ['k',4],
-            17 : ['b',5],
-            18 : ['n',6],
-            19 : ['r',7]
-        }
-        self.tagIDWhitePieces = { 
-            0 : ['P',48],
-            1 : ['P',49],
-            2 : ['P',50],
-            3 : ['P',51],
-            4 : ['P',52],
-            5 : ['P',53],
-            6 : ['P',54],
-            7 : ['P',55],
-            8 : ['R',56],
-            9 : ['N',57],
-            10 : ['B',58],
-            11 : ['Q',59],
-            12 : ['K',60],
-            13 : ['B',61],
-            14 : ['N',62],
-            15 : ['R',63]
-        }
-        # For demo2
-        # self.tagIDBlackPieces = { 
-        #     4 : ['p',-1],
-        #     5 : ['p',-1],
-        #     6 : ['p',-1],
-        #     7 : ['p',-1],
-        #     8 : ['p',-1],
-        #     9 : ['p',-1],
-        #     10 : ['p',-1],
-        #     11 : ['p',-1],
-        #     12 : ['r',-1],
-        #     13 : ['n',-1],
-        #     14 : ['b',-1],
-        #     15 : ['q',-1],
-        #     16 : ['k',-1],
-        #     17 : ['b',-1],
-        #     18 : ['n',-1],
-        #     19 : ['r',-1]
-        # }
-        # self.tagIDWhitePieces = { 
-        #     0 : ['P',-1],
-        #     1 : ['P',-1],
-        #     2 : ['P',-1],
-        #     3 : ['P',-1],
-        #     4 : ['P',-1],
-        #     5 : ['P',-1],
-        #     6 : ['P',-1],
-        #     7 : ['P',-1],
-        #     8 : ['R',-1],
-        #     9 : ['N',-1],
-        #     10 : ['B',-1],
-        #     12 : ['Q',-1],
-        #     11 : ['K',-1],
-        #     13 : ['B',-1],
-        #     14 : ['N',-1],
-        #     15 : ['R',-1]
-        # }
 
-        # self.tagIDBlackPieces = { 
-        #     4 : ['p',48],
-        #     5 : ['p',49],
-        #     6 : ['p',50],
-        #     7 : ['p',51],
-        #     8 : ['p',52],
-        #     9 : ['p',53],
-        #     10 : ['p',54],
-        #     11 : ['p',55],
-        #     12 : ['r',56],
-        #     13 : ['n',57],
-        #     14 : ['b',58],
-        #     15 : ['q',59],
-        #     16 : ['k',60],
-        #     17 : ['b',61],
-        #     18 : ['n',62],
-        #     19 : ['r',63]
-        # }
-        # self.tagIDWhitePieces = { 
-        #     0 : ['P',8],
-        #     1 : ['P',9],
-        #     2 : ['P',10],
-        #     3 : ['P',11],
-        #     4 : ['P',12],
-        #     5 : ['P',13],
-        #     6 : ['P',14],
-        #     7 : ['P',15],
-        #     8 : ['R',0],
-        #     9 : ['N',1],
-        #     10 : ['B',2],
-        #     11 : ['Q',3],
-        #     12 : ['K',4],
-        #     13 : ['B',5],
-        #     14 : ['N',6],
-        #     15 : ['R',7]
-        # }
+        self.pieceMap = { 
+            #Black
+            20 : 'p',
+            21 : 'k',
+            22 : 'q',
+            23 : 'r',
+            24 : 'b',
+            25 : 'n',
 
-        #self.tagIDToMyPieces = self.tagIDBlackPieces
-        #self.tagIDToOppPieces = self.tagIDWhitePieces
+            #White
+            10 : 'P',
+            11 : 'K',
+            12 : 'Q',
+            13 : 'R',
+            14 : 'B',
+            15 : 'N',
+        }
+
+        # self.tagIDWhitePieces = { 
+        #     10 : 'P',
+        #     11 : 'K',
+        #     12 : 'Q',
+        #     13 : 'R',
+        #     14 : 'B',
+        #     15 : 'N',
+        # }
+        
+
+        
+        
         self.turn = "ai"
         self.myPieceDetections = self.tagIDWhitePieces
         self.oppPieceDetections = self.tagIDBlackPieces
@@ -142,51 +60,54 @@ class GamePlayClass:
         rank = str(8 - num//8)
         return col+rank
 
-    # def chessCellPosToCellPos(self,cell):
-    #     # cell is a string like "a8" or "e4"
-    #     col_index = ord(cell[0]) - ord('a')       # Map 'a'-'h' to 0-7
-    #     row_index = 8 - int(cell[1])              # Map rank '8'-'1' to 0-7
-    #     return row_index * 8 + col_index
+    def setCurrboard2PrevBoard(self):
+        for i in range(0,8):
+            for j in range(0,8):
+                self.camera.previosBoard[i][j] = self.camera.currentBoard[i][j]
+    #finds move 
+    def getmovestr(self,board_before, board_after):
+        source = None
+        destination = None
+        for i in range(8):
+            for j in range(8):
+                if board_before[i][j] != board_after[i][j]:
+                    if board_before[i][j] != '.' and board_after[i][j] == '.':
+                        source = (i, j)
+                    else:
+                        destination = (i,j)
 
-    # def cellPosToChessCellPos(self,num):
-    #     # num is an integer between 0 and 63
-    #     row_index = num // 8                      # Row index 0-7 (0 is top row)
-    #     col_index = num % 8                       # Column index 0-7 (0 is left column)
-    #     file = chr(ord('a') + col_index)          # Convert column index back to letter
-    #     rank = str(8 - row_index)                 # Convert row index back to chess rank
-    #     return file + rank
+                #does not consider special moves
+                if source is not None and destination is not None:
+                    break
+                    
+        if source is None or destination is None:
+            return None
+        
+        
+        sourceCell = source[0]*8 + source[1]
+        destCell = destination[0]*8 + destination[1]
+        source_alg = self.cellPosToChessCellPos(sourceCell)
+        dest_alg = self.cellPosToChessCellPos(destCell)
+        
+        return source_alg + dest_alg
 
-    #need castling, en-passant, promotion
-    #focus on the base cases for now
-    def getOppMoveFromVisual(self,oppPieces):
-        for op in oppPieces:
-            newPos = self.camera.getCellPosofPiece(int(op.center[0]),int(op.center[1]))
-            if self.tagIDToOppPieces[op.tag_id][1] != newPos:
-                oldCellString = self.cellPosToChessCellPos(self.tagIDToOppPieces[op.tag_id][1])
-                newCellString = self.cellPosToChessCellPos(newPos)
-                self.tagIDToOppPieces[op.tag_id][1] = newPos
-                return oldCellString+newCellString
-        return None
+   
 
-    def getMyMoveFromVisual(self,myPieces):
-        for mp in myPieces:
-            if self.tagIDToMyPieces[mp.tag_id][0] == "x": #ignore captured pieces
-                continue
-            newPos = self.camera.getCellPosofPiece(int(mp.center[0]),int(mp.center[1]))
-            if self.tagIDToMyPieces[mp.tag_id][1] != newPos:
-                oldCellString = self.cellPosToChessCellPos(self.tagIDToMyPieces[mp.tag_id][1])
-                newCellString = self.cellPosToChessCellPos(newPos)
-                self.tagIDToMyPieces[mp.tag_id][1] = newPos
-                return oldCellString+newCellString
-        return None
-    
     def calibratePieces(self,myPieces, oppPieces):
         self.getMyMoveFromVisual(myPieces)
         self.getOppMoveFromVisual(oppPieces)
 
-
-
-    #def markPieces(self,cells):
+    #returns whitepieces, blackpieces
+    def getWhiteBlackPieces(self,detections):
+        dw = []
+        db = []
+        for d in detections:
+            if d.tag_id >= 4 and d.tag_id <= 9:
+                dw.append(d)
+            else:
+                db.append(d)
+        return dw, db
+    
 
 
     def calibrate(self,computerScreen):
@@ -246,21 +167,11 @@ class GamePlayClass:
             whoGoesFirst = "ai" #dbg
             if whoGoesFirst == "ai":
                 self.chessEngine.side = "w"
-                self.tagIDToMyPieces = self.tagIDWhitePieces
-                self.tagIDToOppPieces = self.tagIDBlackPieces
                 self.turn = "ai"
-                self.myPieceDetections = self.camera.whiteChessPieceDetector
-                self.oppPieceDetections = self.camera.blackChessPieceDetector
                 break
             elif whoGoesFirst == "human":
                 self.chessEngine.side = "b"
-                self.tagIDToOppPieces = self.tagIDWhitePieces
-                self.tagIDToMyPieces = self.tagIDBlackPieces
                 self.turn = "human"
-                self.oppPieceDetections = self.camera.whiteChessPieceDetector 
-                self.myPieceDetections = self.camera.blackChessPieceDetector
-                
-
                 break
             else:
                 print("invalid input, try again\n")
@@ -275,39 +186,13 @@ class GamePlayClass:
         cv2.rectangle(gfCopy, (int(cornerDetections[3].corners[0][0]), int(cornerDetections[3].corners[0][1])), 
                         (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255,0,0), -1)
 
-    #is this really needed?
-    #en-passant rule
-    #Not really needed
-    # def markCaptured(self,side,dest):
-    #     cellNum = self.chessCellPosToCellPos(dest)
-    #     if side == "ai":
-    #         ep_square = self.chessEngine.board.ep_square
-    #         if ep_square is not None:
-    #             cell_name = self.chess.square_name(ep_square)
-
-    #         for k in self.tagIDToOppPieces.keys():
-    #             if dest == cell_name and\
-    #                self.cellPosToChessCellPos(self.tagIDToOppPieces[k][1])[1:]:
-
-    #             if self.tagIDToOppPieces[k][1] == cellNum:
-    #                 self.tagIDToOppPieces[k][0] = "x"
-    #                 return
-                
-            
-
-    #     else:
-    #         for k in self.tagIDToMyPieces.keys():
-    #             if self.tagIDToMyPieces[k][1] == cellNum:
-    #                 self.tagIDToMyPieces[k][0] = "x"
-    #                 return
-
     
     def play(self,computerScreen=False):
-        self.calibrate(computerScreen)
+        #self.calibrate(computerScreen)
         self.determine_side()
         self.camera.openCamera()
         aiMoved = False
-        oppMoved = None
+        #oppMoved = None
         move = None
         sct = None
         #moniotr = None 
@@ -336,62 +221,55 @@ class GamePlayClass:
             
             cornerDetections = self.camera.aprilDetector.detect(img=grayFrame)
             
-            #Every programmer's dream: just nest everything
+            
             if cornerDetections:
                 fp = self.camera.get_chessboard_boundaries(cornerDetections)
                 if fp:
                     gfCopy = grayFrame.copy()
-                    
                     self.mask4Corners(gfCopy,cornerDetections)
-                   
-
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
                     wfCopy = self.camera.getHomoGraphicAppliedImage(gfCopy,fp)
                     
                     if warpedFrame is not None:
-
-                        
                         cornerDetections2 = self.camera.aprilDetector.detect(img=warpedFrame)
                         fp2 = self.camera.get_chessboard_boundaries(cornerDetections2)
-                        #wfCopy = warpedFrame #dbg
+                        
                         if fp2:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
-                            myPieceDetections = self.myPieceDetections.detect(img=wfCopy)
-                            oppPieceDetections = self.oppPieceDetections.detect(img=wfCopy)
-
-                            #warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
+                            
+                            pieces = self.camera.PieceDetector.detect(img=wfCopy)
+                            
                             wfCopy = cv2.cvtColor(wfCopy,cv2.COLOR_GRAY2BGR)
-                            if myPieceDetections and oppPieceDetections:
-                                self.camera.drawPieces(wfCopy,oppPieceDetections,myPieceDetections,self,fp)
-                                
+                            if pieces:
+                                self.camera.markPieces(pieces,self)
+                                self.camera.drawPieces(wfCopy,pieces,self,fp2)
+                            
                                 if self.turn == "ai":
                                     byPass = False #human move needs to be captured after ai's move
                                     if not aiMoved:
-                                        print(self.chessEngine.FEN)
+                                        # print(self.chessEngine.FEN)
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
                                     else:
                                         print("AI's desired move: " + move)
-                                        #print(self.chessEngine.FEN)
+                                        input("press enter after robot makes the move")
 
-                                        
-                                    #self.markCaptured("ai",move[2:])
-                                    moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
+                                    
+                                    moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
                                         aiMoved = False
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
                                         move = None
-
-                                        
-                                        #exit() #will exit if there is a difference (for debugging)
-                                
+ 
+                                       
                                 elif self.turn == "human": 
-                                    #oppMoved = input("type \"a\" after making a move")
-                                    move = self.getOppMoveFromVisual(oppPieceDetections)
+                                    
+                                    move = self.self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
                                     if not byPass:
                                         input("press enter to register opp move")
                                         byPass = True
+                                        
                                     if move is not None:
                                         self.chessEngine.makeOppMove(move)
                                         print(self.chessEngine.FEN)
