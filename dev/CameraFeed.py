@@ -248,10 +248,13 @@ class CameraFeedClass:
                 for piece in pieces:
                     pieceCenterX, pieceCenterY = piece.center.astype(int)
                     cell = self.chessBoardCells[c]
-                    if cell["BL"][0] <= pieceCenterX and pieceCenterX <= cell["BR"][0] and \
-                        cell["BL"][1] >= pieceCenterY and cell["TL"][1] <= pieceCenterY:
-                        self.currentBoard[c//8][c%8] = caller.pieceMap[piece.tag_id]
-                        marked = True
+                    if cell["BL"][0] < pieceCenterX and pieceCenterX < cell["BR"][0] and \
+                        cell["BL"][1] < pieceCenterY and cell["TL"][1] > pieceCenterY:
+
+                        if c["TL"][0] < pieceCenterX and pieceCenterX < c["TR"][0] and\
+                            c["BL"][1] < pieceCenterY and pieceCenterY < c["TR"][1]:
+                            self.currentBoard[c//8][c%8] = caller.pieceMap[piece.tag_id]
+                            marked = True
                 if not marked:
                     self.currentBoard[c//8][c%8] = '.'
 
