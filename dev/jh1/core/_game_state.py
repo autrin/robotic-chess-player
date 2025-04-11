@@ -6,7 +6,7 @@ from ._engine import Engine
 from jh1.typealias import List2D
 
 
-class Gameplay:
+class GameState:
     """
     Handles gameplay logic including board state and integration with the engine.
     """
