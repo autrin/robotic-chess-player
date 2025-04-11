@@ -17,19 +17,19 @@ class GamePlayClass:
         self.pieceMap = { 
             #Black
             20 : 'p',
-            21 : 'k',
-            22 : 'q',
-            23 : 'r',
-            24 : 'b',
-            25 : 'n',
+            21 : 'r',
+            22 : 'n',
+            23 : 'b',
+            24 : 'q',
+            25 : 'k',
 
             #White
             10 : 'P',
-            11 : 'K',
-            12 : 'Q',
-            13 : 'R',
-            14 : 'B',
-            15 : 'N',
+            11 : 'R',
+            12 : 'N',
+            13 : 'B',
+            14 : 'Q',
+            15 : 'K',
         }
 
         # self.tagIDWhitePieces = { 
@@ -45,8 +45,8 @@ class GamePlayClass:
         
         
         self.turn = "ai"
-        self.myPieceDetections = self.tagIDWhitePieces
-        self.oppPieceDetections = self.tagIDBlackPieces
+        #self.myPieceDetections = self.tagIDWhitePieces
+        #self.oppPieceDetections = self.tagIDBlackPieces
         self.HTfp = None
     
     def chessCellPosToCellPos(self,st):
@@ -93,9 +93,9 @@ class GamePlayClass:
 
    
 
-    def calibratePieces(self,myPieces, oppPieces):
-        self.getMyMoveFromVisual(myPieces)
-        self.getOppMoveFromVisual(oppPieces)
+    #def calibratePieces(self,myPieces, oppPieces):
+        #self.getMyMoveFromVisual(myPieces)
+        #self.getOppMoveFromVisual(oppPieces)
 
     #returns whitepieces, blackpieces
     def getWhiteBlackPieces(self,detections):
@@ -120,7 +120,7 @@ class GamePlayClass:
         if computerScreen:
             sct = mss.mss()
             #monitor = sct.monitors[1]
-            region = {"top": 0, "left": 600, "width": 1200, "height": 1200}
+            region = {"top": 0, "left": 0, "width": 800, "height": 800}
 
 
         while True:
@@ -130,7 +130,6 @@ class GamePlayClass:
             else:
                 screenshot = sct.grab(region)
                 frame = np.array(screenshot)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
             grayFrame = None
             if not computerScreen:
@@ -190,7 +189,7 @@ class GamePlayClass:
     def play(self,computerScreen=False):
         #self.calibrate(computerScreen)
         self.determine_side()
-        self.camera.openCamera()
+        #self.camera.openCamera()
         aiMoved = False
         #oppMoved = None
         move = None
@@ -202,7 +201,7 @@ class GamePlayClass:
         if computerScreen:
             sct = mss.mss()
             #monitor = sct.monitors[1]
-            region = {"top": 0, "left": 600, "width": 1200, "height": 1200}
+            region = {"top": 0, "left": 0, "width": 1250, "height": 900}
 
         while True:
             frame = None
@@ -214,10 +213,10 @@ class GamePlayClass:
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
 
             grayFrame = None
-            #if not computerScreen:
-            #    grayFrame = self.camera.convertToTagDetectableImage(frame)
-            #else: #computer screen, no need for 
-            grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
+            if not computerScreen:
+                grayFrame = self.camera.convertToTagDetectableImage(frame)
+            else: #computer screen, no need for 
+                grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             
             cornerDetections = self.camera.aprilDetector.detect(img=grayFrame)
             
@@ -229,7 +228,7 @@ class GamePlayClass:
                     self.mask4Corners(gfCopy,cornerDetections)
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
                     wfCopy = self.camera.getHomoGraphicAppliedImage(gfCopy,fp)
-                    
+                    #print(f"warpedFrame = {warpedFrame}")
                     if warpedFrame is not None:
                         cornerDetections2 = self.camera.aprilDetector.detect(img=warpedFrame)
                         fp2 = self.camera.get_chessboard_boundaries(cornerDetections2)
@@ -238,10 +237,11 @@ class GamePlayClass:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
                             
                             pieces = self.camera.PieceDetector.detect(img=wfCopy)
-                            
+                            print(f"pieces = {pieces}")
                             wfCopy = cv2.cvtColor(wfCopy,cv2.COLOR_GRAY2BGR)
                             if pieces:
                                 self.camera.markPieces(pieces,self)
+                                
                                 self.camera.drawPieces(wfCopy,pieces,self,fp2)
                             
                                 if self.turn == "ai":
@@ -250,13 +250,19 @@ class GamePlayClass:
                                         # print(self.chessEngine.FEN)
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
-                                    else:
                                         print("AI's desired move: " + move)
                                         input("press enter after robot makes the move")
+                                    else:
+                                        print("AI's desired move: " + move)
+                                        #input("press enter after robot makes the move")
 
                                     
                                     moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+                                    if moveFromVisual is not None:
+                                        print(moveFromVisual)
+                                        exit()
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
+                                        
                                         aiMoved = False
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
