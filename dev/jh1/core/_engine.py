@@ -10,7 +10,6 @@ class Engine:
     Wrapper for the Stockfish chess engine.
     """
 
-
     def __init__(self, engine_path: str, *, search_depth: int = 12, force_elo: int = 1500,
                  opening_book_path: Optional[str] = None) -> None:
         """
@@ -26,7 +25,6 @@ class Engine:
         self.stockfish.set_elo_rating(force_elo)
         self.book_path = opening_book_path
 
-
     def set_position(self, fen: str) -> None:
         """
         Set the current position using a FEN string.
@@ -35,7 +33,6 @@ class Engine:
         """
         self.stockfish.set_fen_position(fen)
 
-
     def get_best_move(self) -> str:
         """
         Get the best move from the engine.
@@ -43,7 +40,6 @@ class Engine:
         :return: Move in UCI format.
         """
         return self.stockfish.get_best_move()
-
 
     def get_book_move(self, board: chess.Board) -> Optional[str]:
         """
@@ -62,3 +58,17 @@ class Engine:
                 return random.choice(entries).move().uci()
         except Exception:
             return None
+
+    def get_eval_score(self) -> Optional[float]:
+        """
+        Get the current evaluation score from the engine.
+
+        :return: Evaluation in pawns (positive for White, negative for Black), or None if unavailable.
+        """
+        info = self.stockfish.get_evaluation()
+        if info["type"] == "cp":
+            return info["value"] / 100.0
+        elif info["type"] == "mate":
+            sign = 1 if info["value"] > 0 else -1
+            return sign * 100.0  # convention for mate in N
+        return None
