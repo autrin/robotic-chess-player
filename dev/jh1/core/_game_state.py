@@ -43,6 +43,19 @@ class GameState:
         return self.board.fen()
 
 
+    def get_engine_move(self) -> Optional[str]:
+        """
+        Get the engine's move (opening book or computed), but do not play it.
+
+        :return: Move in UCI format, or None if no move found.
+        """
+        book_move = self.engine.get_book_move(self.board)
+        if book_move:
+            return book_move
+
+        return self.engine.get_best_move()
+
+
     def make_engine_move(self) -> str:
         """
         Make a move if it's the engine's turn. Raises otherwise.
@@ -52,13 +65,10 @@ class GameState:
         if self.board.turn != (chess.WHITE if self.engine_plays_white else chess.BLACK):
             raise RuntimeError("[Gameplay.make_engine_move()]: Not engine's turn")
 
-        book_move = self.engine.get_book_move(self.board)
-        if book_move:
-            self.board.push_uci(book_move)
-            self.engine.set_position(self.board.fen())
-            return book_move
+        move = self.get_engine_move()
+        if not move:
+            raise RuntimeError("[Gameplay.make_engine_move()]: Engine did not return a move")
 
-        move = self.engine.get_best_move()
         self.board.push_uci(move)
         self.engine.set_position(self.board.fen())
         return move
@@ -109,14 +119,7 @@ class GameState:
 
         :return: 8x8 list of piece symbols or '.' for empty squares.
         """
-        board_array: List2D[str] = [['.' for _ in range(8)] for _ in range(8)]
-        for square in chess.SQUARES:
-            piece = self.board.piece_at(square)
-            if piece:
-                row = 7 - (square // 8)
-                col = square % 8
-                board_array[row][col] = piece.symbol()
-        return board_array
+        return GameState._board_to_array(self.board)
 
 
     def print_board(self) -> None:
@@ -124,3 +127,37 @@ class GameState:
         Print the current board in ASCII format.
         """
         print(self.board)
+
+
+    def get_algebraic(self, uci: str) -> str:
+        try:
+            return self.board.san(chess.Move.from_uci(uci))
+        except AssertionError:
+            return "<Illegal>"
+
+
+    @staticmethod
+    def get_move_diff(game_state, new_board_array: List2D[str]) -> Optional[str]:
+        """
+        Determines the move that transitions the current board state (inside game_state)
+        to the new board state (new_board_array). Returns the move in UCI notation if found.
+        """
+        legal_moves = list(game_state.board.legal_moves)
+        for move in legal_moves:
+            tmp_board = game_state.board.copy()
+            tmp_board.push(move)
+            if GameState._board_to_array(tmp_board) == new_board_array:
+                return move.uci()
+        return None
+
+
+    @staticmethod
+    def _board_to_array(board: chess.Board) -> List2D[str]:
+        board_array: List2D[str] = [['.' for _ in range(8)] for _ in range(8)]
+        for square in chess.SQUARES:
+            piece = board.piece_at(square)
+            if piece:
+                row = 7 - (square // 8)
+                col = square % 8
+                board_array[row][col] = piece.symbol()
+        return board_array
