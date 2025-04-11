@@ -183,27 +183,40 @@ class CameraFeedClass:
         return [TL, BL, BR, TR]
 
     def getHomoGraphicAppliedImage(self, sourceImage, fourPoints, refImg=None, ow=1280, oh=720):
-        if not refImg:
+        if refImg is None:
             refImg = self.referenceImage
 
         refdi = cv2.cvtColor(refImg, cv2.COLOR_BGR2GRAY)
-        refdi = cv2.resize(refdi, (0, 0), fx=0.6, fy=0.6)  # 0.6 or 0.4
         refImgDetections = self.aprilDetector.detect(img=refdi)
-        # print(f"refIMG = {len(refImgDetections)}")
         if not refImgDetections:
-            return None
+            return None, None
 
         refImgPoints = self.get_chessboard_boundaries(refImgDetections)
-
         if not refImgPoints:
-            return None
+            return None, None
 
-        # cv2.imshow(f"warped",refdi)
         source = np.float32(fourPoints)
         ref = np.float32(refImgPoints)
-        # print(f"source == {source}")
+
         mat = cv2.getPerspectiveTransform(source, ref)
-        return cv2.warpPerspective(sourceImage, mat, (ow, oh))
+        warped = cv2.warpPerspective(sourceImage, mat, (ow, oh))
+        return warped, mat
+
+    def transform_detections(self, detections, H):
+        transformed = []
+
+        for d in detections:
+            if isinstance(d, tuple):
+                tag_id = d[0][0]
+                center = np.array([d[2][0], d[2][1], 1.0])
+            else:
+                tag_id = d.tag_id
+                center = np.array([d.center[0], d.center[1], 1.0])
+
+            warped_center = H @ center
+            warped_center /= warped_center[2]
+            transformed.append((tag_id, warped_center[:2]))
+        return transformed
 
     def getAxesIntervalDots(self, TL, BL, BR):
         width = self.calculateEuclidianDist(BL, BR)
@@ -313,6 +326,24 @@ class CameraFeedClass:
 
                 if not marked:
                     self.currentBoard[c // 8][c % 8] = '.'
+
+    def markPiecesTransformed(self, transformed_tags, caller):
+        if len(self.chessBoardCells) == 0:
+            return
+
+        for c, cell in enumerate(self.chessBoardCells):
+            marked = False
+            for tag_id, center in transformed_tags:
+                x, y = center.astype(int)
+                if cell["BL"][0] < x < cell["BR"][0] and cell["TL"][1] < y < cell["BR"][1]:
+                    if tag_id in caller.pieceMap:
+                        self.currentBoard[c // 8][c % 8] = caller.pieceMap[tag_id]
+                        self.pieceCounter[c // 8][c % 8] += 1
+                        marked = True
+                        break
+            if not marked:
+                self.currentBoard[c // 8][c % 8] = '.'
+
 
     def drawLine(self, frame, p0, p1):
         """

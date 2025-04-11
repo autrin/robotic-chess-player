@@ -186,122 +186,159 @@ class GamePlayClass:
                       (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255, 0, 0), -1)
 
     def play(self, computerScreen=False):
-        # self.calibrate(computerScreen)
         self.determine_side()
         self.camera.openCamera()
-        aiMoved = False
-        # oppMoved = None
-        move = None
-        sct = None
-        # moniotr = None
-        region = None
-        byPass = False
 
+        sct, region = None, None
         if computerScreen:
             sct = mss.mss()
-            # monitor = sct.monitors[1]
-            region = {"top": 0, "left": 0, "width": 1280, "height": 720}
+            region = {"top": 0, "left": 0, "width": 1250, "height": 900}
+
+        aiMoved = False
+        move = None
+        byPass = False
 
         while True:
-            frame = None
-            if not computerScreen:
-                ret, frame = self.camera.cam.read()  # for webcam
-            else:
-                screenshot = sct.grab(region)
-                frame = np.array(screenshot)
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+            # --- FRAME ACQUISITION ---
+            frame = self._get_frame_from_source(computerScreen, sct, region)
+            gray = self._get_gray_frame_from_source(frame, computerScreen)
 
-            grayFrame = None
-            if not computerScreen:
-                grayFrame = self.camera.convertToTagDetectableImage(frame)
-            else:  # computer screen, no need for
-                grayFrame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-            cornerDetections = self.camera.detectPlz(grayFrame, self.camera.aprilDetector)
-            for cluster_ids, count, center in cornerDetections:
-                text = f"{cluster_ids} {count / 60:.0%}"
-                center_int = (int(center[0]), int(center[1]))
-                cv2.putText(frame, text, center_int, cv2.FONT_HERSHEY_SIMPLEX,
-                            0.4, (10, 10, 100 + (count / 60) * 150), 1, cv2.LINE_AA)
-            cv2.imshow(f"FEED Cam-ID = {self.camera.camID}", frame)
-            if cornerDetections:
-                fp = self.camera.get_chessboard_boundaries(cornerDetections)
-                if fp:
-                    gfCopy = grayFrame.copy()
-                    # self.mask4Corners(gfCopy,cornerDetections)
-                    warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame, fp)
-                    wfCopy = self.camera.getHomoGraphicAppliedImage(gfCopy, fp)
-                    # print(f"warpedFrame = {warpedFrame}")
-                    if warpedFrame is not None:
-                        cornerDetections2 = self.camera.detectPlz(warpedFrame, self.camera.aprilDetector)
-                        fp2 = self.camera.get_chessboard_boundaries(cornerDetections2)
-
-                        if fp2:
-                            self.camera.drawBordersandDots(warpedFrame, cornerDetections2)
-
-                            pieces = cornerDetections2
-                            # print(f"pieces = {pieces}")
-                            wfCopy = cv2.cvtColor(wfCopy, cv2.COLOR_GRAY2BGR)
-                            if pieces:
-                                # self.camera.drawBordersandDots(wfCopy,cornerDetections2)
-
-                                self.camera.markPieces(pieces, self)
-                                # self.camera.drawPieces(wfCopy,pieces,self,fp2)
-                                print("\n".join(["".join(rank) for rank in self.camera.currentBoard]))
-
-                                if self.turn == "ai":
-                                    byPass = False  # human move needs to be captured after ai's move
-                                    if not aiMoved:
-                                        # print(self.chessEngine.FEN)
-                                        move = self.chessEngine.makeAIMove()
-                                        aiMoved = True
-                                        print("AI's desired move: " + move)
-                                        input("press enter after robot makes the move")
-                                    else:
-                                        print("AI's desired move: " + move)
-                                        # input("press enter after robot makes the move")
-
-                                    moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
-                                    # if moveFromVisual is not None:
-                                    # print(moveFromVisual)
-                                    # exit()
-                                    if moveFromVisual is not None and move == moveFromVisual:  # add promotion rule as well?
-                                        aiMoved = False
-                                        self.turn = "human"
-                                        print("AI move validated: " + moveFromVisual)
-                                        move = None
-                                        self.setCurrboard2PrevBoard()
-                                        self.camera.resetCounters()
-
-
-                                elif self.turn == "human":
-
-                                    move = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
-                                    if not byPass:
-                                        input("press enter to register opp move")
-                                        byPass = True
-
-                                    if move is not None:
-                                        self.chessEngine.makeOppMove(move)
-                                        print(self.chessEngine.FEN)
-                                        # self.markCaptured("human",move[2:])
-                                        self.turn = "ai"
-                                        print("opp move: " + move)
-                                        # time.sleep(1)
-                                        move = None
-                                        self.setCurrboard2PrevBoard()
-                                        self.camera.resetCounters()
-
-                        #         cv2.imshow(f"warped", wfCopy)
-                        # cv2.imshow(f"wf", warpedFrame)
-                        # cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
+            # --- APRILTAG DETECTION ---
+            detections = self.camera.detectPlz(gray, self.camera.aprilDetector)
+            fp = self.camera.get_chessboard_boundaries(detections)
+            if not fp:
+                cv2.imshow(f"FEED Cam-ID = {self.camera.camID}", frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
-            # Draw cluster metadata (id array and count)
+                continue
+
+            # --- APPLY HOMOGRAPHY TO FRAME + PIECE CENTERS ---
+            warped_gray, H = self.camera.getHomoGraphicAppliedImage(gray, fp)
+            if warped_gray is None or H is None:
+                continue
+
+            transformed_pieces = self.camera.transform_detections(detections, H)
+            self.camera.markPiecesTransformed(transformed_pieces, self)
+            # --- DRAW TAG METADATA ON WARPED FRAME ---
+            for tag_id, warped_center in transformed_pieces:
+                cx, cy = int(warped_center[0]), int(warped_center[1])
+                text = f"{tag_id}"
+                cv2.putText(warped_gray, text, (cx, cy), cv2.FONT_HERSHEY_SIMPLEX,
+                            0.4, (255, 255, 255), 1, cv2.LINE_AA)
+
+            print("\n".join(["".join(rank) for rank in self.camera.currentBoard]))
+
+            # --- GAME LOGIC ---
+            if self.turn == "ai":
+                if not aiMoved:
+                    move = self.chessEngine.makeAIMove()
+                    aiMoved = True
+                    print("AI's desired move: " + move)
+                    input("Press enter after robot makes the move")
+                else:
+                    print("AI's desired move: " + move)
+
+                moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+                if moveFromVisual and move == moveFromVisual:
+                    print("AI move validated: " + moveFromVisual)
+                    aiMoved = False
+                    move = None
+                    self.turn = "human"
+                    self.setCurrboard2PrevBoard()
+                    self.camera.resetCounters()
+
+            elif self.turn == "human":
+                move = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+                if not byPass:
+                    input("Press enter to register human move")
+                    byPass = True
+
+                if move:
+                    print("Human move: " + move)
+                    self.chessEngine.makeOppMove(move)
+                    print("FEN after human move:", self.chessEngine.FEN)
+                    self.turn = "ai"
+                    move = None
+                    self.setCurrboard2PrevBoard()
+                    self.camera.resetCounters()
+                    byPass = False
+
+            # --- DISPLAY ---
+            display = cv2.cvtColor(warped_gray, cv2.COLOR_GRAY2BGR)
+            self.camera.drawBordersandDots(display, detections, grayFrame=warped_gray)
+            cv2.imshow("Warped Board View", display)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
         self.camera.destroyCameraFeed()
-        if computerScreen:
+        if sct:
             sct.close()
+
+    def _get_frame_from_source(self, computerScreen, sct, region):
+        if not computerScreen:
+            ret, frame = self.camera.cam.read()
+            return frame
+        else:
+            screenshot = sct.grab(region)
+            return cv2.cvtColor(np.array(screenshot), cv2.COLOR_BGRA2BGR)
+
+    def _get_gray_frame_from_source(self, frame, computerScreen):
+        if not computerScreen:
+            return self.camera.convertToTagDetectableImage(frame)
+        else:
+            return cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+    def _get_frame(self, sct, region, computerScreen):
+        if not computerScreen:
+            ret, frame = self.camera.cam.read()
+        else:
+            screenshot = sct.grab(region)
+            frame = np.array(screenshot)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
+        return frame
+
+    def _get_gray_frame(self, frame, computerScreen):
+        return (cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                if computerScreen else self.camera.convertToTagDetectableImage(frame))
+
+    def _check_quit(self):
+        return cv2.waitKey(1) & 0xFF == ord('q')
+
+    def _show_frame(self, frame):
+        cv2.imshow(f"FEED Cam-ID = {self.camera.camID}", frame)
+
+    def _handle_ai_turn(self, aiMoved, move):
+        if not aiMoved:
+            move = self.chessEngine.makeAIMove()
+            print("AI's desired move: " + move)
+            input("press enter after robot makes the move")
+        else:
+            print("AI's desired move: " + move)
+
+        visualMove = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+        if visualMove and move == visualMove:
+            self.turn = "human"
+            self.setCurrboard2PrevBoard()
+            self.camera.resetCounters()
+            print("AI move validated: " + visualMove)
+            return None
+        return move
+
+    def _handle_human_turn(self, byPass):
+        move = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+        if not byPass:
+            input("press enter to register opponent's move")
+
+        if move:
+            self.chessEngine.makeOppMove(move)
+            print("Opponent move: " + move)
+            print(self.chessEngine.FEN)
+            self.turn = "ai"
+            self.setCurrboard2PrevBoard()
+            self.camera.resetCounters()
+            return None
+        return move
 
 
 if __name__ == "__main__":
