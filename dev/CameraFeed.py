@@ -13,7 +13,7 @@ This script is designed to capture video from a camera, process the images to de
 
 class CameraFeedClass:
     #use april tags, mode := paper | block
-    def __init__(self,camID = 0,mode="paper"):
+    def __init__(self,camID = 0,mode="block"):
         self.cam = None
         self.camID = camID
         self.aprilDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
@@ -69,7 +69,7 @@ class CameraFeedClass:
         self.cam = cv2.VideoCapture(self.camID)
         if not self.cam.isOpened():
             print(f"ERROR: can't open camera id={self.camID}")
-            exit()
+            #exit()
     
     #this might be unnecessary
     def getCenterPositionofDetection(self,detections):
@@ -114,18 +114,13 @@ class CameraFeedClass:
         if detections is None:
             return None
         
-        idCounter = 0
-        for d in detections:
-            id = d.tag_id
-            if id == 0 or id == 1 or id == 2 or id == 3:
-                idCounter += 1
-        #print(idCounter)
-        if idCounter != 4:
+        detections = self.getChessBoardCorners(detections)
+        if detections is None or len(detections) < 4:
             return None
         
         #TL = top left apriltag, BR = bottom right apriltag, BL = bottom left apriltag ...
         
-        TL = detections[3].corners
+        TL = detections[3].corners 
         BL= detections[0].corners        
         BR = detections[1].corners
         TR = detections[2].corners
@@ -136,15 +131,14 @@ class CameraFeedClass:
         TR = [int(TR[3][0]), int(TR[3][1])]
         return [TL, BL, BR, TR]
     
-    def getHomoGraphicAppliedImage(self,sourceImage,fourPoints, refImg = None, ow = 900, oh = 800):
+    def getHomoGraphicAppliedImage(self,sourceImage,fourPoints, refImg = None, ow = 1250, oh = 900):
         if not refImg:
             refImg = self.referenceImage
         
         refdi = cv2.cvtColor(refImg,cv2.COLOR_BGR2GRAY)
-        refdi = cv2.resize(refdi, (0, 0), fx = 0.4, fy = 0.4) #0.4
+        refdi = cv2.resize(refdi, (0, 0), fx = 0.6, fy = 0.6) #0.6 or 0.4
         refImgDetections = self.aprilDetector.detect(img=refdi)
-        #cv2.imshow(f"warped",refdi)
-        #return None
+        #print(f"refIMG = {len(refImgDetections)}")
         if not refImgDetections:
             return None
         
@@ -281,6 +275,7 @@ class CameraFeedClass:
         ret = []
         
         for d in detections:
+            #print(d.tag_id)
             if self.mode == "paper" and \
                 (d.tag_id == 1 or d.tag_id == 2 or d.tag_id == 3 or d.tag_id == 4)\
                 and d.tag_id not in ret:
@@ -288,9 +283,10 @@ class CameraFeedClass:
             elif self.mode == "block":
                 if (d.tag_id == 5 or d.tag_id == 6 or d.tag_id == 7 or d.tag_id == 8)\
                 and d.tag_id not in ret:
+                    print(d.tag_id)
                     ret.append(d)
-
-         
+        
+        #print("")
         if len(ret) != 4:
             print("Failed to detect all four corners, detecting april tags again")
             return None
@@ -321,20 +317,17 @@ class CameraFeedClass:
         
         for pc in pieces:
             cx,cy = pc.center.astype(int)
-            for f in fp:
-                if cx <= f[0][0] or cx >= f[3][0] or cy <= f[0][1] or cy >= f[1][1]:
-                    continueFlag = True
-                    break
-            if continueFlag:
+            
+            if cx <= fp[0][0] or cx >= fp[3][0] or cy <= fp[0][1] or cy >= fp[1][1]:
                 continue
 
             color = (0,255,0)
             if pc.tag_id >= 20 and pc.tag_id <= 25:
                 color = (0,0,255)
             
-            cv2.circle(frame,cx,cy,3,color,2)
+            cv2.circle(frame,(cx,cy),3,color,2)
             cv2.putText(frame,callerClass.pieceMap[pc.tag_id],
-                        cx,cy,cv2.FONT_HERSHEY_PLAIN, 
+                        (cx,cy),cv2.FONT_HERSHEY_PLAIN, 
                         2,color,2)
             
         
