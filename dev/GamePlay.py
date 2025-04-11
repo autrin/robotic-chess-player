@@ -69,15 +69,19 @@ class GamePlayClass:
         source = None
         destination = None
         for i in range(8):
+            breakOuter = False
             for j in range(8):
                 if board_before[i][j] != board_after[i][j]:
                     if board_before[i][j] != '.' and board_after[i][j] == '.':
                         source = (i, j)
-                        for k in range(8):
-                            print(board_after[k])
-                        #exit()
                     else:
                         destination = (i,j)
+                    
+                if source is not None and destination is not None:
+                    breakOuter = True
+                    break
+            if breakOuter:
+                break
                         
                         
                     
@@ -121,7 +125,7 @@ class GamePlayClass:
         if computerScreen:
             sct = mss.mss()
             #monitor = sct.monitors[1]
-            region = {"top": 0, "left": 0, "width": 800, "height": 800}
+            region = {"top": 0, "left": 0, "width": 1920, "height": 1080}
 
 
         while True:
@@ -139,7 +143,8 @@ class GamePlayClass:
                 grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             
             #grayFrame = self.camera.convertToTagDetectableImage(frame)
-            detections = self.camera.aprilDetector.detect(img=grayFrame)
+            detections = self.camera.aprilDetector.detect(grayFrame)
+            
             #self.drawBordersandDots(frame,detections,grayFrame)
             
             if detections:
@@ -149,7 +154,8 @@ class GamePlayClass:
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,self.HTfp)
                     
                     if warpedFrame is not None:
-                        detections = self.camera.aprilDetector.detect(img=warpedFrame)
+                        detections = self.camera.detectPlz(warpedFrame,self.camera.aprilDetector)
+                        #self.camera.aprilDetector.detect(img=warpedFrame)
                         warpedFrame = cv2.cvtColor(warpedFrame,cv2.COLOR_GRAY2BGR)
                         self.camera.drawBordersandDots(warpedFrame,detections)
                         cv2.imshow(f"hit c to end calibration",warpedFrame)
@@ -177,6 +183,7 @@ class GamePlayClass:
                 print("invalid input, try again\n")
 
     def mask4Corners(self, gfCopy,cornerDetections):
+        
         cv2.rectangle(gfCopy, (int(cornerDetections[0].corners[0][0]), int(cornerDetections[0].corners[0][1])), 
                                   (int(cornerDetections[0].corners[2][0]), int(cornerDetections[0].corners[2][1])), (255,0,0), -1)           
         cv2.rectangle(gfCopy, (int(cornerDetections[1].corners[0][0]), int(cornerDetections[1].corners[0][1])), 
@@ -219,31 +226,33 @@ class GamePlayClass:
             else: #computer screen, no need for 
                 grayFrame = cv2.cvtColor(frame,cv2.COLOR_BGR2GRAY)
             
-            cornerDetections = self.camera.aprilDetector.detect(img=grayFrame)
+            cornerDetections = self.camera.detectPlz(grayFrame,self.camera.aprilDetector)
             
             
             if cornerDetections:
                 fp = self.camera.get_chessboard_boundaries(cornerDetections)
                 if fp:
                     gfCopy = grayFrame.copy()
-                    self.mask4Corners(gfCopy,cornerDetections)
+                    #self.mask4Corners(gfCopy,cornerDetections)
                     warpedFrame = self.camera.getHomoGraphicAppliedImage(grayFrame,fp)
                     wfCopy = self.camera.getHomoGraphicAppliedImage(gfCopy,fp)
                     #print(f"warpedFrame = {warpedFrame}")
                     if warpedFrame is not None:
-                        cornerDetections2 = self.camera.aprilDetector.detect(img=warpedFrame)
+                        cornerDetections2 = self.camera.detectPlz(warpedFrame,self.camera.aprilDetector)
                         fp2 = self.camera.get_chessboard_boundaries(cornerDetections2)
                         
                         if fp2:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
                             
-                            pieces = self.camera.PieceDetector.detect(img=wfCopy)
+                            pieces = cornerDetections2
                             #print(f"pieces = {pieces}")
                             wfCopy = cv2.cvtColor(wfCopy,cv2.COLOR_GRAY2BGR)
                             if pieces:
-                                self.camera.drawBordersandDots(wfCopy,cornerDetections2)
+                                #self.camera.drawBordersandDots(wfCopy,cornerDetections2)
+
                                 self.camera.markPieces(pieces,self)
-                                self.camera.drawPieces(wfCopy,pieces,self,fp2)
+                                #self.camera.drawPieces(wfCopy,pieces,self,fp2)
+                                print(self.camera.currentBoard)
                             
                                 if self.turn == "ai":
                                     byPass = False #human move needs to be captured after ai's move
@@ -268,6 +277,7 @@ class GamePlayClass:
                                         print("AI move validated: " + moveFromVisual)
                                         move = None
                                         self.setCurrboard2PrevBoard()
+                                        self.camera.resetCounters()
  
                                        
                                 elif self.turn == "human": 
@@ -286,6 +296,7 @@ class GamePlayClass:
                                         #time.sleep(1)
                                         move = None
                                         self.setCurrboard2PrevBoard()
+                                        self.camera.resetCounters()
                             
                                 cv2.imshow(f"warped",wfCopy)
                         cv2.imshow(f"wf",warpedFrame)                
