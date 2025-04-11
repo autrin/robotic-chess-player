@@ -13,8 +13,8 @@ detector = apriltag.Detector(
     decode_sharpening=0.2,
 )
 
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1600)
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 900)
+cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
 n_perturbs = 60
 
@@ -40,12 +40,12 @@ def find_april_tags(img, detector, n_random=n_perturbs):
     for _ in range(n_random):
         # Generate small random perturbations:
         angle = np.random.uniform(-180, 180)  # degrees
-        scale = np.random.uniform(0.8, 1.2)
+        scale = np.random.uniform(0.9, 1.1)
         shear = np.random.uniform(-0.4, 0.4)  # shear factor (skew)
         tx = np.random.uniform(-80, 80)  # translation in x (pixels)
         ty = np.random.uniform(-80, 80)  # translation in y (pixels)
-        brightness = np.random.uniform(-60, 60)  # brightness adjustment
-        contrast = np.random.uniform(0.3, 3.0)  # contrast adjustment
+        brightness = np.random.uniform(-40, 40)  # brightness adjustment
+        contrast = np.random.uniform(0.5, 2.0)  # contrast adjustment
 
         # Build the transformation matrices (in homogeneous coordinates)
         theta = np.deg2rad(angle)
@@ -138,7 +138,7 @@ def count_clusters(detections, radius=16):
         cluster_center = np.mean(cluster_pts, axis=0)
         clusters.append((cluster_ids, len(cluster_pts), (float(cluster_center[0]), float(cluster_center[1]))))
 
-    return clusters
+    return [c for c in clusters if c[1] > 1]  # Only get clusters with at least 2 supporting detections
 
 
 
@@ -166,10 +166,10 @@ while True:
 
     # Draw cluster metadata (id array and count)
     for cluster_ids, count, center in cluster_counts:
-        text = f"{count / n_perturbs:.0%}"
+        text = f"{cluster_ids} {count / n_perturbs:.0%}"
         center_int = (int(center[0]), int(center[1]))
         cv2.putText(frame, text, center_int, cv2.FONT_HERSHEY_SIMPLEX,
-                    0.75, (10 + (count / n_perturbs) * 100, 10, 100 + (count / n_perturbs) * 150), 2, cv2.LINE_AA)
+                    0.4, (10, 10, 100 + (count / n_perturbs) * 150), 1, cv2.LINE_AA)
 
     cv2.imshow("AprilTags", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
