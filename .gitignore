@@ -180,3 +180,5 @@ stockfish
 paths.csv
 dev/__pycache__
 .venv
+
+resources/stockfish
