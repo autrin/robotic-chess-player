@@ -73,12 +73,13 @@ class GamePlayClass:
                 if board_before[i][j] != board_after[i][j]:
                     if board_before[i][j] != '.' and board_after[i][j] == '.':
                         source = (i, j)
+                        for k in range(8):
+                            print(board_after[k])
+                        #exit()
                     else:
                         destination = (i,j)
-
-                #does not consider special moves
-                if source is not None and destination is not None:
-                    break
+                        
+                        
                     
         if source is None or destination is None:
             return None
@@ -237,11 +238,11 @@ class GamePlayClass:
                             self.camera.drawBordersandDots(warpedFrame,cornerDetections2)
                             
                             pieces = self.camera.PieceDetector.detect(img=wfCopy)
-                            print(f"pieces = {pieces}")
+                            #print(f"pieces = {pieces}")
                             wfCopy = cv2.cvtColor(wfCopy,cv2.COLOR_GRAY2BGR)
                             if pieces:
+                                self.camera.drawBordersandDots(wfCopy,cornerDetections2)
                                 self.camera.markPieces(pieces,self)
-                                
                                 self.camera.drawPieces(wfCopy,pieces,self,fp2)
                             
                                 if self.turn == "ai":
@@ -258,20 +259,20 @@ class GamePlayClass:
 
                                     
                                     moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
-                                    if moveFromVisual is not None:
-                                        print(moveFromVisual)
-                                        exit()
+                                    #if moveFromVisual is not None:
+                                        #print(moveFromVisual)
+                                        #exit()
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
-                                        
                                         aiMoved = False
                                         self.turn = "human"
                                         print("AI move validated: " + moveFromVisual)
                                         move = None
+                                        self.setCurrboard2PrevBoard()
  
                                        
                                 elif self.turn == "human": 
                                     
-                                    move = self.self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
+                                    move = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
                                     if not byPass:
                                         input("press enter to register opp move")
                                         byPass = True
@@ -284,6 +285,7 @@ class GamePlayClass:
                                         print("opp move: " + move)
                                         #time.sleep(1)
                                         move = None
+                                        self.setCurrboard2PrevBoard()
                             
                                 cv2.imshow(f"warped",wfCopy)
                         cv2.imshow(f"wf",warpedFrame)                

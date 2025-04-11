@@ -54,6 +54,8 @@ class ChessEngineClass:
         move = self.stockfish.get_best_move()
         self.board.push_uci(move)
         self.FEN = self.board.fen()
+        print("FEN string after white's move"+self.FEN)
+        #exit()
         return move
     
     #assume that the opponent will make the right movements
@@ -62,6 +64,8 @@ class ChessEngineClass:
         if move in self.board.legal_moves: #for demo2
             self.board.push(move)
             self.FEN = self.board.fen()
+            print("FEN string after black's move"+self.FEN)
+            #exit()
             #print(self.FEN)
     
         
