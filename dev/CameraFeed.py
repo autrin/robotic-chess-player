@@ -50,12 +50,12 @@ class CameraFeedClass:
         self.chessBoardResetCounterThreshold = 150  
         self.previosBoard = [
             list("rnbqkbnr"),
+            list("pppppppp"),
             list("........"),
             list("........"),
             list("........"),
             list("........"),
-            list("........"),
-            list("........"),
+            list("PPPPPPPP"),
             list("RNBQKBNR")
     #          ['.', '.', '.', '.', '.', '.', '.', '.'],           # 8
     # ['p', 'p', '.', '.', '.', 'p', 'b', 'k'],            # 7
@@ -69,12 +69,12 @@ class CameraFeedClass:
 
         self.currentBoard = [
             list("rnbqkbnr"),
+            list("pppppppp"),
             list("........"),
             list("........"),
             list("........"),
             list("........"),
-            list("........"),
-            list("........"),
+            list("PPPPPPPP"),
             list("RNBQKBNR")
     #          ['.', '.', '.', '.', '.', '.', '.', '.'],           # 8
     # ['p', 'p', '.', '.', '.', 'p', 'b', 'k'],            # 7
@@ -339,7 +339,7 @@ class CameraFeedClass:
         If fewer than 3 are found, it prints a warning and returns None.
         """
         ret = []
-        print(detections)
+        #print(detections)
         for d in detections:
             if isinstance(d, tuple):
                 if self.mode == "paper" and \
@@ -349,7 +349,7 @@ class CameraFeedClass:
                 elif self.mode == "block":
                     if (d[0][0] == 5 or d[0][0] == 6 or d[0][0] == 7 or d[0][0] == 8)\
                     and d[0][0] not in ret:
-                        print(d)
+                        #print(d)
                         ret.append(d)
 
             else: 
@@ -361,7 +361,7 @@ class CameraFeedClass:
                 elif self.mode == "block":
                     if (d.tag_id == 5 or d.tag_id == 6 or d.tag_id == 7 or d.tag_id == 8)\
                     and d.tag_id not in ret:
-                        print(d.tag_id)
+                        #print(d.tag_id)
                         ret.append(d)
         
         #print("")

@@ -303,6 +303,12 @@ class GamePlayClass:
                 #cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
+            # Draw cluster metadata (id array and count)
+            for cluster_ids, count, center in cornerDetections:
+                text = f"{count / 60:.0%}"
+                center_int = (int(center[0]), int(center[1]))
+                cv2.putText(frame, text, center_int, cv2.FONT_HERSHEY_SIMPLEX,
+                            0.75, (10 + (count / 60) * 100, 10, 100 + (count / 60) * 150), 2, cv2.LINE_AA)
             cv2.imshow(f"FEED Cam-ID = {self.camera.camID}",frame)
             
         self.camera.destroyCameraFeed()
