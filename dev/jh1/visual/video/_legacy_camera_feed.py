@@ -1,41 +1,19 @@
-#!/usr/bin/env python3
 import cv2
 import numpy as np
 import pupil_apriltags as apriltag
 import FilePathFinder
 import math
 
-"""
-This script is designed to capture video from a camera, process the images to detect AprilTags 
-(fiducial markers), and use that information to infer the geometry of a chessboard.
-"""
 
-
-class CameraFeedClass:
+class LegacyCameraFeedClass:
     # use april tags, mode := paper | block
     def __init__(self, camID=0, mode="block"):
+        self.cam = None
         self.camID = camID
-        self.cam = cv2.VideoCapture(self.camID)
-        self.aprilDetector = apriltag.Detector(
-            families="tag25h9",
-            nthreads=4,
-            quad_decimate=1.0,
-            quad_sigma=0.0,
-            refine_edges=1,
-            decode_sharpening=0.25,
-        )
-        self.cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
-        self.cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
+        self.aprilDetector = apriltag.Detector(families="tag25h9")
         # self.whiteChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag25h9"))
         # self.blackChessPieceDetector = apriltag.Detector(apriltag.DetectorOptions(families="tag36h11"))
-        self.PieceDetector = apriltag.Detector(
-            families="tag25h9",
-            nthreads=4,
-            quad_decimate=1.0,
-            quad_sigma=0.0,
-            refine_edges=1,
-            decode_sharpening=0.25
-        )
+        self.PieceDetector = apriltag.Detector(families="tag25h9")
         self.mode = mode
 
         # self.referenceImage = cv2.imread("../resources/ChessboardReference.png")
@@ -147,8 +125,8 @@ class CameraFeedClass:
         return [TL, BL, BR, TR]
 
     def getHomoGraphicAppliedImage(self, sourceImage, fourPoints, refImg=None, ow=1250, oh=900):
-        # if not refImg:
-        #     refImg = self.referenceImage
+        if not refImg:
+            refImg = self.referenceImage
 
         refdi = cv2.cvtColor(refImg, cv2.COLOR_BGR2GRAY)
         refdi = cv2.resize(refdi, (0, 0), fx=0.6, fy=0.6)  # 0.6 or 0.4
@@ -298,7 +276,6 @@ class CameraFeedClass:
 
         # print("")
         if len(ret) != 4:
-            print(len(ret))
             print("Failed to detect all four corners, detecting april tags again")
             return None
         # sort the array
@@ -386,11 +363,3 @@ class CameraFeedClass:
         self.cam.release()
         if destroyAllWindows:  # Optionally closes all OpenCV windows.
             cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    # ocr = CameraFeed(1)
-    # ocr.openCamera()
-    # ocr.startLoop()
-    print("CameraFeed.py")
-    # ocr.destroyCameraFeed()

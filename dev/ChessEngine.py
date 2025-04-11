@@ -25,7 +25,7 @@ class ChessEngineClass:
         depth=20,
         level=15,
         side="w",
-        enginePath=FilePathFinder.getPath("chessEngine"),
+        enginePath="C:\Program Files\stockfish\stockfish-windows-x86-64-avx2.exe",
     ):
         """
         Parameters:

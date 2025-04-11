@@ -9,7 +9,7 @@ import copy
 import cairosvg
 import time
 
-global GUI 
+global GUI
 inGame = False
 #wrapper that contains all board information, including fen
 class boardInfo:
