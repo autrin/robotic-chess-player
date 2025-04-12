@@ -1,6 +1,7 @@
-import FilePathFinder
-from CameraFeed import CameraFeedClass
-from ChessEngine import ChessEngineClass
+import time
+import dev.FilePathFinder as FilePathFinder
+from dev.CameraFeed import CameraFeedClass
+from dev.ChessEngine import ChessEngineClass
 import cv2
 import rospy
 
@@ -8,7 +9,7 @@ import rospy
 
 class GamePlayClass:
     def __init__(self):
-        self.camera = CameraFeedClass(1)
+        self.camera = CameraFeedClass(0) #! Changed this to 0 from 1
         self.chessEngine = ChessEngineClass()
         #assume robot will always play white by default
         
@@ -230,8 +231,14 @@ class GamePlayClass:
                                     if not aiMoved:
                                         move = self.chessEngine.makeAIMove()
                                         aiMoved = True
+                                        move_start_time = time.time()
+                                        self.ai_move = move  # Store move for robot to execute
+                                        print(f"AI decided to move: {move}")
+                                        time.sleep(10)  # Give the robot time to execute before checking
                                     else:
                                         print("AI's desired move: " + move)
+                                         # Check if robot has completed the move
+                                        moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
                                     #self.markCaptured("ai",move[2:])
                                     moveFromVisual = self.getMyMoveFromVisual(myPieceDetections)
                                     if moveFromVisual is not None and move == moveFromVisual: #add promotion rule as well?
@@ -241,7 +248,12 @@ class GamePlayClass:
                                         move = None
                                         
                                         #exit() #will exit if there is a difference (for debugging)
-                                
+                                                                # In GamePlay.py, add retry logic
+                                    if moveFromVisual is None or move != moveFromVisual:
+                                        # If vision doesn't confirm move after 30 seconds, try again
+                                        if time.time() - move_start_time > 30:
+                                            print("Move validation timed out, retrying...")
+                                            aiMoved = False  # Reset to try again
                                 elif self.turn == "human": 
                                     #oppMoved = input("type \"a\" after making a move")
                                     move = self.getOppMoveFromVisual(oppPieceDetections)
