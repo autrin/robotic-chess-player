@@ -17,12 +17,13 @@ class ChessRobot:
         self.game.play()
         
     def robot_thread(self):
-        """Execute robot moves from queue"""
         while self.running:
             if len(self.move_queue) > 0:
                 move = self.move_queue.pop(0)
                 try:
+                    print(f"Robot starting to execute move: {move}")
                     self.robot.execute_move(move)
+                    print(f"Robot finished executing move: {move}")
                 except Exception as e:
                     rospy.logerr(f"Error executing move: {e}")
             time.sleep(0.1)
