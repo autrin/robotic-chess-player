@@ -1,6 +1,6 @@
 import pandas as pd
 
-def getPath(name,csvFile="../paths.csv"):
+def getPath(name,csvFile="paths.csv"):
     paths = pd.read_csv(csvFile)["path"]
     if name == "chessEngine":
         return paths[0]
