@@ -1,21 +1,20 @@
+import chess
 import cv2
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import chess
+import numpy as np
 
+from jh1.core._engine import Engine
+from jh1.core._game_state import GameState
 from jh1.visual import (
     instantiate_detector,
     find_april_tags,
     count_clusters,
-    TagVariationalCluster,
     PIECE_TAG_IDS,
     HomographySolver,
 )
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
-from jh1.core._engine import Engine
-from jh1.core._game_state import GameState
 
 ENGINE_PATH = "./resources/stockfish"
 OPENING_BOOK_PATH = "./resources/baron30.bin"
@@ -154,7 +153,7 @@ def main():
         move = game.get_engine_move()
         print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
         print("Please make the engine's move on the board.")
-        scanned_board = verify_move(move, game, cam, detector)
+        verify_move(move, game, cam, detector)
         game.offer_move(move, by_white=True)
         # print_board_array(scanned_board)
         print("FEN:", game.get_fen())
