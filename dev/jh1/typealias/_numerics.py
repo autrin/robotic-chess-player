@@ -3,7 +3,7 @@ from numpy import float64, uint8
 from typing import Annotated, TypeVar, List
 from numpy.typing import NDArray
 
-_T = TypeVar("_T", bound=np.generic)
+_T = TypeVar("_T", bound=np.generic, covariant=False, contravariant=False)
 
 uint8 = uint8
 
