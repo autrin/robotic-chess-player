@@ -20,5 +20,5 @@ class TagVariationalCluster:
         return ELEVATED_CORNER_TAG_IDS.get(self.tag_id, None)
 
 
-    def is_piece_tag(self):
+    def is_piece_tag(self) -> bool:
         return self.tag_id in PIECE_TAG_IDS

@@ -1,21 +1,19 @@
+import chess
 import cv2
-import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import chess
+import numpy as np
 
+from jh1.core import Engine, GameState
 from jh1.visual import (
     instantiate_detector,
     find_april_tags,
     count_clusters,
-    TagVariationalCluster,
     PIECE_TAG_IDS,
     HomographySolver,
 )
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
-from jh1.core._engine import Engine
-from jh1.core._game_state import GameState
 
 ENGINE_PATH = "./resources/stockfish"
 OPENING_BOOK_PATH = "./resources/baron30.bin"
@@ -54,6 +52,7 @@ def update_plot(img, solver, board_bins, certainty_grid):
     fig, ax = plt.subplots(figsize=(12, 8))
     ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
+
     def project(pt):
         pt = np.array(pt, dtype=np.float32)
         if solver.adjust:
@@ -62,6 +61,7 @@ def update_plot(img, solver, board_bins, certainty_grid):
         vec = np.array([pt[0], pt[1], 1.0])
         img_pt_h = np.linalg.inv(solver.mat_homography) @ vec
         return tuple(img_pt_h[:2] / img_pt_h[2])
+
 
     for i in range(9):
         ax.plot(*zip(project((i + 1, 1)), project((i + 1, 9))), color="tab:blue", linewidth=1)
@@ -76,7 +76,7 @@ def update_plot(img, solver, board_bins, certainty_grid):
             if certainty <= 0:
                 continue
 
-            corners = [(j + dx, i + dy) for dx, dy in [(1,1), (2,1), (2,2), (1,2)]]
+            corners = [(j + dx, i + dy) for dx, dy in [(1, 1), (2, 1), (2, 2), (1, 2)]]
             img_corners = [project(c) for c in corners]
             poly = plt.Polygon(img_corners, color=cmap(norm(certainty)), alpha=0.7)
             ax.add_patch(poly)
