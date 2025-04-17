@@ -10,7 +10,7 @@ import sounddevice as sd
 import vosk
 import json
 import random
-import dev.FilePathFinder as FilePathFinder
+import src.FilePathFinder as FilePathFinder
 #from sensor_msgs.msg import JointState
 
 
