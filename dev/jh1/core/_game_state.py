@@ -132,7 +132,7 @@ class GameState:
     def get_algebraic(self, uci: str) -> str:
         try:
             return self.board.san(chess.Move.from_uci(uci))
-        except AssertionError:
+        except (AssertionError, ValueError) as ex:
             return "<Illegal>"
 
 
