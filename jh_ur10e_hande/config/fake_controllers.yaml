@@ -1,0 +1,4 @@
+gripper_controller:
+  type: GripperCommand
+  joints:
+    - hande_left_finger_joint
