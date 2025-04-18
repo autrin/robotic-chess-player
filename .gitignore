@@ -182,3 +182,4 @@ src/__pycache__
 .venv
 
 resources/stockfish
+catkin_ws/src/sd02_joseph-hoane_1/catkin_ws
