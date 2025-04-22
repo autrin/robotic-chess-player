@@ -25,7 +25,7 @@ class ChessEngineClass:
         depth=20,
         level=15,
         side="w",
-        enginePath="C:\Program Files\stockfish\stockfish-windows-x86-64-avx2.exe",
+        enginePath=None,
     ):
         """
         Parameters:
@@ -35,6 +35,11 @@ class ChessEngineClass:
         - startFirst: Boolean indicating whether the engine moves first.
         - enginePath: The file path to the Stockfish executable; retrieved from a helper module.
         """
+        if enginePath is None:
+            try:
+                enginePath = FilePathFinder.getPath("chessEngine")
+            except:
+                enginePath = "/usr/games/stockfish"
 
         self.depth = max(20, depth)
         self.level = max(20, level)
