@@ -1,6 +1,6 @@
 from stockfish import Stockfish
 import chess
-import dev.FilePathFinder as FilePathFinder
+import FilePathFinder as FilePathFinder
 
 """
 Purpose:
