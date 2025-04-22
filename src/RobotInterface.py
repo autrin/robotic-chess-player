@@ -1,42 +1,116 @@
+#!/usr/bin/env python3
 import rospy
-import moveit_commander
-from tf.transformations import quaternion_from_euler
+import actionlib
+from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
+from trajectory_msgs.msg import JointTrajectory, JointTrajectoryPoint
+from sensor_msgs.msg import JointState
+from geometry_msgs.msg import Pose, Point, Quaternion
+import numpy as np
+import tf.transformations
 import time
 
 class RobotArmController:
     def __init__(self):
-        self.group, self.robot, self.scene = self._init_robot()
+        rospy.init_node('chess_robot', anonymous=True, disable_signals=True)
+        
+        # Connect to the UR10e action server
+        self.traj_client = actionlib.SimpleActionClient(
+            'scaled_pos_joint_traj_controller/follow_joint_trajectory', 
+            FollowJointTrajectoryAction)
+        
+        rospy.loginfo("Waiting for UR10e action server...")
+        self.traj_client.wait_for_server()
+        rospy.loginfo("Connected to UR10e action server")
+        
+        # Define joint names
+        self.joint_names = [
+            'shoulder_pan_joint', 
+            'shoulder_lift_joint', 
+            'elbow_joint',
+            'wrist_1_joint', 
+            'wrist_2_joint', 
+            'wrist_3_joint'
+        ]
+        
+        # Pre-defined positions (in joint space)
         self.positions = {
-            "high": [0, -0.5, 0.5, -0.5, -1.57, 0],  # Safety position above board
-            "low": [0, -1.0, 1.0, -0.5, -1.57, 0],   # Position for grabbing/placing pieces
-            "backup": [0.5, -1.0, 1.0, 0, -1.57, 0]  # Backup position away from the board
+            "home": [0, -1.57, 0, -1.57, 0, 0],
+            "high": [0, -1.0, 0.5, -1.0, -1.57, 0],  # Safety position above board
+            "low": [0, -1.2, 1.0, -1.3, -1.57, 0],   # Position for grabbing/placing pieces
+            "backup": [0.5, -1.0, 1.0, -1.5, -1.57, 0]  # Backup position away from the board
         }
         
-    def _init_robot(self):
-        # Initialize MoveIt and ROS
-        moveit_commander.roscpp_initialize([])
-        rospy.init_node("chess_robot", anonymous=True)
-        robot = moveit_commander.RobotCommander()
-        scene = moveit_commander.PlanningSceneInterface()
-        group = moveit_commander.MoveGroupCommander("manipulator")
-        group.set_max_velocity_scaling_factor(0.5)
-        group.set_max_acceleration_scaling_factor(0.5)
-        return group, robot, scene
+        # Subscribe to joint states to get current position
+        self.current_joints = None
+        self.joint_sub = rospy.Subscriber('/joint_states', JointState, self._joint_state_cb)
+        
+        # Wait for first joint state message
+        rospy.loginfo("Waiting for joint state...")
+        while self.current_joints is None and not rospy.is_shutdown():
+            rospy.sleep(0.1)
+        rospy.loginfo("Received joint state")
 
-    def move_to_position(self, position_name):
-        """Move to a predefined position (high, low, backup)"""
+    def _joint_state_cb(self, msg):
+        # Filter for only the arm joints (exclude gripper)
+        positions = []
+        for name in self.joint_names:
+            if name in msg.name:
+                idx = msg.name.index(name)
+                positions.append(msg.position[idx])
+        
+        if len(positions) == 6:
+            self.current_joints = positions
+
+    def move_to_position(self, position_name, duration=2.0):
+        """Move to a predefined position (home, high, low, backup)"""
         if position_name in self.positions:
-            self.group.go(self.positions[position_name], wait=True)
-            self.group.stop()
+            return self.move_to_joints(self.positions[position_name], duration)
+        else:
+            rospy.logerr(f"Position '{position_name}' not defined")
+            return False
+
+    def move_to_joints(self, joint_positions, duration=2.0):
+        """Move to specific joint positions"""
+        if len(joint_positions) != 6:
+            rospy.logerr("Expected 6 joint positions")
+            return False
+        
+        # Create trajectory message
+        traj = JointTrajectory()
+        traj.joint_names = self.joint_names
+        
+        # Create trajectory point
+        point = JointTrajectoryPoint()
+        point.positions = joint_positions
+        point.time_from_start = rospy.Duration(duration)
+        traj.points.append(point)
+        
+        # Create goal
+        goal = FollowJointTrajectoryGoal()
+        goal.trajectory = traj
+        
+        # Send goal and wait
+        self.traj_client.send_goal(goal)
+        success = self.traj_client.wait_for_result(rospy.Duration(duration + 5.0))
+        
+        if success:
+            rospy.loginfo("Successfully moved to position")
             return True
-        return False
+        else:
+            rospy.logerr("Failed to move to position")
+            return False
+
+    def move_to_xyz(self, x, y, z, pitch=3.14, duration=2.0):
+        """
+        Move end effector to specific XYZ position with downward orientation
+        Note: This is a simplified version that requires inverse kinematics
+        """
+        # TODO: Implement inverse kinematics or use MoveIt for this
+        # For now, just log that this would move to the position
+        rospy.loginfo(f"Would move to position ({x}, {y}, {z})")
+        return True
 
     def emergency_stop(self):
-        """Emergency stop - halt all movement"""
-        self.group.stop()
+        """Emergency stop - cancel current goal"""
+        self.traj_client.cancel_all_goals()
         rospy.logwarn("EMERGENCY STOP ACTIVATED")
-        
-        # we may need additional code here to release motors
-        # or take other safety actions depending on the hardware    
-        
-    # More methods will be added for chess movements
