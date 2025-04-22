@@ -1,22 +1,32 @@
 import time
-import dev.FilePathFinder as FilePathFinder
-from dev.CameraFeed import CameraFeedClass
-from dev.ChessEngine import ChessEngineClass
+import rospy
+from src.FilePathFinder import getPath
+from src.CameraFeed import CameraFeedClass
+from src.ChessEngine import ChessEngineClass
+from src.ChessMovement import ChessMovementController
 import cv2
 import mss
-import time
 import numpy as np
-# bridge between camera and chess engine
-import rospy
+import threading
 
 class GamePlayClass:
     def __init__(self):
+        # Initialize ROS node if it hasn't been done already
+        try:
+            if not rospy.get_node_uri():
+                rospy.init_node('chess_game', anonymous=True, disable_signals=True)
+        except:
+            rospy.init_node('chess_game', anonymous=True, disable_signals=True)
+            
         self.camera = CameraFeedClass(0)
-        self.chessEngine = ChessEngineClass()
-        # assume robot will always play white by default
-
-        # tagID: [pieceType,cellPos] pieceType == "x" if captured
-
+        
+        # Initialize the chess engine with the correct path
+        self.chessEngine = ChessEngineClass(enginePath="/usr/games/stockfish")
+        
+        # Initialize robot movement controller
+        self.robot = ChessMovementController()
+        
+        # Piece mapping
         self.pieceMap = {
             # Black
             20: 'p',
@@ -35,20 +45,12 @@ class GamePlayClass:
             15: 'K',
         }
 
-        # self.tagIDWhitePieces = { 
-        #     10 : 'P',
-        #     11 : 'K',
-        #     12 : 'Q',
-        #     13 : 'R',
-        #     14 : 'B',
-        #     15 : 'N',
-        # }
-
         self.turn = "ai"
-        # self.myPieceDetections = self.tagIDWhitePieces
-        # self.oppPieceDetections = self.tagIDBlackPieces
         self.HTfp = None
-
+        self.ai_move = None
+        self.running = True
+        self.move_executed = threading.Event()
+        
     def chessCellPosToCellPos(self, st):
         rank = (int(st[1]) - 1) * 10
         col = ord(st[0])
@@ -187,6 +189,11 @@ class GamePlayClass:
                       (int(cornerDetections[3].corners[2][0]), int(cornerDetections[3].corners[2][1])), (255, 0, 0), -1)
 
     def play(self, computerScreen=False):
+        # Start robot movement thread
+        robot_thread = threading.Thread(target=self.robot_thread)
+        robot_thread.daemon = True
+        robot_thread.start()
+        
         self.determine_side()
         self.camera.openCamera()
 
@@ -199,7 +206,7 @@ class GamePlayClass:
         move = None
         byPass = False
 
-        while True:
+        while self.running:
             # --- FRAME ACQUISITION ---
             frame = self._get_frame_from_source(computerScreen, sct, region)
             gray = self._get_gray_frame_from_source(frame, computerScreen)
@@ -235,13 +242,18 @@ class GamePlayClass:
                     move = self.chessEngine.makeAIMove()
                     aiMoved = True
                     move_start_time = time.time()
-                    self.ai_move = move  #! Store move for robot to execute
+                    self.ai_move = move  # Store move for robot to execute
                     print("AI's desired move: " + move)
-                    time.sleep(10)  # Give the robot time to execute before checking
-                    input("Press enter after robot makes the move")
+                    # Signal the robot thread to execute the move
+                    self.move_executed.clear()
+                    # Wait for robot to complete the move
+                    if not self.move_executed.wait(timeout=30):
+                        print("Robot movement timed out")
+                    time.sleep(2)  # Short delay after move completes
                 else:
                     print("AI's desired move: " + move)
 
+                # Verify the move was made correctly
                 moveFromVisual = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
                 if moveFromVisual and move == moveFromVisual:
                     print("AI move validated: " + moveFromVisual)
@@ -250,11 +262,10 @@ class GamePlayClass:
                     self.turn = "human"
                     self.setCurrboard2PrevBoard()
                     self.camera.resetCounters()
-                if moveFromVisual is None or move != moveFromVisual:
-                    # If vision doesn't confirm move after 30 seconds, try again
-                    if time.time() - move_start_time > 30:
-                        print("Move validation timed out, retrying...")
-                        aiMoved = False  # Reset to try again
+                elif time.time() - move_start_time > 30:
+                    print("Move validation timed out, retrying...")
+                    aiMoved = False  # Reset to try again
+                    
             elif self.turn == "human":
                 move = self.getmovestr(self.camera.previosBoard, self.camera.currentBoard)
                 if not byPass:
@@ -282,6 +293,25 @@ class GamePlayClass:
         self.camera.destroyCameraFeed()
         if sct:
             sct.close()
+    
+    def robot_thread(self):
+        """Thread that handles robot movement"""
+        while self.running:
+            if self.ai_move:
+                move = self.ai_move
+                try:
+                    print(f"Robot executing move: {move}")
+                    success = self.robot.execute_move(move)
+                    if success:
+                        print(f"Robot successfully executed move: {move}")
+                    else:
+                        print(f"Robot failed to execute move: {move}")
+                except Exception as e:
+                    print(f"Error executing move: {e}")
+                finally:
+                    self.ai_move = None
+                    self.move_executed.set()
+            time.sleep(0.1)
 
     def _get_frame_from_source(self, computerScreen, sct, region):
         if not computerScreen:
