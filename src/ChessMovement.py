@@ -1,7 +1,7 @@
 import rospy
 import numpy as np
-from dev.RobotInterface import RobotArmController
-from dev.GripperInterface import GripperController
+from src.RobotInterface import RobotArmController
+from src.GripperInterface import GripperController
 
 class ChessMovementController:
     def __init__(self):

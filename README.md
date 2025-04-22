@@ -116,7 +116,7 @@ catkin_make
 In your virtual environment, run:
 
 ```
-pip install -e ./dev
+pip install -e ./src
 
 ```
 
