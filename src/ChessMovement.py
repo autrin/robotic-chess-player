@@ -12,9 +12,9 @@ class ChessMovementController:
         
         # Board configuration (will need calibration)
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
-        self.square_size = 0.05              # Square size in meters (adjust based on your actual board)
-        self.hover_height = 0.1              # Height above board for safety movements
-        self.piece_height = 0.05             # Height of chess pieces
+        self.square_size = 0.05              #TODO Square size in meters (adjust based on actual board)
+        self.hover_height = 0.1              #TODO Height above board for safety movements
+        self.piece_height = 0.05             #TODO Height of chess pieces
         
         # Initialize positions
         self.arm.move_to_position("home")
