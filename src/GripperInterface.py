@@ -1,103 +1,84 @@
-# import rospy
-# from robotiq_2f_gripper_control.msg import Robotiq2FGripper_robot_output as GripperCmd
-# import time
-
-# class GripperController:
-#     def __init__(self):
-#         self.pub = rospy.Publisher('Robotiq2FGripperRobotOutput', GripperCmd, queue_size=1)
-#         self.command = GripperCmd()
-#         self.activated = False
-#         self.last_activation_time = None
-        
-#     def activate(self):
-#         """Activate the gripper"""
-#         self.command.rACT = 1
-#         self.command.rGTO = 1
-#         self.command.rSP  = 255  # Speed
-#         self.command.rFR  = 150  # Force
-#         self.pub.publish(self.command)
-#         self.activated = True
-#         self.last_activation_time = time.time()
-#         rospy.sleep(1)  # Give time for activation
-        
-#     def check_activation(self):
-#         """Check if gripper needs reactivation (runs every 1-5 min)"""
-#         if self.last_activation_time and time.time() - self.last_activation_time > 60:
-#             rospy.loginfo("Preventative gripper reactivation")
-#             self.activate()
-            
-#     def close(self, position=255):
-#         """Close gripper to given position (255 = fully closed)"""
-#         if not self.activated:
-#             self.activate()
-#         self.check_activation()
-#         self.command.rPR = position
-#         self.pub.publish(self.command)
-#         rospy.sleep(0.5)
-        
-#     def open(self):
-#         """Open gripper fully"""
-#         if not self.activated:
-#             self.activate()
-#         self.check_activation()
-#         self.command.rPR = 0
-#         self.pub.publish(self.command)
-#         rospy.sleep(0.5)
-
+#!/usr/bin/env python3
 import rospy
+import actionlib
+from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperAction, CommandRobotiqGripperGoal
+from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus
 import time
-
-# Create simulation mode
-SIMULATION_MODE = True
-rospy.logwarn("Using simulated gripper interface")
-
-class GripperCmd:
-    def __init__(self):
-        self.rACT = 0
-        self.rGTO = 0
-        self.rATR = 0
-        self.rPR = 0  # Position request (0-255)
-        self.rSP = 0  # Speed (0-255)
-        self.rFR = 0  # Force (0-255)
 
 class GripperController:
     def __init__(self):
-        rospy.loginfo("Gripper running in SIMULATION mode")
-        self.command = GripperCmd()
+        # Connect to the Robotiq action server
+        self.gripper_client = actionlib.SimpleActionClient(
+            'command_robotiq_action', 
+            CommandRobotiqGripperAction)
+        
+        rospy.loginfo("Waiting for gripper action server...")
+        self.gripper_client.wait_for_server()
+        rospy.loginfo("Connected to gripper action server")
+        
+        # Subscribe to gripper status
+        self.gripper_status = None
+        self.status_sub = rospy.Subscriber(
+            '/robotiq_2f_gripper_msgs/RobotiqGripperStatus',
+            RobotiqGripperStatus,
+            self._status_cb)
+        
         self.activated = False
         self.last_activation_time = None
         
+    def _status_cb(self, msg):
+        self.gripper_status = msg
+        
     def activate(self):
         """Activate the gripper"""
-        self.command.rACT = 1
-        self.command.rGTO = 1
-        self.command.rSP  = 255  # Speed
-        self.command.rFR  = 150  # Force
-        rospy.loginfo("SIM: Activating gripper")
-        self.activated = True
-        self.last_activation_time = time.time()
-        rospy.sleep(1)  # Give time for activation
+        goal = CommandRobotiqGripperGoal()
+        goal.emergency_release = False
+        goal.stop = False
+        goal.position = 0.0  # Open position
+        goal.speed = 1.0     # Max speed
+        goal.force = 1.0     # Max force
         
-    def check_activation(self):
-        """Check if gripper needs reactivation (runs every 1-5 min)"""
-        if self.last_activation_time and time.time() - self.last_activation_time > 60:
-            rospy.loginfo("SIM: Preventative gripper reactivation")
-            self.activate()
+        self.gripper_client.send_goal(goal)
+        success = self.gripper_client.wait_for_result(rospy.Duration(5.0))
+        
+        if success:
+            rospy.loginfo("Gripper activated")
+            self.activated = True
+            self.last_activation_time = time.time()
+            return True
+        else:
+            rospy.logerr("Failed to activate gripper")
+            return False
             
-    def close(self, position=255):
-        """Close gripper to given position (255 = fully closed)"""
-        if not self.activated:
-            self.activate()
-        self.check_activation()
-        self.command.rPR = position
-        rospy.loginfo(f"SIM: Closing gripper to position {position}")
-        rospy.sleep(0.5)
+    def check_activation(self):
+        """Check if gripper needs reactivation"""
+        if not self.activated or (self.last_activation_time and time.time() - self.last_activation_time > 60):
+            rospy.loginfo("Preventative gripper reactivation")
+            return self.activate()
+        return True
+            
+    def close(self, position=0.5):
+        """Close gripper (position 0.0-1.0)"""
+        if not self.check_activation():
+            return False
+            
+        goal = CommandRobotiqGripperGoal()
+        goal.emergency_release = False
+        goal.stop = False
+        goal.position = position  # 0.0 is open, 1.0 is closed
+        goal.speed = 1.0
+        goal.force = 1.0
+        
+        self.gripper_client.send_goal(goal)
+        success = self.gripper_client.wait_for_result(rospy.Duration(5.0))
+        
+        if success:
+            rospy.loginfo(f"Gripper closed to position {position}")
+            return True
+        else:
+            rospy.logerr("Failed to close gripper")
+            return False
         
     def open(self):
         """Open gripper fully"""
-        if not self.activated:
-            self.activate()
-        self.check_activation()
-        self.command.rPR = 0
-        rospy.loginfo("SIM: Opening gripper")
-        rospy.sleep(0.5)
+        return self.close(0.0)  # 0.0 is fully open
