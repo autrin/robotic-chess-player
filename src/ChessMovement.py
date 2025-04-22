@@ -1,21 +1,23 @@
+#!/usr/bin/env python3
 import rospy
-import numpy as np
-from src.RobotInterface import RobotArmController
-from src.GripperInterface import GripperController
+import math
+from RobotInterface import RobotArmController
+from GripperInterface import GripperController
 
 class ChessMovementController:
     def __init__(self):
+        # Initialize robot arm and gripper
         self.arm = RobotArmController()
         self.gripper = GripperController()
         
         # Board configuration (will need calibration)
-        self.board_origin = [0.4, 0.3, 0.0]  # Bottom-left corner coordinates
-        self.square_size = 0.0254  # 1 inch = 2.54cm
-        self.hover_height = 0.05  # Height above board
-        self.piece_height = 0.03  # Height of pieces
+        self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
+        self.square_size = 0.05              # Square size in meters (adjust based on your actual board)
+        self.hover_height = 0.1              # Height above board for safety movements
+        self.piece_height = 0.05             # Height of chess pieces
         
-        # Initialize arm
-        self.arm.move_to_position("backup")
+        # Initialize positions
+        self.arm.move_to_position("home")
         self.gripper.activate()
         
     def square_to_position(self, square):
@@ -23,13 +25,19 @@ class ChessMovementController:
         col = ord(square[0]) - ord('a')
         row = int(square[1]) - 1
         
-        # Calculate position (adjust based on your board orientation)
+        # Calculate position (adjust based on board orientation)
+        # In this setup, a1 is at board_origin, h8 is at the far corner
         x = self.board_origin[0] + col * self.square_size
         y = self.board_origin[1] + row * self.square_size
-        return [x, y]
+        z = self.board_origin[2]  # Base height of the board
+        
+        return [x, y, z]
         
     def execute_move(self, move):
         """Execute a chess move (e.g., 'e2e4')"""
+        rospy.loginfo(f"Executing move: {move}")
+        
+        # Parse the move
         from_square = move[0:2]
         to_square = move[2:4]
         
@@ -37,55 +45,62 @@ class ChessMovementController:
         from_pos = self.square_to_position(from_square)
         to_pos = self.square_to_position(to_square)
         
-        # Move sequence with safety
-        self._move_piece(from_pos, to_pos)
+        # Execute the move
+        success = self._move_piece(from_pos, to_pos)
+        
+        if success:
+            rospy.loginfo(f"Successfully completed move {move}")
+        else:
+            rospy.logerr(f"Failed to complete move {move}")
+            
+        return success
         
     def _move_piece(self, from_pos, to_pos):
         """Handle the actual movement sequence with safety positions"""
-        # Move to high safety position
-        self.arm.move_to_position("high")
-        
-        # Move above source position
-        self._move_xyz(from_pos[0], from_pos[1], self.hover_height)
-        
-        # Lower to pick up piece
-        self._move_xyz(from_pos[0], from_pos[1], self.piece_height)
-        
-        # Grab piece
-        self.gripper.close(200)  # Adjust grip force as needed
-        
-        # Lift piece
-        self._move_xyz(from_pos[0], from_pos[1], self.hover_height)
-        
-        # Move to high safety position again
-        self.arm.move_to_position("high")
-        
-        # Move above destination
-        self._move_xyz(to_pos[0], to_pos[1], self.hover_height)
-        
-        # Lower to place piece (with safety gap)
-        self._move_xyz(to_pos[0], to_pos[1], self.piece_height + 0.005)
-        
-        # Release piece
-        self.gripper.open()
-        
-        # Return to safe position
-        self.arm.move_to_position("high")
-        
-    def _move_xyz(self, x, y, z):
-        """Move end effector to specific XYZ position"""
-        pose_goal = self.arm.group.get_current_pose().pose
-        pose_goal.position.x = x
-        pose_goal.position.y = y
-        pose_goal.position.z = z
-        
-        # Keep the current orientation (pointing downward)
-        self.arm.group.set_pose_target(pose_goal)
-        success = self.arm.group.go(wait=True)
-        
-        if not success:
-            rospy.logwarn(f"Failed to move to position ({x}, {y}, {z})")
+        try:
+            # Move to high safety position
+            self.arm.move_to_position("high")
             
-        self.arm.group.stop()
-        self.arm.group.clear_pose_targets()
-        return success
+            # Move above source position
+            self._move_above(from_pos)
+            
+            # Lower to pick up piece
+            self._move_down_to(from_pos)
+            
+            # Grab piece
+            self.gripper.close(0.5)  # Adjust grip force as needed
+            
+            # Lift piece
+            self._move_above(from_pos)
+            
+            # Move to high safety position again
+            self.arm.move_to_position("high")
+            
+            # Move above destination
+            self._move_above(to_pos)
+            
+            # Lower to place piece (with safety gap)
+            self._move_down_to(to_pos, offset=0.005)
+            
+            # Release piece
+            self.gripper.open()
+            
+            # Return to safe position
+            self.arm.move_to_position("high")
+            
+            return True
+            
+        except Exception as e:
+            rospy.logerr(f"Error executing move: {e}")
+            # Try to return to a safe position
+            self.arm.move_to_position("backup")
+            return False
+            
+    def _move_above(self, pos):
+        """Move to a position above the given position"""
+        return self.arm.move_to_xyz(pos[0], pos[1], pos[2] + self.hover_height)
+        
+    def _move_down_to(self, pos, offset=0):
+        """Move down to the given position with optional small offset"""
+        piece_top = pos[2] + self.piece_height + offset
+        return self.arm.move_to_xyz(pos[0], pos[1], piece_top)
