@@ -22,7 +22,7 @@ class ChessMovementController:
     positions and handles the pick-and-place sequences needed to move pieces.
     """
     
-    def __init__(self, simulation_mode=True):
+    def __init__(self, simulation_mode=True, chess_engine=None):
         """
         Initialize the chess movement controller.
         
@@ -61,7 +61,16 @@ class ChessMovementController:
             "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],# Preparation position
             "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, 0] # Position away from the board
         }
-        
+
+        # TODO Define two storage areas for captured pieces
+        self.captured_storage = {
+            'white': {'x': 0.6, 'y': 0.2, 'z': 0.1, 'next_idx': 0},  # Right side of board
+            'black': {'x': 0.6, 'y': 0.4, 'z': 0.1, 'next_idx': 0}   # Left side of board
+        }
+
+        # Keep an internal representation of the board to determine if a square has a piece
+        self.board_state = [[None for _ in range(8)] for _ in range(8)]
+        self.chess_engine = chess_engine
         # Initialize robot position
         self._go_to_safe_position()
         rospy.loginfo("ChessMovementController initialized and ready")
@@ -206,7 +215,13 @@ class ChessMovementController:
                 self._move_to_cartesian(above_dest, gripper_open=False)
                 
                 # Move captured piece to the side of the board (could be a predefined position)
-                captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
+                # captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
+                # Get appropriate storage position based on piece color
+                # In a real implementation, you'd get the piece color from your chess engine
+                piece_color = 'black' if self.chess_engine.side == 'w' else 'white'
+                # or
+                # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black
+                captured_storage = self._move_captured_piece_to_storage(piece_color)
                 self._move_to_cartesian(captured_storage, gripper_open=False)
                 
                 # Release the captured piece
@@ -255,7 +270,26 @@ class ChessMovementController:
             # Try to return to a safe position
             self._go_to_safe_position()
             return False
-    
+        
+    def _move_captured_piece_to_storage(self, piece_color):
+        """Move a captured piece to the appropriate storage area."""
+        storage = self.captured_storage['white' if piece_color == 'black' else 'black']
+        
+        # Calculate position with offset to avoid piece collisions
+        offset_x = (storage['next_idx'] % 4) * 0.03  # 3cm spacing in X
+        offset_y = (storage['next_idx'] // 4) * 0.03  # 3cm spacing in Y
+        
+        storage_pos = [
+            storage['x'] + offset_x,
+            storage['y'] + offset_y,
+            storage['z']
+        ]
+        
+        # Increment the index for next captured piece
+        storage['next_idx'] += 1
+        
+        return storage_pos
+
     def _execute_castling(self, color: str, side: str) -> bool:
         """
         Execute a castling move, which involves moving both king and rook.
