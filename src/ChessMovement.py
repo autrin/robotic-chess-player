@@ -268,7 +268,7 @@ class ChessMovementController:
                 # In a real implementation, you'd get the piece color from your chess engine
                 piece_color = 'black' if self.chess_engine.side == 'w' else 'white'
                 # or
-                # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black
+                # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black. Won't work for test mode
                 captured_storage = self._move_captured_piece_to_storage(piece_color)
                 self._move_to_cartesian(captured_storage, gripper_open=False)
                 
