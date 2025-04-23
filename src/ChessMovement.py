@@ -4,9 +4,6 @@ Chess Movement Controller
 
 This module connects the chess game logic with the UR10e robot arm,
 controlling movement for executing chess moves in the physical world.
-
-Author: Autrin
-Date: April 2025
 """
 
 import rospy
