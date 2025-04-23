@@ -34,7 +34,7 @@ class ChessMovementController:
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
         
-        # Board configuration (will need calibration)
+        #TODO Board configuration (will need calibration)
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
         self.square_size = 0.05              # Square size in meters
         self.hover_height = 0.1              # Height above board for safety movements
