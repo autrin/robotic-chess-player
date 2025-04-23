@@ -334,11 +334,7 @@ class ChessMovementController:
             
             # Execute the move
             rospy.loginfo(f"Moving to position: {position}")
-            self.robot.command_robot(joint_values, 2.0)
-            
-            # Add a short delay to ensure movement completes
-            # In a real implementation, you would wait for feedback that movement is complete
-            time.sleep(0.5)
+            self.robot.command_robot(joint_values, 5.0)
             
             return True
             
