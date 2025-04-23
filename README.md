@@ -18,8 +18,6 @@
 	
 	# For simulation mode (default)
 		roslaunch sd02_joseph-hoane_1 chess_robot.launch
-		OR
-		bash ~/Desktop/402project/project/catkin_ws/src/sd02_joseph-hoane_1/launch_simulation.sh
 	
 	# When connecting to the actual robot
 		roslaunch sd02_joseph-hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
