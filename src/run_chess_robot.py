@@ -27,7 +27,7 @@ def main():
         
         # detect test mode
         test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
-        rospy.loginfo(f"Command‑line args: {sys.argv}")
+        rospy.loginfo(f"Command-line args: {sys.argv}")
         rospy.loginfo(f"Test mode: {test_mode}")
 
         # OPTION 1: Simple chess move test mode
