@@ -45,15 +45,15 @@ class ChessMovementController:
             is located in the robot's workspace.
         """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
-        self.square_size = 0.0454            # Square size in meters
+        self.square_size = 0.0508            # Square size in meters. 2 inches (50.8mm) per square
         self.hover_height = 0.1              # Height above board for safety movements
         self.piece_height = 0.0254           # Height of chess pieces
-        self.approach_height = 0.0254        # Height from which to approach a piece
+        self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
         
         # Pre-defined joint positions
         self.positions = {
             "home": [0, -1.57, 0, -1.57, 0, 0, 0],         # Home position (gripper open)
-            "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board
+            "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board. Adjust to see the entire large board
             "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],# Preparation position
             "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, 0] # Position away from the board
         }
