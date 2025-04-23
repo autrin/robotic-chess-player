@@ -328,6 +328,19 @@ class ChessMovementController:
             True if successful, False otherwise
         """
         try:
+            # Safety check - ensure position is within workspace limits
+            workspace_limits = {
+                'x': (0.2, 0.8), # min max in meters
+                'y': (0.0, 0.6),
+                'z': (0.05, 0.4)
+            }
+            
+            if (position[0] < workspace_limits['x'][0] or position[0] > workspace_limits['x'][1] or
+                position[1] < workspace_limits['y'][0] or position[1] > workspace_limits['y'][1] or
+                position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
+                rospy.logerr(f"Position {position} is outside of safe workspace limits!")
+                return False
+                
             # In a real implementation, use proper IK or MoveIt
             # For now, use our simplified joint angles calculation
             joint_values = self.joint_angles_for_position(position, gripper_open)
