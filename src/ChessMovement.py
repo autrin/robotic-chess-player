@@ -324,6 +324,7 @@ class ChessMovementController:
         """
         try:
             # Safety check - ensure position is within workspace limits
+            # TODO: you might need to adjust the numbers
             workspace_limits = {
                 'x': (0.2, 0.8), # min max in meters
                 'y': (0.0, 0.6),
