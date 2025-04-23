@@ -9,7 +9,7 @@
   
   <!-- Load UR10e driver (only when not in sim mode) -->
   <group unless="$(arg sim)">
-    <include file="$(find ur_robot_driver)/launch/ur10e_bringup.launch">
+    <include file="$(find ur_robot_driver)/launch/ur10e_griper_bringup.launch">
       <arg name="robot_ip" value="$(arg robot_ip)"/>
     </include>
   </group>
