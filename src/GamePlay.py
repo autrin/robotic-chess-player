@@ -12,11 +12,11 @@ import threading
 class GamePlayClass:
     def __init__(self):
         # Initialize ROS node if it hasn't been done already
-        try:
-            if not rospy.get_node_uri():
-                rospy.init_node('chess_game', anonymous=True, disable_signals=True)
-        except:
-            rospy.init_node('chess_game', anonymous=True, disable_signals=True)
+        # try:
+        #     if not rospy.get_node_uri():
+        #         rospy.init_node('chess_game', anonymous=True, disable_signals=True)
+        # except:
+        #     rospy.init_node('chess_game', anonymous=True, disable_signals=True)
             
         self.camera = CameraFeedClass(0)
         
