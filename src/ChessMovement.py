@@ -11,6 +11,7 @@ import numpy as np
 import math
 import time
 from typing import List, Tuple, Optional
+from geometry_msgs.msg import Pose
 from robot_ur10e_gripper import RobotUR10eGripper
 
 class ChessMovementController:
@@ -21,7 +22,7 @@ class ChessMovementController:
     positions and handles the pick-and-place sequences needed to move pieces.
     """
     
-    def __init__(self, simulation_mode=True):
+    def __init__(self, simulation_mode=True, chess_engine=None):
         """
         Initialize the chess movement controller.
         
@@ -29,26 +30,95 @@ class ChessMovementController:
             simulation_mode: Whether to run in simulation mode or with a real robot
         """
         rospy.loginfo("Initializing ChessMovementController...")
-        
+        # Initialize ROS node if not already done
+        if not rospy.core.is_initialized():
+            rospy.init_node('chess_movement_controller', anonymous=True)
+    
         # Initialize the robot control interface
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
-        
-        # Board configuration (will need calibration)
+
+        # TODO
+        """
+        Board configuration (will need calibration) in meters
+        - board_origin:
+            X = 0.4 meters (40cm): Distance forward from the robot base
+            Y = 0.3 meters (30cm): Distance to the left from the robot base
+            Z = 0.1 meters (10cm): Height above the robot base
+            These coordinates define where the corner of the chess board (specifically the a1 square)
+            is located in the robot's workspace.
+        """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
-        self.square_size = 0.05              # Square size in meters
+        self.square_size = 0.0508            # Square size in meters. 2 inches (50.8mm) per square
         self.hover_height = 0.1              # Height above board for safety movements
-        self.piece_height = 0.05             # Height of chess pieces
-        self.approach_height = 0.05          # Height from which to approach a piece
+        self.piece_height = 0.0254           # Height of chess pieces
+        self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
         
         # Pre-defined joint positions
-        self.positions = {
+        """
+        - home:
+        Purpose: Safe initial/default position
+        Description: Robot arm fully upright with the gripper pointing downward
+        Joint Values:
+        First joint (base): 0 (centered)
+        Second joint (shoulder): -1.57 (90 degrees back)
+        Third joint (elbow): 0 (straight)
+        Fourth joint (wrist 1): -1.57 (90 degrees down)
+        Fifth joint (wrist 2): 0 (straight)
+        Sixth joint (wrist 3): 0 (straight)
+        Gripper: 0 (open)
+        When Used: At startup, shutdown, or when recovering from errors
+
+        - observe:
+        Purpose: Position to get a good view of the entire board
+        Description: Arm slightly lowered and extended to see the chess board from above
+        Joint Values:
+        Less extreme angles than home position
+        Elbow joint bent at 0.5 radians
+        Wrist positioned to look down at the board
+        When Used:
+        Between moves to assess the board
+        Before and after executing a move
+        As an intermediate position for safety
+
+        - prepare:
+        Purpose: Ready position before making precise movements
+        Description: Similar to observe but slightly rotated and positioned for approach
+        Joint Values:
+        Slight base rotation (0.2)
+        More bent elbow (0.7)
+        Adjusted wrist angle (-1.2)
+        When Used: As an intermediate position before reaching for specific squares
+
+        - retreat:
+        Purpose: Position away from the board when not actively moving pieces
+        Description: Arm rotated and raised higher than the observe position
+        Joint Values:
+        Significant base rotation (0.5)
+        Higher shoulder position (-0.8)
+        More bent elbow (1.0)
+        Wrist angled further (-1.5)
+        When Used:
+        When waiting for player's move
+        When giving the player more space to interact with the board
+        Between games or during pause
+        """
+        self.positions = { # TODO
             "home": [0, -1.57, 0, -1.57, 0, 0, 0],         # Home position (gripper open)
-            "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board
+            "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board. Adjust to see the entire large board
             "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],# Preparation position
             "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, 0] # Position away from the board
         }
-        
+
+        # TODO Define two storage areas for captured pieces
+        self.captured_storage = {
+            'white': {'x': 0.6, 'y': 0.2, 'z': 0.1, 'next_idx': 0},  # Right side of board
+            'black': {'x': 0.6, 'y': 0.4, 'z': 0.1, 'next_idx': 0}   # Left side of board
+        }
+
+        # Keep an internal representation of the board to determine if a square has a piece
+        self.board_state = [[None for _ in range(8)] for _ in range(8)]
+        self.chess_engine = chess_engine
         # Initialize robot position
         self._go_to_safe_position()
         rospy.loginfo("ChessMovementController initialized and ready")
@@ -56,7 +126,7 @@ class ChessMovementController:
     def _go_to_safe_position(self):
         """Move the robot to a safe starting position."""
         rospy.loginfo("Moving to home position...")
-        self.robot.command_robot(self.positions["home"], 3.0)
+        self.robot.command_robot(self.positions["home"], 5.0) #! might be better to be faster here
         time.sleep(0.5)  # Short delay to ensure movement completes
     
     def square_to_position(self, square: str) -> List[float]:
@@ -84,13 +154,9 @@ class ChessMovementController:
         
         return [x, y, z]
         
-    def joint_angles_for_position(self, position: List[float], gripper_open: bool = True) -> List[float]:
+    def joint_angles_for_position(self, position, gripper_open=True):
         """
-        Convert cartesian position to joint angles using inverse kinematics.
-        
-        In a real implementation, this would use proper IK through the MoveIt interface.
-        This simplified version just returns a pre-calculated pose with adjusted X/Y.
-        
+        Simple cartesian to joint angle conversion.
         Args:
             position: [x, y, z] position in workspace
             gripper_open: Whether the gripper should be open (True) or closed (False)
@@ -98,21 +164,16 @@ class ChessMovementController:
         Returns:
             List of 7 joint angles (6 arm joints + gripper)
         """
-        # This is a simplified approach - in real world, use proper IK
-        # The joint_values should come from MoveIt or another IK solver
-        
-        # Example joint values for a position above the board
-        # Adjust the values based on the position
+        # Simple approximation for joint angles based on position
         joint_values = [
-            -0.5 + 0.1 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
-            -1.2 - 0.1 * (position[1] - self.board_origin[1]),   # Shoulder - adjust based on Y
-            0.7,                                                # Elbow
+            -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
+            -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
+            0.7 + 0.3 * (position[2] - self.board_origin[2]),   # Elbow - adjust based on Z
             -1.1,                                               # Wrist 1
             -1.57,                                              # Wrist 2
             0.0,                                                # Wrist 3
             0.0 if gripper_open else 0.7                        # Gripper (0 = open, 0.7 = closed)
         ]
-        
         return joint_values
     
     def execute_move(self, move: str) -> bool:
@@ -202,7 +263,13 @@ class ChessMovementController:
                 self._move_to_cartesian(above_dest, gripper_open=False)
                 
                 # Move captured piece to the side of the board (could be a predefined position)
-                captured_storage = [0.6, 0.3, 0.2]  # Location where captured pieces are stored
+                # captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
+                # Get appropriate storage position based on piece color
+                # In a real implementation, you'd get the piece color from your chess engine
+                piece_color = 'black' if self.chess_engine.side == 'w' else 'white'
+                # or
+                # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black. Won't work for test mode
+                captured_storage = self._move_captured_piece_to_storage(piece_color)
                 self._move_to_cartesian(captured_storage, gripper_open=False)
                 
                 # Release the captured piece
@@ -213,7 +280,7 @@ class ChessMovementController:
                 self._move_to_cartesian(above_storage, gripper_open=True)
             
             # Step 1: Move to observation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             # Step 2: Move above source position
             above_source = [from_pos[0], from_pos[1], from_pos[2] + self.hover_height]
@@ -242,7 +309,7 @@ class ChessMovementController:
             self._move_to_cartesian(above_dest, gripper_open=True)
             
             # Step 10: Return to observation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             return True
             
@@ -251,7 +318,26 @@ class ChessMovementController:
             # Try to return to a safe position
             self._go_to_safe_position()
             return False
-    
+        
+    def _move_captured_piece_to_storage(self, piece_color):
+        """Move a captured piece to the appropriate storage area."""
+        storage = self.captured_storage['white' if piece_color == 'black' else 'black']
+        
+        # Calculate position with offset to avoid piece collisions
+        offset_x = (storage['next_idx'] % 4) * 0.03  # 3cm spacing in X
+        offset_y = (storage['next_idx'] // 4) * 0.03  # 3cm spacing in Y
+        
+        storage_pos = [
+            storage['x'] + offset_x,
+            storage['y'] + offset_y,
+            storage['z']
+        ]
+        
+        # Increment the index for next captured piece
+        storage['next_idx'] += 1
+        
+        return storage_pos
+
     def _execute_castling(self, color: str, side: str) -> bool:
         """
         Execute a castling move, which involves moving both king and rook.
@@ -319,20 +405,32 @@ class ChessMovementController:
             True if successful, False otherwise
         """
         try:
+            # Safety check - ensure position is within workspace limits
+            # TODO: you might need to adjust the numbers
+            workspace_limits = {
+                'x': (0.2, 0.8), # min max in meters
+                'y': (0.0, 0.6),
+                'z': (0.05, 0.4)
+            }
+
+            if (position[0] < workspace_limits['x'][0] or position[0] > workspace_limits['x'][1] or
+                position[1] < workspace_limits['y'][0] or position[1] > workspace_limits['y'][1] or
+                position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
+                rospy.logerr(f"Position {position} is outside of safe workspace limits!")
+                return False
+                
             # In a real implementation, use proper IK or MoveIt
             # For now, use our simplified joint angles calculation
             joint_values = self.joint_angles_for_position(position, gripper_open)
             
             # Execute the move
             rospy.loginfo(f"Moving to position: {position}")
-            self.robot.command_robot(joint_values, 2.0)
-            
-            # Add a short delay to ensure movement completes
-            # In a real implementation, you would wait for feedback that movement is complete
-            time.sleep(0.5)
+            success = self.robot.command_robot(joint_values, 5.0)
+            if not success:
+                rospy.logwarn(f"Movement to {position} may not have completed sucessfully")
+                return False
             
             return True
-            
         except Exception as e:
             rospy.logerr(f"Error in _move_to_cartesian: {e}")
             return False
@@ -352,7 +450,7 @@ class ChessMovementController:
             gripper_open_position = current_pos[:6] + [0.0]  # 0.0 is open
             
             rospy.loginfo("Opening gripper")
-            self.robot.command_robot(gripper_open_position, 1.0)
+            self.robot.command_robot(gripper_open_position, 3.0)
             time.sleep(0.5)  # Give time for the gripper to open
             
             return True
@@ -366,7 +464,7 @@ class ChessMovementController:
         Close the gripper to grasp a piece.
         
         Args:
-            position: Gripper position (0.0 is open, 1.0 is closed)
+            position: Gripper position (0.0 is open, 0.7 is closed)
             
         Returns:
             True if successful, False otherwise
@@ -379,7 +477,7 @@ class ChessMovementController:
             gripper_close_position = current_pos[:6] + [position]
             
             rospy.loginfo(f"Closing gripper to position {position}")
-            self.robot.command_robot(gripper_close_position, 1.0)
+            self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
             time.sleep(0.5)  # Give time for the gripper to close
             
             return True
@@ -399,7 +497,7 @@ class ChessMovementController:
             rospy.loginfo("Testing board calibration...")
             
             # Move to the preparation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             # Move to each corner with a slight hover
             for square in ['a1', 'a8', 'h8', 'h1']:
