@@ -27,7 +27,7 @@
 		roslaunch sd02_joseph-hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
 	
 	Manually test chess moves without the vision system:
-		roslaunch sd02_joseph-hoane_1 chess_robot.launch _chess_robot:=test
+		roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test
 		OR
 		rosrun sd02_joseph-hoane_1 run_chess_robot.py test
 
