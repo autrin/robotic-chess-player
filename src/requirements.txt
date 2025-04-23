@@ -1,0 +1,8 @@
+opencv-python~=4.11.0.86
+chess~=1.11.2
+stockfish~=3.28.0
+numpy~=2.0.2
+mss~=10.0.0
+setuptools~=68.2.0
+pillow~=11.1.0
+pandas~=2.2.3
