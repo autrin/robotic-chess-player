@@ -232,7 +232,7 @@ class ChessMovementController:
                 self._move_to_cartesian(above_storage, gripper_open=True)
             
             # Step 1: Move to observation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             # Step 2: Move above source position
             above_source = [from_pos[0], from_pos[1], from_pos[2] + self.hover_height]
