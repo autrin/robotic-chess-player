@@ -206,7 +206,7 @@ class ChessMovementController:
                 self._move_to_cartesian(above_dest, gripper_open=False)
                 
                 # Move captured piece to the side of the board (could be a predefined position)
-                captured_storage = [0.6, 0.3, 0.2]  # Location where captured pieces are stored
+                captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
                 self._move_to_cartesian(captured_storage, gripper_open=False)
                 
                 # Release the captured piece
