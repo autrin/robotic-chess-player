@@ -1,11 +1,15 @@
 <launch>
-  <!-- Simulation mode flag -->
+  <!-- Arguments -->
   <arg name="sim" default="true"/>
-  <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/> <!-- Replace with your robot IP -->
+  <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/>
+  <arg name="_chess_robot" default=""/> <!-- Empty for normal mode, "test" for test mode -->
+  
+  <!-- Launch our simulator when in simulation mode -->
+  <node if="$(arg sim)" name="robot_sim" pkg="sd02_joseph-hoane_1" type="simulator.py" output="screen"/>
   
   <!-- Load UR10e driver (only when not in sim mode) -->
   <group unless="$(arg sim)">
-    <include file="$(find ur_robot_driver)/launch/ur10e_bringup.launch">
+    <include file="$(find ur_robot_driver)/launch/ur10e_griper_bringup.launch">
       <arg name="robot_ip" value="$(arg robot_ip)"/>
     </include>
   </group>
@@ -30,6 +34,6 @@
     </node>
   </group>
   
-  <!-- Launch our chess robot node -->
-  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" output="screen" />
+  <!-- Launch our chess robot node with appropriate arguments -->
+  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" args="$(arg _chess_robot)" output="screen" />
 </launch>
