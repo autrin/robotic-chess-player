@@ -7,6 +7,10 @@ from ChessMovement import ChessMovementController
 from ChessEngine import ChessEngineClass
 from GamePlay import GamePlayClass
 
+"""
+ The primary ROS node entry point launched by chess_robot.launch file
+"""
+
 def main():
     try:
         rospy.loginfo("Starting Chess Robot System...")
