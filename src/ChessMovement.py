@@ -69,7 +69,7 @@ class ChessMovementController:
     def _go_to_safe_position(self):
         """Move the robot to a safe starting position."""
         rospy.loginfo("Moving to home position...")
-        self.robot.command_robot(self.positions["home"], 5.0)
+        self.robot.command_robot(self.positions["home"], 5.0) #! might be better to be faster here
         time.sleep(0.5)  # Short delay to ensure movement completes
     
     def square_to_position(self, square: str) -> List[float]:
