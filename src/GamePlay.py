@@ -1,9 +1,9 @@
 import time
 import rospy
-from src.FilePathFinder import getPath
-from src.CameraFeed import CameraFeedClass
-from src.ChessEngine import ChessEngineClass
-from src.ChessMovement import ChessMovementController
+from FilePathFinder import getPath
+from CameraFeed import CameraFeedClass
+from ChessEngine import ChessEngineClass
+from ChessMovement import ChessMovementController
 import cv2
 import mss
 import numpy as np
