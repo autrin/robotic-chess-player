@@ -30,11 +30,14 @@ class ChessMovementController:
             simulation_mode: Whether to run in simulation mode or with a real robot
         """
         rospy.loginfo("Initializing ChessMovementController...")
-        
+        # Initialize ROS node if not already done
+        if not rospy.core.is_initialized():
+            rospy.init_node('chess_movement_controller', anonymous=True)
+    
         # Initialize the robot control interface
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
-        
+
         # TODO
         """
         Board configuration (will need calibration) in meters
