@@ -31,8 +31,8 @@ class ChessMovementController:
         """
         rospy.loginfo("Initializing ChessMovementController...")
         # Initialize ROS node if not already done
-        if not rospy.core.is_initialized():
-            rospy.init_node('chess_movement_controller', anonymous=True)
+        # if not rospy.core.is_initialized():
+        #     rospy.init_node('chess_movement_controller', anonymous=True)
     
         # Initialize the robot control interface
         self.robot = RobotUR10eGripper(is_gripper_up=True)
