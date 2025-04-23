@@ -382,7 +382,7 @@ class ChessMovementController:
         Close the gripper to grasp a piece.
         
         Args:
-            position: Gripper position (0.0 is open, 1.0 is closed)
+            position: Gripper position (0.0 is open, 0.7 is closed)
             
         Returns:
             True if successful, False otherwise
@@ -395,7 +395,7 @@ class ChessMovementController:
             gripper_close_position = current_pos[:6] + [position]
             
             rospy.loginfo(f"Closing gripper to position {position}")
-            self.robot.command_robot(gripper_close_position, 1.0)
+            self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
             time.sleep(0.5)  # Give time for the gripper to close
             
             return True
