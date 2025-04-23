@@ -15,6 +15,10 @@ from jh1.visual import (
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
 
+"""
+A standalone vision-based chess system
+"""
+
 ENGINE_PATH = "./resources/stockfish"
 OPENING_BOOK_PATH = "./resources/baron30.bin"
 
