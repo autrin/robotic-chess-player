@@ -34,7 +34,16 @@ class ChessMovementController:
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
         
-        #TODO Board configuration (will need calibration) in meters
+        #TODO
+        """
+        Board configuration (will need calibration) in meters
+        - board_origin:
+            X = 0.4 meters (40cm): Distance forward from the robot base
+            Y = 0.3 meters (30cm): Distance to the left from the robot base
+            Z = 0.1 meters (10cm): Height above the robot base
+            These coordinates define where the corner of the chess board (specifically the a1 square)
+            is located in the robot's workspace.
+        """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
         self.square_size = 0.0454            # Square size in meters
         self.hover_height = 0.1              # Height above board for safety movements
