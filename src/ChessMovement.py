@@ -261,7 +261,7 @@ class ChessMovementController:
             self._move_to_cartesian(above_dest, gripper_open=True)
             
             # Step 10: Return to observation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             return True
             
