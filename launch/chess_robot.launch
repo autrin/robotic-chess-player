@@ -2,7 +2,7 @@
   <!-- Arguments -->
   <arg name="sim" default="true"/>
   <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/>
-  <arg name="_chess_robot" default=""/> <!-- Empty for normal mode, "test" for test mode -->
+  <arg name="chess_robot" default=""/> <!-- Empty for normal mode, "test" for test mode -->
   
   <!-- Launch our simulator when in simulation mode -->
   <node if="$(arg sim)" name="robot_sim" pkg="sd02_joseph-hoane_1" type="simulator.py" output="screen"/>
@@ -33,7 +33,7 @@
       <rosparam param="source_list">[/joint_states]</rosparam>
     </node>
   </group>
-  
   <!-- Launch our chess robot node with appropriate arguments -->
-  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" args="$(arg _chess_robot)" output="screen"/>
+  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" output="screen" args="$(arg chess_robot)">
+  </node>
 </launch>

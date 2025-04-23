@@ -25,11 +25,14 @@ def main():
         # Initialize robot movement controller
         movement_controller = ChessMovementController(simulation_mode=True, chess_engine=chess_engine)
         
-        # Two options for how to run the system:
-        test_mode = rospy.get_param('~chess_robot', '') == 'test'
-        
+        # detect test mode
+        test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
+        rospy.loginfo(f"Command‑line args: {sys.argv}")
+        rospy.loginfo(f"Test mode: {test_mode}")
+
         # OPTION 1: Simple chess move test mode
         if test_mode:
+            # ... rest of your test mode code ...
             rospy.loginfo("Running in test mode")
             
             # Test basic calibration
