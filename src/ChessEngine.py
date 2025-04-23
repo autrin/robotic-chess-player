@@ -1,6 +1,6 @@
 from stockfish import Stockfish
 import chess
-import FilePathFinder
+import FilePathFinder as FilePathFinder
 
 """
 Purpose:
@@ -25,7 +25,7 @@ class ChessEngineClass:
         depth=20,
         level=15,
         side="w",
-        enginePath=FilePathFinder.getPath("chessEngine"),
+        enginePath=None,
     ):
         """
         Parameters:
@@ -35,6 +35,11 @@ class ChessEngineClass:
         - startFirst: Boolean indicating whether the engine moves first.
         - enginePath: The file path to the Stockfish executable; retrieved from a helper module.
         """
+        if enginePath is None:
+            try:
+                enginePath = FilePathFinder.getPath("chessEngine")
+            except:
+                enginePath = "/usr/games/stockfish"
 
         self.depth = max(20, depth)
         self.level = max(20, level)
@@ -42,7 +47,7 @@ class ChessEngineClass:
         self.stockfish = Stockfish(enginePath)
         self.stockfish.set_depth(self.depth)
         self.stockfish.set_skill_level(self.level)
-        self.FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
+        self.FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"#"8/pp3pbk/2q1p2p/4n1p1/4NQ2/2B4P/1P3PP1/6K1 w - - 2 35"#"3q2k1/8/8/8/8/8/8/1Q2K3 w - - 0 1" #<--for demo2 #"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  # for other purposes. Might me removed
         self.board = chess.Board(self.FEN)
         self.chess = chess
 
@@ -54,14 +59,19 @@ class ChessEngineClass:
         move = self.stockfish.get_best_move()
         self.board.push_uci(move)
         self.FEN = self.board.fen()
+        print("FEN string after white's move"+self.FEN)
+        #exit()
         return move
     
     #assume that the opponent will make the right movements
     def makeOppMove(self,move):
         move = chess.Move.from_uci(move)
-        if move in self.board.legal_moves:
+        if move in self.board.legal_moves: #for demo2
             self.board.push(move)
             self.FEN = self.board.fen()
+            print("FEN string after black's move"+self.FEN)
+            #exit()
+            #print(self.FEN)
     
         
 

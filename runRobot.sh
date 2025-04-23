@@ -16,7 +16,7 @@ roscore &
 CORE_PID=$!
 # Wait until the ROS master is available.
 echo "Waiting for ROS master..."
-until rostopic list > /dev/null 2>&1; do
+until rostopic list >/src/null 2>&1; do
     sleep 1
 done
 echo "ROS master is available."
@@ -67,7 +67,7 @@ done
 echo "move_group action server is now available."
 
 # Check if the robot_description is loaded.
-if ! rosparam get /robot_description > /dev/null 2>&1; then
+if ! rosparam get /robot_description >/src/null 2>&1; then
     echo "Error: 'robot_description' parameter is not loaded. Please check your launch files."
     kill -SIGINT $SIM_PID $MOVEIT_PID $CORE_PID
     exit 1

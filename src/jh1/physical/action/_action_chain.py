@@ -1,6 +1,6 @@
 from typing import List
 
-from jh1.orchestrator.action._abstract_action import AbstractAction
+from ._abstract_action import AbstractAction
 
 
 class ActionChain:

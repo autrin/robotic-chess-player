@@ -1,0 +1,39 @@
+<launch>
+  <!-- Arguments -->
+  <arg name="sim" default="true"/>
+  <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/>
+  <arg name="_chess_robot" default=""/> <!-- Empty for normal mode, "test" for test mode -->
+  
+  <!-- Launch our simulator when in simulation mode -->
+  <node if="$(arg sim)" name="robot_sim" pkg="sd02_joseph-hoane_1" type="simulator.py" output="screen"/>
+  
+  <!-- Load UR10e driver (only when not in sim mode) -->
+  <group unless="$(arg sim)">
+    <include file="$(find ur_robot_driver)/launch/ur10e_griper_bringup.launch">
+      <arg name="robot_ip" value="$(arg robot_ip)"/>
+    </include>
+  </group>
+
+  <!-- Load Robotiq gripper driver with correct launch file -->
+  <include file="$(find robotiq_2f_gripper_control)/launch/robotiq_action_server.launch">
+    <arg name="sim" value="$(arg sim)"/>
+    <arg name="stroke" value="0.085"/> <!-- For 85mm gripper, use 0.140 for 140mm -->
+    <arg name="joint_name" value="finger_joint"/>
+    <arg name="comport" value="/dev/ttyUSB0" unless="$(arg sim)"/>
+  </include>
+
+  <!-- For visualization in simulation mode -->
+  <group if="$(arg sim)">
+    <!-- Robot state publisher for gripper -->
+    <param name="robot_description" command="$(find xacro)/xacro $(find robotiq_2f_85_gripper_visualization)/urdf/robotiq_arg2f_85_model.xacro"/>
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="100.0"/>
+    </node>
+    <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+      <rosparam param="source_list">[/joint_states]</rosparam>
+    </node>
+  </group>
+  
+  <!-- Launch our chess robot node with appropriate arguments -->
+  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" args="$(arg _chess_robot)" output="screen"/>
+</launch>
