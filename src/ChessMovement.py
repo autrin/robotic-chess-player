@@ -53,9 +53,57 @@ class ChessMovementController:
         self.hover_height = 0.1              # Height above board for safety movements
         self.piece_height = 0.0254           # Height of chess pieces
         self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
-        # TODO
+        
         # Pre-defined joint positions
-        self.positions = {
+        """
+        - home:
+        Purpose: Safe initial/default position
+        Description: Robot arm fully upright with the gripper pointing downward
+        Joint Values:
+        First joint (base): 0 (centered)
+        Second joint (shoulder): -1.57 (90 degrees back)
+        Third joint (elbow): 0 (straight)
+        Fourth joint (wrist 1): -1.57 (90 degrees down)
+        Fifth joint (wrist 2): 0 (straight)
+        Sixth joint (wrist 3): 0 (straight)
+        Gripper: 0 (open)
+        When Used: At startup, shutdown, or when recovering from errors
+
+        - observe:
+        Purpose: Position to get a good view of the entire board
+        Description: Arm slightly lowered and extended to see the chess board from above
+        Joint Values:
+        Less extreme angles than home position
+        Elbow joint bent at 0.5 radians
+        Wrist positioned to look down at the board
+        When Used:
+        Between moves to assess the board
+        Before and after executing a move
+        As an intermediate position for safety
+
+        - prepare:
+        Purpose: Ready position before making precise movements
+        Description: Similar to observe but slightly rotated and positioned for approach
+        Joint Values:
+        Slight base rotation (0.2)
+        More bent elbow (0.7)
+        Adjusted wrist angle (-1.2)
+        When Used: As an intermediate position before reaching for specific squares
+
+        - retreat:
+        Purpose: Position away from the board when not actively moving pieces
+        Description: Arm rotated and raised higher than the observe position
+        Joint Values:
+        Significant base rotation (0.5)
+        Higher shoulder position (-0.8)
+        More bent elbow (1.0)
+        Wrist angled further (-1.5)
+        When Used:
+        When waiting for player's move
+        When giving the player more space to interact with the board
+        Between games or during pause
+        """
+        self.positions = { # TODO
             "home": [0, -1.57, 0, -1.57, 0, 0, 0],         # Home position (gripper open)
             "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board. Adjust to see the entire large board
             "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],# Preparation position
