@@ -399,7 +399,7 @@ class ChessMovementController:
             rospy.loginfo("Testing board calibration...")
             
             # Move to the preparation position
-            self.robot.command_robot(self.positions["observe"], 2.0)
+            self.robot.command_robot(self.positions["observe"], 5.0)
             
             # Move to each corner with a slight hover
             for square in ['a1', 'a8', 'h8', 'h1']:
