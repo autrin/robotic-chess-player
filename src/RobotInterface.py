@@ -7,6 +7,8 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, Point, Quaternion
 import numpy as np
 import time
+# no need to use this file. chessMovementController uses ur10eripper file that was sent by client
+# the simulation part is usefull to be used in chessMovementController later
 
 class RobotArmController:
     def __init__(self):
