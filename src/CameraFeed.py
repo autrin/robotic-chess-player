@@ -2,7 +2,7 @@
 import cv2
 import numpy as np
 import pupil_apriltags as apriltag
-
+import rospkg, os
 import FilePathFinder
 import math
 
@@ -41,7 +41,10 @@ class CameraFeedClass:
                              [0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 0, 0, 0, 0, 0],
                              [0, 0, 0, 0, 0, 0, 0, 0]]
-        self.referenceImage = cv2.imread("./resources/ChessboardReference.png")
+        rospack = rospkg.RosPack()
+        pkg_path = rospack.get_path('sd02_joseph-hoane_1')
+        resources_path = os.path.join(pkg_path, "resources", "ChessboardReference.png")
+        self.referenceImage = cv2.imread(resources_path)
         self.hasBeenCalibrated = False
         self.chessBoardVertices = []
         self.callCounter = 0
