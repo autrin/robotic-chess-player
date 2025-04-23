@@ -11,6 +11,7 @@ import numpy as np
 import math
 import time
 from typing import List, Tuple, Optional
+from geometry_msgs.msg import Pose
 from robot_ur10e_gripper import RobotUR10eGripper
 
 class ChessMovementController:
@@ -93,7 +94,7 @@ class ChessMovementController:
         
         return [x, y, z]
         
-    def joint_angles_for_position(self, position: List[float], gripper_open: bool = True) -> List[float]:
+    def joint_angles_for_position(self, position, gripper_open=True):
         """
         Convert cartesian position to joint angles using inverse kinematics.
         
@@ -107,22 +108,43 @@ class ChessMovementController:
         Returns:
             List of 7 joint angles (6 arm joints + gripper)
         """
-        # This is a simplified approach - in real world, use proper IK
-        # The joint_values should come from MoveIt or another IK solver
-        
+        target_pose = Pose()
+        target_pose.position.x = position[0]
+        target_pose.position.y = position[1]
+        target_pose.position.z = position[2]
+
+        # set orientation - typically downward-facing for chess pieces
+        target_pose.orientation.x = 0.0
+        target_pose.orientation.y = 1.0
+        target_pose.orientation.z = 0.0
+        target_pose.orientation.w = 0.0
+
+        # set the target pose
+        self.move_group.set_pose_target(target_pose)
+
+        # plan and execute
+        success, plan = self.move_group.plan()
+        if success:
+            joint_values = self.move_group.get_join_values()
+            # add gripper position
+            joint_values.append(0.0 if gripper_open else 0.7)
+            return joint_values
+        else:
+            rospy.logerr("No IK solution found for position")
+            return None
         # Example joint values for a position above the board
         # Adjust the values based on the position
-        joint_values = [
-            -0.5 + 0.1 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
-            -1.2 - 0.1 * (position[1] - self.board_origin[1]),   # Shoulder - adjust based on Y
-            0.7,                                                # Elbow
-            -1.1,                                               # Wrist 1
-            -1.57,                                              # Wrist 2
-            0.0,                                                # Wrist 3
-            0.0 if gripper_open else 0.7                        # Gripper (0 = open, 0.7 = closed)
-        ]
+        # joint_values = [
+        #     -0.5 + 0.1 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
+        #     -1.2 - 0.1 * (position[1] - self.board_origin[1]),   # Shoulder - adjust based on Y
+        #     0.7,                                                # Elbow
+        #     -1.1,                                               # Wrist 1
+        #     -1.57,                                              # Wrist 2
+        #     0.0,                                                # Wrist 3
+        #     0.0 if gripper_open else 0.7                        # Gripper (0 = open, 0.7 = closed)
+        # ]
         
-        return joint_values
+        # return joint_values
     
     def execute_move(self, move: str) -> bool:
         """
@@ -334,7 +356,7 @@ class ChessMovementController:
                 'y': (0.0, 0.6),
                 'z': (0.05, 0.4)
             }
-            
+
             if (position[0] < workspace_limits['x'][0] or position[0] > workspace_limits['x'][1] or
                 position[1] < workspace_limits['y'][0] or position[1] > workspace_limits['y'][1] or
                 position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
