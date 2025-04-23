@@ -24,7 +24,7 @@ class GamePlayClass:
         self.chessEngine = ChessEngineClass(enginePath="/usr/games/stockfish")
         
         # Initialize robot movement controller
-        self.robot = ChessMovementController()
+        self.robot = ChessMovementController(chess_engine=self.chessEngine)
         
         # Piece mapping
         self.pieceMap = {

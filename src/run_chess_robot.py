@@ -19,7 +19,7 @@ def main():
         )
         
         # Initialize robot movement controller
-        movement_controller = ChessMovementController(simulation_mode=True)
+        movement_controller = ChessMovementController(simulation_mode=True, chess_engine=chess_engine)
         
         # Two options for how to run the system:
         
