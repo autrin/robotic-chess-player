@@ -4,7 +4,8 @@ import actionlib
 from robotiq_2f_gripper_msgs.msg import CommandRobotiqGripperAction, CommandRobotiqGripperGoal
 from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus
 import time
-
+# no need to use this file. chessMovementController uses ur10eripper file that was sent by client
+# the simulation part is usefull to be used in chessMovementController later
 class GripperController:
     def __init__(self):
         # Check if we're in simulation mode
