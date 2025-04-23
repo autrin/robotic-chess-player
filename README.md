@@ -7,6 +7,10 @@
 	.   CMakeLists.txt  robotiq              universal_robot              ur_msgs
 	..  isu_rel         sd02_joseph-hoane_1  Universal_Robots_ROS_Driver
 	autrin@autrin-rog-zephyrus-g14-ga403ui:~/Desktop/402project/project/catkin_ws$ 
+	autrin@autrin-rog-zephyrus-g14-ga403ui:~/Desktop/402project/project/catkin_ws$ ls -a src/sd02_joseph-hoane_1/
+	.   build           Document  .gitattributes  jh_ur10e_hande  launch_simulation.sh  meeting-notes.md  paths.csv  progress.md  resources    run.sh  stockfish
+	..  CMakeLists.txt  .git      .gitignore      launch          main.py               package.xml       practice   README.md    runRobot.sh  src
+	autrin@autrin-rog-zephyrus-g14-ga403ui:~/Desktop/402project/project/catkin_ws$ 
 
 ### To activate the workspace and run:
 	
