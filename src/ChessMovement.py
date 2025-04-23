@@ -334,10 +334,12 @@ class ChessMovementController:
             
             # Execute the move
             rospy.loginfo(f"Moving to position: {position}")
-            self.robot.command_robot(joint_values, 5.0)
+            success = self.robot.command_robot(joint_values, 5.0)
+            if not success:
+                rospy.logwarn(f"Movement to {position} may not have completed sucessfully")
+                return False
             
             return True
-            
         except Exception as e:
             rospy.logerr(f"Error in _move_to_cartesian: {e}")
             return False
