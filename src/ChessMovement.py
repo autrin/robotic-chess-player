@@ -34,7 +34,7 @@ class ChessMovementController:
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
         
-        #TODO
+        # TODO
         """
         Board configuration (will need calibration) in meters
         - board_origin:
@@ -49,7 +49,7 @@ class ChessMovementController:
         self.hover_height = 0.1              # Height above board for safety movements
         self.piece_height = 0.0254           # Height of chess pieces
         self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
-        
+        # TODO
         # Pre-defined joint positions
         self.positions = {
             "home": [0, -1.57, 0, -1.57, 0, 0, 0],         # Home position (gripper open)
