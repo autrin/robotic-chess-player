@@ -32,7 +32,6 @@ def main():
 
         # OPTION 1: Simple chess move test mode
         if test_mode:
-            # ... rest of your test mode code ...
             rospy.loginfo("Running in test mode")
             
             # Test basic calibration
