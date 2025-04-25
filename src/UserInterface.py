@@ -183,7 +183,7 @@ difficulty8 = Button(GUI,
                 pady=10
                 )
 def showHomepage():
-    distance = 50
+    distance = 60
     play.place(x=0,y=0)
     difficulty1.place(x=200,y=distance*0)
     difficulty2.place(x=200,y=distance*1)
