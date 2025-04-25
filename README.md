@@ -43,4 +43,4 @@ In your virtual environment, run:
 pip install -e ./src
 
 ```
-
+Google slides for progress: https://docs.google.com/presentation/d/1KjLXtcGOjq-ztTGnWDBwuNPuuBlknc9xajZgTyLYn-0/edit?usp=sharing
