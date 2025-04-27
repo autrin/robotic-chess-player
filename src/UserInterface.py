@@ -8,6 +8,7 @@ from io import BytesIO
 import copy
 import cairosvg
 import time
+import main
 PlayerTime=600
 RobotTime=600
 global GUI 
@@ -82,6 +83,21 @@ defaultfen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 boarddata = getBoard(defaultfen)
 displayedboard = getDisplayBoard(boarddata)
 Board = boardInfo(displayedboard,defaultfen,boarddata)
+
+#updates currentBoard to fen, and sets RobotTurnGoingOn to false (ends robot turn)
+def SignalRobotTurnDone(fen):
+    global RobotTurnGoingOn
+    RobotTurnGoingOn=False
+
+    Board.UpdateFen(fen)
+
+    BoardTemp = chess.Board(fen)
+    #update screen with board displaying new move
+    newBoardImage = getDisplayBoard(BoardTemp)
+    Board.SetBoardImage(newBoardImage)
+    Board.DisplayBoard()
+    GUI.update()
+    GUI.after(0,endRobotTurn)
 
 
 #BUTTON TO PLAY/START GAME
@@ -289,6 +305,7 @@ def gameTimer():
     else:
         GUI.after_cancel(timerAfter)
 
+#edits visuals
 def startRobotTurn():
     global isPlayerTurn
     isPlayerTurn=False
@@ -297,8 +314,7 @@ def startRobotTurn():
     RobotTimeLabel.config(fg="red",font=("Arial",20,"bold"))
     playerTimeLabel.config(fg="black",font=("Arial",20))
 
-    GUI.after(3000,endRobotTurn)
-
+#edits visuals
 def endRobotTurn():
     global isPlayerTurn
     isPlayerTurn=True
@@ -306,47 +322,50 @@ def endRobotTurn():
     PlayerTurnText.config(fg="red",font=("Arial",20,"bold"))
     RobotTimeLabel.config(fg="black",font=("Arial",20))
     playerTimeLabel.config(fg="red",font=("Arial",20,"bold"))
-    global TurnGoingOn
-    TurnGoingOn=False
+    global RobotTurnGoingOn
+    RobotTurnGoingOn = False
 
-TurnGoingOn = False
+RobotTurnGoingOn = False
 #majority of code for getting data from arm will be in this method.
 def finishTurn():
-    global TurnGoingOn
-    print("Checking:",TurnGoingOn)
-    if TurnGoingOn==False:
-        TurnGoingOn=True
+    global RobotTurnGoingOn
+    if RobotTurnGoingOn==False:
+        RobotTurnGoingOn=True
         
         GUI.after(100,startRobotTurn)
-        CurBoardFEN = Board.fen
-        startsquare = 0
-        endsquare = 0
-        newMove = 0
-        #set new board
-        boardTemp = chess.Board(CurBoardFEN)
-        for move in boardTemp.legal_moves:
-            startsquare = move.from_square
-            endsquare = move.to_square
-            newMove = move
-            break
-        #update screen with board displaying arrow for next move.
-        arrowImage = getDisplayBoard(boardTemp,arrowsVal=[chess.svg.Arrow(startsquare,endsquare)])
-        Board.SetBoardImage(arrowImage)
-        Board.DisplayBoard()
 
+        # CurBoardFEN = Board.fen
         
-        #update the screen instantly and wait a bit to display the move.
-        GUI.update()
-        #set temp Board's FEN to the current board FEN after the new move
-        boardTemp.push(newMove)
-        Board.fen=boardTemp.board_fen()
-        #update screen with board displaying last move
-        newBoardImage = getDisplayBoard(boardTemp)
-        Board.SetBoardImage(newBoardImage)
-        Board.DisplayBoard()
+        # startsquare = 0
+        # endsquare = 0
+        # newMove = 0
+        #set new board
+        # boardTemp = chess.Board(updateBoardFEN())
+        # boardTemp = chess.Board(CurBoardFEN)
+        # for move in boardTemp.legal_moves:
+        #     startsquare = move.from_square
+        #     endsquare = move.to_square
+        #     newMove = move
+        #     break
+
+        #update screen with board displaying arrow for next move.
+        # arrowImage = getDisplayBoard(boardTemp,arrowsVal=[chess.svg.Arrow(startsquare,endsquare)])
+        # Board.SetBoardImage(arrowImage)
+        # Board.DisplayBoard()
+
+        #let main know that player's turn is done.
+        main.updatePlayerTurnDone()
+
+        # #update the screen instantly and wait a bit to display the move.
+        # GUI.update()
+        # #set temp Board's FEN to the current board FEN after the new move
+        # boardTemp.push(newMove)
+        # Board.fen=boardTemp.board_fen()
+        # #update screen with board displaying last move
+        # newBoardImage = getDisplayBoard(boardTemp)
+        # Board.SetBoardImage(newBoardImage)
+        # Board.DisplayBoard()
         
-        print("End of Turn:",TurnGoingOn)
-    
 endTurn.config(command= finishTurn)
 
 
@@ -373,5 +392,7 @@ def getMoveFromTwoBoardStates(state1,state2):
     return movefound
 
 
+def runMainLoop():
+    GUI.mainloop()
 
-GUI.mainloop() #opens window
+# GUI.mainloop() #opens window

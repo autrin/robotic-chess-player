@@ -3,7 +3,7 @@ import cv2
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
+import UserInterface
 from jh1.core import Engine, GameState
 from jh1.visual import (
     instantiate_detector,
@@ -137,8 +137,14 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
+playerTurnDone = False
+#sets player turn Done to True
+def updatePlayerTurnDone():
+    global playerTurnDone
+    playerTurnDone=True
 
 def main():
+    UserInterface.runMainLoop()
     cam = WebcamSource(cam_id=0)
     detector = instantiate_detector()
 
@@ -165,30 +171,34 @@ def main():
         print("-" * 60)
 
     while not game.board.is_game_over():
-        move, scanned_board = prompt_for_move(game, cam, detector)
+        if(playerTurnDone==False): #once true, does the rest of the turn
+            move, scanned_board = prompt_for_move(game, cam, detector)
 
-        board_before = game.board.copy()
-        if game.offer_move(move):
-            print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
-            # print_board_array(scanned_board)
-            print("FEN:", game.get_fen())
-            print("Stockfish:", engine.get_eval_score())
-        else:
-            print("Move rejected. Retaining previous board state.")
-            print("FEN:", board_before.fen())
-            print("-" * 60)
-            continue
+            board_before = game.board.copy()
+            if game.offer_move(move):
+                print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
+                # print_board_array(scanned_board)
+                print("FEN:", game.get_fen())
+                print("Stockfish:", engine.get_eval_score())
+            else:
+                print("Move rejected. Retaining previous board state.")
+                print("FEN:", board_before.fen())
+                print("-" * 60)
+                continue
 
-        if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
-            move = game.get_engine_move()
-            print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
-            print("Please make the engine's move on the board.")
-            scanned_board = verify_move(move, game, cam, detector)
-            game.offer_move(move, by_white=game.engine_plays_white)
-            # print_board_array(scanned_board)
-            print("FEN:", game.get_fen())
-            print("Stockfish:", engine.get_eval_score())
-            print("-" * 60)
+            if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
+                move = game.get_engine_move()
+                print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
+                print("Please make the engine's move on the board.")
+                scanned_board = verify_move(move, game, cam, detector)
+                game.offer_move(move, by_white=game.engine_plays_white)
+                # print_board_array(scanned_board)
+                print("FEN:", game.get_fen())
+                print("Stockfish:", engine.get_eval_score())
+                print("-" * 60)
+            #signal that the robot is done with its turn
+            UserInterface.SignalRobotTurnDone(game.get_fen())
+            playerTurnDone=False
 
     print("Game over.")
     cam.release()
