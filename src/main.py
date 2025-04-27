@@ -3,7 +3,7 @@ import cv2
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-import UserInterface
+
 from jh1.core import Engine, GameState
 from jh1.visual import (
     instantiate_detector,
@@ -144,6 +144,7 @@ def updatePlayerTurnDone():
     playerTurnDone=True
 
 def main():
+    import UserInterface
     UserInterface.runMainLoop()
     cam = WebcamSource(cam_id=0)
     detector = instantiate_detector()

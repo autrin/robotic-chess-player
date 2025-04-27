@@ -7,7 +7,6 @@ import tksvg
 from io import BytesIO
 import copy
 import cairosvg
-import time
 import main
 PlayerTime=600
 RobotTime=600
@@ -49,7 +48,7 @@ GUI.title("Robotic Chess Player")
 
 programimage = Image.open("robo_arm.jpg")
 iconimage = ImageTk.PhotoImage(programimage)
-GUI.iconphoto(True,iconimage)
+# GUI.iconphoto(True,iconimage)
 GUI.config()
 #takes FEN string and returns board with that string
 def getBoard(FEN):
@@ -395,4 +394,5 @@ def getMoveFromTwoBoardStates(state1,state2):
 def runMainLoop():
     GUI.mainloop()
 
+runMainLoop()
 # GUI.mainloop() #opens window
