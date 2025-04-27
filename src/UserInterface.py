@@ -394,5 +394,5 @@ def getMoveFromTwoBoardStates(state1,state2):
 def runMainLoop():
     GUI.mainloop()
 
-runMainLoop()
+# runMainLoop()
 # GUI.mainloop() #opens window
