@@ -157,7 +157,7 @@ def main():
     game = GameState(engine, engine_plays_white=engine_is_white)
     
     # Initialize robot movement controller
-    movement_controller = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
+    robot = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
     
     print("Chess Game Running...\n")
 
@@ -167,7 +167,16 @@ def main():
         print("Please make the engine's move on the board.")
         scanned_board = verify_move(move, game, cam, detector)
         game.offer_move(move, by_white=True)
-        # print_board_array(scanned_board)
+        try:
+            print(f"Robot executing move: {move}")
+            success = robot.execute_move(move)
+            if success:
+                print(f"Robot successfully executed move: {move}")
+            else:
+                print(f"Robot failed to execute move: {move}")
+        except Exception as e:
+            print(f"Error executing move: {e}")
+
         print("FEN:", game.get_fen())
         print("-" * 60)
 
