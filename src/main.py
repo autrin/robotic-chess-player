@@ -255,13 +255,6 @@ def main():
                     if len(human_move) != 4:  # Fixed: using human_move instead of move
                         print("Invalid move format. Please use format like 'e2e4'")
                         continue
-                    
-                    # Validate move against game rules
-                    legal_moves = [m.uci() for m in game.board.legal_moves]
-                    if human_move not in legal_moves:
-                        print(f"Illegal move: {human_move}")
-                        print(f"Legal moves: {', '.join(legal_moves[:10])}...")
-                        continue
 
                     # Execute human move with robot
                     rospy.loginfo(f"Executing human move: {human_move}")
@@ -300,7 +293,7 @@ def main():
                                 print(f"Game over! Result: {result}")
                                 break
                     else:
-                        rospy.logerr("Failed to execute move")
+                        rospy.logerr("Robot failed to execute move")
                 except KeyboardInterrupt:
                     break
                 except Exception as e:
@@ -378,7 +371,9 @@ def main():
                 success = set_robot_move(move)
                 if success:
                     print("Robot completed the engine's move")
-                
+                else:
+                    print("Robot failed to execute move. Please try again.")
+                    continue
                 # Verify the move was made correctly on the board
                 scanned_board = verify_move(move, game, cam, detector)
                 
