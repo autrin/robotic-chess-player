@@ -23,7 +23,7 @@ def main():
         )
         
         # Initialize robot movement controller
-        movement_controller = ChessMovementController(simulation_mode=True, chess_engine=chess_engine)
+        movement_controller = ChessMovementController(simulation_mode=True, robot_color=chess_engine)
         
         # detect test mode
         test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
