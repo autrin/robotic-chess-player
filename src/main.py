@@ -186,7 +186,6 @@ def main():
     global move_executed, ai_move, robot_running
     
     rospy.loginfo("Starting Chess Robot System...")
-    rospy.loginfo("Starting full gameplay with vision system")
 
     # Check for test mode
     test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
@@ -195,6 +194,14 @@ def main():
     
     # Get user preference for engine color
     engine_is_white = input("Should the engine play as White? (y/n): ").strip().lower() == 'y'
+    # Initialize chess engine (for both test and normal mode)
+    engine = Engine(
+        engine_path=ENGINE_PATH,
+        search_depth=12,
+        force_elo=1500,
+        opening_book_path=OPENING_BOOK_PATH
+    )
+    game = GameState(engine, engine_plays_white=engine_is_white)
     
     # Initialize robot movement controller
     robot = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
@@ -208,31 +215,82 @@ def main():
     try:
         # OPTION 1: Test mode - simple chess move testing without vision
         if test_mode:
-            rospy.loginfor("Running in test mode...")
+            rospy.loginfor("Running in test mode with chess engine but without visualization...")
             robot.test_board_calibration()
                     
             # Manual move testing interface
-            print("\nChess Robot Test Mode")
+            print("\nChess Robot Test Mode with AI")
             print("Enter chess moves in algebraic notation (e.g., 'e2e4')")
+            print("The AI will respond with its own move")
             print("Type 'quit' to exit\n")
             
-            # print("Chess Game Running...\n")
+            #Engine plays first if it's white
+            if engine_is_white == 'y':
+                move = game.get_engine_move()
+                print(f"\nEngine plays first as white: {move}")
+
+                # Execute the move on the robot
+                rospy.loginfo(f"Robot executing engine's move: {move}")
+                success = set_robot_move(move)
+
+                if success:
+                    # Update the game state
+                    game.offer_move(move, by_white=True)
+                    game.print_board()
+                    print(f"FEN: {game.get_fen()}")
+                    print("-" * 60)
+
             while not rospy.is_shutdown():
                 try:
-                    move = input("Enter move: ").strip().lower()
-                    if move == 'quit':
+                    human_move = input("Enter move: ").strip().lower()
+                    if human_move == 'quit':
                         break
-                    
+
                     if len(move) != 4:
                         print("Invalid move format. Please use format like 'e2e4'")
                         continue
                     
-                    # Execute move with robot
-                    rospy.loginfo(f"Executing move: {move}")
-                    success = robot.execute_move(move)
+                    # Validate move against game rules
+                    if human_move not in [m.uci() for m in game.board.legal_moves]:
+                        print(f"Illegal move: {human_move}")
+                        continue
+
+                    # Execute human move with robot
+                    rospy.loginfo(f"Executing human move: {human_move}")
+                    success = set_robot_move(human_move)
                     
                     if success:
-                        rospy.loginfo("Move executed successfully")
+                        # Update game state with human move
+                        game.offer_move(human_move)
+                        game.print_board()
+                        print(f"FEN: {game.get_fen()}")
+                        
+                        # Check if game is over
+                        if game.board.is_game_over():
+                            result = game.board.result()
+                            print(f"Game over! Result: {result}")
+                            break
+                        
+                        # Get AI's response
+                        ai_move = game.get_engine_move()
+                        print(f"\nEngine move: {ai_move}")
+                        
+                        # Execute AI move with robot
+                        rospy.loginfo(f"Robot executing engine's move: {ai_move}")
+                        success = set_robot_move(ai_move)
+                        
+                        if success:
+                            # Update game state with AI move
+                            game.offer_move(ai_move)
+                            game.print_board()
+                            print(f"FEN: {game.get_fen()}")
+                            print("-" * 60)
+                            
+                            # Check if game is over
+                            if game.board.is_game_over():
+                                result = game.board.result()
+                                print(f"Game over! Result: {result}")
+                                break
                     else:
                         rospy.logerr("Failed to execute move")
                 except KeyboardInterrupt:
