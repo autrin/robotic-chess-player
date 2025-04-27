@@ -15,6 +15,7 @@ from jh1.visual import (
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
 from ChessMovement import ChessMovementController
+import threading
 
 """
 A standalone vision-based chess system
@@ -140,6 +141,8 @@ def verify_move(expected_move, game_state, cam, detector):
 
 
 def main():
+    robot_thread = threading.Event()
+    
     rospy.loginfo("Starting Chess Robot System...")
     rospy.loginfo("Starting full gameplay with vision system")
 
