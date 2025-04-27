@@ -193,21 +193,8 @@ def main():
     rospy.loginfo(f"Command-line args: {sys.argv}")
     rospy.loginfo(f"Test mode: {test_mode}")
     
-    # Initialize camera and detector
-    cam = WebcamSource(cam_id=0)
-    detector = instantiate_detector()
-
     # Get user preference for engine color
     engine_is_white = input("Should the engine play as White? (y/n): ").strip().lower() == 'y'
-
-    # Initialize chess engine
-    engine = Engine(
-        engine_path=ENGINE_PATH,
-        search_depth=12,
-        force_elo=1500,
-        opening_book_path=OPENING_BOOK_PATH
-    )
-    game = GameState(engine, engine_plays_white=engine_is_white)
     
     # Initialize robot movement controller
     robot = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
@@ -255,9 +242,23 @@ def main():
             
             rospy.loginfo("Exiting test mode")
             return
+        
         # OPTION 2: Full gameplay with vision system
         rospy.loginfo("Starting full gameplay with vision system")
+
+        # Initialize camera and detector
+        cam = WebcamSource(cam_id=0)
+        detector = instantiate_detector()
         
+        # Initialize chess engine
+        engine = Engine(
+            engine_path=ENGINE_PATH,
+            search_depth=12,
+            force_elo=1500,
+            opening_book_path=OPENING_BOOK_PATH
+        )
+        game = GameState(engine, engine_plays_white=engine_is_white)
+
         # Engine plays first if it's white
         if engine_is_white:
             move = game.get_engine_move()
