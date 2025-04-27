@@ -237,6 +237,9 @@ def main():
             print("FEN:", game.get_fen())
             print("-" * 60)
 
+        print("Chess Game Running...\n")
+        rospy.loginfo("Chess Robot System running. Press Ctrl+C to exit.")
+
         # Main game loop
         while not game.board.is_game_over():
             # Wait for human player's move
