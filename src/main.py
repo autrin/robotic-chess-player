@@ -187,13 +187,18 @@ def main():
     
     rospy.loginfo("Starting Chess Robot System...")
 
-    # Check for test mode
+    # Parse command line arguments
     test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
+    # Use a ROS parameter to determine if we're running in simulation
+    simulation_mode = rospy.get_param('sim', True)
+    
     rospy.loginfo(f"Command-line args: {sys.argv}")
     rospy.loginfo(f"Test mode: {test_mode}")
+    rospy.loginfo(f"Simulation mode: {simulation_mode}")
     
     # Get user preference for engine color
     engine_is_white = input("Should the engine play as White? (y/n): ").strip().lower() == 'y'
+    
     # Initialize chess engine (for both test and normal mode)
     engine = Engine(
         engine_path=ENGINE_PATH,
@@ -203,19 +208,19 @@ def main():
     )
     game = GameState(engine, engine_plays_white=engine_is_white)
     
-    # Initialize robot movement controller
-    robot = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
+    # Initialize robot movement controller - simulation mode is independent of test mode
+    robot = ChessMovementController(simulation_mode=simulation_mode, robot_is_white=engine_is_white)
     
     # Start robot movement thread
     robot_running = True
     robot_thread = threading.Thread(target=robot_thread_function, args=(robot,))
-    robot_thread.daemon = True  # This makes the thread terminate when main thread exits
+    robot_thread.daemon = True
     robot_thread.start()
     
     try:
         # OPTION 1: Test mode - simple chess move testing without vision
         if test_mode:
-            rospy.loginfor("Running in test mode with chess engine but without visualization...")
+            rospy.loginfo(f"Running in test mode with chess engine (simulation: {simulation_mode})")
             robot.test_board_calibration()
                     
             # Manual move testing interface
@@ -224,10 +229,10 @@ def main():
             print("The AI will respond with its own move")
             print("Type 'quit' to exit\n")
             
-            #Engine plays first if it's white
-            if engine_is_white == 'y':
+            # Engine plays first if it's white
+            if engine_is_white:
                 move = game.get_engine_move()
-                print(f"\nEngine plays first as white: {move}")
+                print(f"\nEngine plays first as White: {move}")
 
                 # Execute the move on the robot
                 rospy.loginfo(f"Robot executing engine's move: {move}")
@@ -240,19 +245,22 @@ def main():
                     print(f"FEN: {game.get_fen()}")
                     print("-" * 60)
 
+            # Test mode game loop
             while not rospy.is_shutdown():
                 try:
                     human_move = input("Enter move: ").strip().lower()
                     if human_move == 'quit':
                         break
 
-                    if len(move) != 4:
+                    if len(human_move) != 4:  # Fixed: using human_move instead of move
                         print("Invalid move format. Please use format like 'e2e4'")
                         continue
                     
                     # Validate move against game rules
-                    if human_move not in [m.uci() for m in game.board.legal_moves]:
+                    legal_moves = [m.uci() for m in game.board.legal_moves]
+                    if human_move not in legal_moves:
                         print(f"Illegal move: {human_move}")
+                        print(f"Legal moves: {', '.join(legal_moves[:10])}...")
                         continue
 
                     # Execute human move with robot
@@ -297,12 +305,15 @@ def main():
                     break
                 except Exception as e:
                     rospy.logerr(f"Error: {str(e)}")
+                    print(f"Error: {e}")
             
             rospy.loginfo("Exiting test mode")
             return
         
         # OPTION 2: Full gameplay with vision system
-        rospy.loginfo("Starting full gameplay with vision system")
+        rospy.loginfo(f"Starting full gameplay with vision system (simulation: {simulation_mode})")
+
+        # Rest of your normal mode code...
 
         # Initialize camera and detector
         cam = WebcamSource(cam_id=0)
