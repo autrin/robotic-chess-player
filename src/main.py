@@ -14,6 +14,7 @@ from jh1.visual import (
 )
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
+from ChessMovement import ChessMovementController
 
 """
 A standalone vision-based chess system
@@ -139,6 +140,7 @@ def verify_move(expected_move, game_state, cam, detector):
 
 
 def main():
+    rospy.loginfo("Starting Chess Robot System...")
     rospy.loginfo("Starting full gameplay with vision system")
 
     cam = WebcamSource(cam_id=0)
@@ -153,7 +155,10 @@ def main():
         opening_book_path=OPENING_BOOK_PATH
     )
     game = GameState(engine, engine_plays_white=engine_is_white)
-
+    
+    # Initialize robot movement controller
+    movement_controller = ChessMovementController(simulation_mode=True, robot_is_white=engine_is_white)
+    
     print("Chess Game Running...\n")
 
     if engine_is_white:
