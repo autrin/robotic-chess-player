@@ -3,7 +3,7 @@ import cv2
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
-
+import rospy
 from jh1.core import Engine, GameState
 from jh1.visual import (
     instantiate_detector,
@@ -139,6 +139,8 @@ def verify_move(expected_move, game_state, cam, detector):
 
 
 def main():
+    rospy.loginfo("Starting full gameplay with vision system")
+
     cam = WebcamSource(cam_id=0)
     detector = instantiate_detector()
 
