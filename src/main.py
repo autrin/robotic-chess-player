@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import numpy as np
 import rospy
+import sys
 from jh1.core import Engine, GameState
 from jh1.visual import (
     instantiate_detector,
@@ -187,6 +188,11 @@ def main():
     rospy.loginfo("Starting Chess Robot System...")
     rospy.loginfo("Starting full gameplay with vision system")
 
+    # Check for test mode
+    test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
+    rospy.loginfo(f"Command-line args: {sys.argv}")
+    rospy.loginfo(f"Test mode: {test_mode}")
+    
     # Initialize camera and detector
     cam = WebcamSource(cam_id=0)
     detector = instantiate_detector()
