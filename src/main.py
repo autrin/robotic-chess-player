@@ -219,8 +219,45 @@ def main():
     robot_thread.start()
     
     try:
-        print("Chess Game Running...\n")
-
+        # OPTION 1: Test mode - simple chess move testing without vision
+        if test_mode:
+            rospy.loginfor("Running in test mode...")
+            robot.test_board_calibration()
+                    
+            # Manual move testing interface
+            print("\nChess Robot Test Mode")
+            print("Enter chess moves in algebraic notation (e.g., 'e2e4')")
+            print("Type 'quit' to exit\n")
+            
+            # print("Chess Game Running...\n")
+            while not rospy.is_shutdown():
+                try:
+                    move = input("Enter move: ").strip().lower()
+                    if move == 'quit':
+                        break
+                    
+                    if len(move) != 4:
+                        print("Invalid move format. Please use format like 'e2e4'")
+                        continue
+                    
+                    # Execute move with robot
+                    rospy.loginfo(f"Executing move: {move}")
+                    success = robot.execute_move(move)
+                    
+                    if success:
+                        rospy.loginfo("Move executed successfully")
+                    else:
+                        rospy.logerr("Failed to execute move")
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    rospy.logerr(f"Error: {str(e)}")
+            
+            rospy.loginfo("Exiting test mode")
+            return
+        # OPTION 2: Full gameplay with vision system
+        rospy.loginfo("Starting full gameplay with vision system")
+        
         # Engine plays first if it's white
         if engine_is_white:
             move = game.get_engine_move()
