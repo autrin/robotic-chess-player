@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 import chess
 import cv2
 import matplotlib as mpl
