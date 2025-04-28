@@ -18,20 +18,22 @@
 	
 	catkin_make
 	
-	source ~/Desktop/402project/project/catkin_ws/devel/setup.bash
-	
-	# For simulation mode (default)
-		roslaunch sd02_joseph-hoane_1 chess_robot.launch
-	
-	# When connecting to the actual robot
-		roslaunch sd02_joseph-hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
-	
-	Manually test chess moves without the vision system:
-		roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test
-		OR
-		rosrun sd02_joseph-hoane_1 run_chess_robot.py test
+	• Run full (vision) in simulation (default):
+	roslaunch sd02_joseph‑hoane_1 chess_robot.launch
 
+	• Run full (vision) with the real robot:
+	roslaunch sd02_joseph‑hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
 
+	• Run test mode (no vision) in simulation:
+	roslaunch sd02_joseph‑hoane_1 chess_robot.launch chess_robot:=test
+
+	• Run test mode (no vision) with the real robot:
+	roslaunch sd02_joseph‑hoane_1 chess_robot.launch chess_robot:=test sim:=false robot_ip:=192.168.1.100
+
+	In all cases:
+
+	– sim:=true|false toggles simulated vs. real‐hardware movement.
+	– chess_robot:=test tells the node to enter test mode (human enters moves on CLI).
 
 ## Setup
 
