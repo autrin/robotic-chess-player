@@ -21,13 +21,13 @@
 	source ~/Desktop/402project/project/catkin_ws/devel/setup.bash
 	
 	• Run full (vision) in simulation (default):
-	roslaunch sd02_joseph‑hoane_1 chess_robot.launch
+	roslaunch sd02_joseph-hoane_1 chess_robot.launch
 
 	• Run full (vision) with the real robot:
-	roslaunch sd02_joseph‑hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
+	roslaunch sd02_joseph-hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
 
 	• Run test mode (no vision) in simulation:
-	roslaunch sd02_joseph‑hoane_1 chess_robot.launch chess_robot:=test
+	roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test
 
 	• Run test mode (no vision) with the real robot:
 	roslaunch sd02_joseph‑hoane_1 chess_robot.launch chess_robot:=test sim:=false robot_ip:=192.168.1.100
