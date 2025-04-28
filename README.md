@@ -18,6 +18,8 @@
 	
 	catkin_make
 	
+	source ~/Desktop/402project/project/catkin_ws/devel/setup.bash
+	
 	• Run full (vision) in simulation (default):
 	roslaunch sd02_joseph‑hoane_1 chess_robot.launch
 
