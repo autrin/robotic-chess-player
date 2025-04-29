@@ -6,7 +6,7 @@ import cv2
 import pupil_apriltags as apriltag
 
 from jh1.typealias import *
-from ._tag_variational_cluster import TagVariationalCluster
+from ._vari_cluster import VariCluster
 
 
 def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
@@ -155,7 +155,7 @@ def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=5
     return detections
 
 
-def count_clusters(detections: Dict[int, List[Vec2]], radius: float = 12) -> List[TagVariationalCluster]:
+def count_clusters(detections: Dict[int, List[Vec2]], radius: float = 12) -> List[VariCluster]:
     """
     Groups tag detections into spatial clusters, then selects the majority tag ID per cluster.
 
@@ -164,7 +164,7 @@ def count_clusters(detections: Dict[int, List[Vec2]], radius: float = 12) -> Lis
         radius (float): Distance threshold for clustering nearby detections.
 
     Returns:
-        List[TagVariationalCluster]: List of TagVariationalCluster objects. Each cluster includes:
+        List[VariCluster]: List of TagVariationalCluster objects. Each cluster includes:
             - majority tag_id (int)
             - count of points in cluster (int)
             - center (x, y) of cluster (Vec2)
@@ -181,7 +181,7 @@ def count_clusters(detections: Dict[int, List[Vec2]], radius: float = 12) -> Lis
     used: NDArray[bool] = np.zeros(len(all_points), dtype=bool)
 
     # Output list of clusters
-    clusters: List[TagVariationalCluster] = []
+    clusters: List[VariCluster] = []
 
     # Iterate through all points to form clusters
     for i, (tag_id, pt) in enumerate(all_points):
@@ -217,7 +217,7 @@ def count_clusters(detections: Dict[int, List[Vec2]], radius: float = 12) -> Lis
         sq_norms = np.sum(diffs ** 2, axis=1)
         pooled_stdev = float(np.sqrt(np.mean(sq_norms)))
 
-        clusters.append(TagVariationalCluster(
+        clusters.append(VariCluster(
             tag_id=majority_id,
             detection_count=len(cluster_pts),
             position=(float(cluster_center[0]), float(cluster_center[1])),

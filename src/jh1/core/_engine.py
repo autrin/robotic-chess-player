@@ -50,6 +50,8 @@ class Engine:
         """
         if not self.book_path:
             return None
+
+        # noinspection PyBroadException
         try:
             with chess.polyglot.open_reader(self.book_path) as reader:
                 entries = list(reader.find_all(board))
