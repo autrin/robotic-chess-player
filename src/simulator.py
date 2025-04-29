@@ -4,7 +4,7 @@
 Description: This class defines methods to publish the joint states and 
              receive commands to simulate the UR10e with gripper
 
-Author: Ling Tang
+Author: Ling Tang ling@iastate.edu
 Date: 2025-02-16
 Version: 1.0
 """
