@@ -4,10 +4,10 @@ import rospy
 class Calibration:
     """
         Assign the insatnce of RobotUr10eGripper to Calibration::robot
-        The calibrationPoints and robot variables are static in case we need to
+        The calibration_points and robot variables are static in case we need to
         access the calibration points elsewhere
     """
-    calibrationPoints = {"corner1":None, "corner2":None, "corner3" : None, "corner4":None}
+    calibration_points = {"corner1":None, "corner2":None, "corner3" : None, "corner4":None}
     robot: RobotUR10eGripper = None
 
     def init(self):
@@ -22,13 +22,13 @@ class Calibration:
         User needs to press enter to save the joint position of each target point.
         """
         try:
-            for corner in Calibration.calibrationPoints.keys():
+            for corner in Calibration.calibration_points.keys():
                 print("move the robot to " + corner + " and press enter")
                 input()
-                Calibration.calibrationPoints[corner] = Calibration.robot.get_joint_pos()
+                Calibration.calibration_points[corner] = Calibration.robot.get_joint_pos()
 
-            for corner in Calibration.calibrationPoints.keys():
-                if Calibration.calibrationPoints[corner] is None:
+            for corner in Calibration.calibration_points.keys():
+                if Calibration.calibration_points[corner] is None:
                     raise Exception
 
         except Exception as e:
@@ -42,13 +42,13 @@ class Calibration:
         returns None if at least one joint position is missing
         """
         missing = False
-        for corner in Calibration.calibrationPoints.keys():
-            if Calibration.calibrationPoints[corner] is None:
+        for corner in Calibration.calibration_points.keys():
+            if Calibration.calibration_points[corner] is None:
                 missing = True
                 break
 
         if missing:
             return None
         else:
-            return Calibration.calibrationPoints
+            return Calibration.calibration_points
 
