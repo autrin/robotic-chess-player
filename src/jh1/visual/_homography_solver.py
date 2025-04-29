@@ -2,7 +2,7 @@ import numpy as np
 import cv2
 from typing import List, Tuple, Optional
 
-from ._tag_variational_cluster import TagVariationalCluster
+from ._vari_cluster import VariCluster
 from jh1.typealias import *
 
 GRID_SIZE = 8
@@ -18,7 +18,7 @@ class HomographySolver:
     """
 
 
-    def __init__(self, corner_tags: List[Optional[TagVariationalCluster]], adjust: bool = True):
+    def __init__(self, corner_tags: List[Optional[VariCluster]], adjust: bool = True):
         """
         Initialize the HomographySolver.
 
@@ -29,7 +29,7 @@ class HomographySolver:
                        an 8x8 grid within the 10x10 canonical square.
         """
         assert all(corner_tags) and len(corner_tags) == 4, "Need 4 valid corner tags"
-        self.corner_tags: List[TagVariationalCluster] = corner_tags
+        self.corner_tags: List[VariCluster] = corner_tags
         self.adjust: bool = adjust
         self.mat_homography: Mat3x3 = self._compute_homography()
 
@@ -51,7 +51,7 @@ class HomographySolver:
         return mat_h
 
 
-    def project_point(self, img_pt: Tuple[float, float]) -> Tuple[float, ...]:
+    def project_point(self, img_pt: Vec2) -> Tuple[float, ...]:
         """
         Project a point from image space to canonical board coordinates.
 
@@ -66,7 +66,7 @@ class HomographySolver:
         return tuple(board_pt)
 
 
-    def bin_pieces(self, pieces: List[TagVariationalCluster]) -> List2D[List[TagVariationalCluster]]:
+    def bin_pieces(self, pieces: List[VariCluster]) -> List2D[List[VariCluster]]:
         """
         Assign projected piece detections to board bins based on their location.
 
@@ -85,7 +85,7 @@ class HomographySolver:
 
     @staticmethod
     def get_certainty_grid(
-        board_bins: List2D[List[TagVariationalCluster]],
+        board_bins: List2D[List[VariCluster]],
         scale: float = 50.0
     ) -> Array2D[np.float64]:
         """

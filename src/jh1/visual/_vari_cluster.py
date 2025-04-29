@@ -4,7 +4,7 @@ from jh1.typealias import Vec2
 from ._apriltag_predef import ELEVATED_CORNER_TAG_IDS, PIECE_TAG_IDS
 
 
-class TagVariationalCluster:
+class VariCluster:
     def __init__(
         self,
         tag_id: int, detection_count: int,
