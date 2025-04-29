@@ -34,6 +34,6 @@
     </node>
   </group>
   <!-- Launch our chess robot node with appropriate arguments -->
-  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="run_chess_robot.py" output="screen" args="$(arg chess_robot)">
+  <node name="chess_robot" pkg="sd02_joseph-hoane_1" type="main.py" output="screen" args="$(arg chess_robot)">
   </node>
 </launch>
