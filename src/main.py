@@ -19,12 +19,15 @@ from jh1.visual.video import WebcamSource
 from ChessMovement import ChessMovementController
 import threading
 import time
+import os 
+
 """
 A standalone vision-based chess system
 """
-
-ENGINE_PATH = "./resources/stockfish"
-OPENING_BOOK_PATH = "./resources/baron30.bin"
+# If resources are in a parent directory named 'resources'
+resources_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources")
+ENGINE_PATH = "/usr/games/stockfish"
+OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 
 # Global variables for thread synchronization
 move_executed = threading.Event()
