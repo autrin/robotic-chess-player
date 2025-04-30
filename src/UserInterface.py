@@ -133,7 +133,6 @@ difficulty1 = Button(GUI,
                 padx=10,
                 pady=10
                 )
-
 #BUTTON TO CHOOSE DIFFICULTY 2 FOR STOCKFISH
 difficulty2 = Button(GUI,
                 text ="1100",
@@ -197,6 +196,33 @@ difficulty8 = Button(GUI,
                 padx=10,
                 pady=10
                 )
+#BUTTON THAT STOPS ROBOT IN CASE OF EMERGENCY
+emergencystop = Button(GUI,
+                text ="E-STOP",
+                font=('Times_New_Roman'),
+                relief=RAISED,
+                bd=5,
+                padx=10,
+                pady=10
+                )
+emergencystop.place(x=0,y=436)
+def SetDifficulty1():
+    pass
+def SetDifficulty2():
+    pass
+def SetDifficulty3():
+    pass
+def SetDifficulty4():
+    pass
+def SetDifficulty5():
+    pass
+def SetDifficulty6():
+    pass
+def SetDifficulty7():
+    pass
+def SetDifficulty8():
+    pass
+
 def showHomepage():
     distance = 60
     play.place(x=0,y=0)
@@ -229,7 +255,7 @@ def startGame():
     inGame = True
     global isPlayerTurn
     isPlayerTurn=True
-    
+    # emergencystop.place()
     RobotTurnText.place(x=875,y=100,anchor="center")
     PlayerTurnText.place(x=875,y=400,anchor="center")
     RobotTurnText.config(fg="black",font=("Arial",20))
