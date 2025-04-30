@@ -22,7 +22,7 @@ class ChessMovementController:
     positions and handles the pick-and-place sequences needed to move pieces.
     """
     
-    def __init__(self, simulation_mode=True, chess_engine=None):
+    def __init__(self, simulation_mode=True, robot_is_white=None):
         """
         Initialize the chess movement controller.
         
@@ -49,8 +49,8 @@ class ChessMovementController:
             is located in the robot's workspace.
         """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
-        self.square_size = 0.0508            # Square size in meters. 2 inches (50.8mm) per square
-        self.hover_height = 0.1              # Height above board for safety movements
+        self.square_size = 0.05715            # Square size in meters. 2 inches (50.8mm) per square
+        self.hover_height = 0.15              # Height above board for safety movements
         self.piece_height = 0.0254           # Height of chess pieces
         self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
         
@@ -118,7 +118,7 @@ class ChessMovementController:
 
         # Keep an internal representation of the board to determine if a square has a piece
         self.board_state = [[None for _ in range(8)] for _ in range(8)]
-        self.chess_engine = chess_engine
+        self.robot_is_white = robot_is_white
         # Initialize robot position
         self._go_to_safe_position()
         rospy.loginfo("ChessMovementController initialized and ready")
@@ -266,7 +266,7 @@ class ChessMovementController:
                 # captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
                 # Get appropriate storage position based on piece color
                 # In a real implementation, you'd get the piece color from your chess engine
-                piece_color = 'black' if self.chess_engine.side == 'w' else 'white'
+                piece_color = 'white' if self.robot_is_white == 'y' else 'black'
                 # or
                 # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black. Won't work for test mode
                 captured_storage = self._move_captured_piece_to_storage(piece_color)
