@@ -33,7 +33,7 @@ OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 move_executed = threading.Event()
 ai_move = None
 robot_running = True
-playerTurnDone = False
+playerTurnDone = False # for UI
 
 def capture_board_state(cam, detector):
     print("Reading frame...")
@@ -296,7 +296,7 @@ def main():
                                 print("FEN:", before.fen())
                                 print("-" * 60)
                                 continue
-                            #signal that the robot is done with its turn
+                        #signal that the robot is done with its turn
                         UserInterface.SignalRobotTurnDone(game.get_fen())
                         playerTurnDone=False
                     except KeyboardInterrupt:
@@ -340,36 +340,48 @@ def main():
 
         while not game.board.is_game_over():
             if(playerTurnDone==True): #once true, does the rest of the turn
+                try:
+                    move, scanned_board = prompt_for_move(game, cam, detector)
 
-                move, scanned_board = prompt_for_move(game, cam, detector)
+                    board_before = game.board.copy()
+                    if game.offer_move(move):
+                        print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
+                        # print_board_array(scanned_board)
+                        print("FEN:", game.get_fen())
+                        print("Stockfish:", engine.get_eval_score())
+                    else:
+                        print("Move rejected. Retaining previous board state.")
+                        print("FEN:", board_before.fen())
+                        print("-" * 60)
+                        continue
 
-                board_before = game.board.copy()
-                if game.offer_move(move):
-                    print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
-                    # print_board_array(scanned_board)
-                    print("FEN:", game.get_fen())
-                    print("Stockfish:", engine.get_eval_score())
-                else:
-                    print("Move rejected. Retaining previous board state.")
-                    print("FEN:", board_before.fen())
-                    print("-" * 60)
-                    continue
-
-                if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
-                    move = game.get_engine_move()
-                    print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
-                    print("Please make the engine's move on the board.")
-                    scanned_board = verify_move(move, game, cam, detector)
-                    game.offer_move(move, by_white=game.engine_plays_white)
-                    # print_board_array(scanned_board)
-                    print("FEN:", game.get_fen())
-                    print("Stockfish:", engine.get_eval_score())
-                    print("-" * 60)
+                    if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
+                        move = game.get_engine_move()
+                        print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
+                        print("Please make the engine's move on the board.")
+                        scanned_board = verify_move(move, game, cam, detector)
+                        game.offer_move(move, by_white=game.engine_plays_white)
+                        # print_board_array(scanned_board)
+                        print("FEN:", game.get_fen())
+                        print("Stockfish:", engine.get_eval_score())
+                        print("-" * 60)
                     #signal that the robot is done with its turn
-                UserInterface.SignalRobotTurnDone(game.get_fen())
-                playerTurnDone=False
+                    UserInterface.SignalRobotTurnDone(game.get_fen())
+                    playerTurnDone=False
+                except KeyboardInterrupt:
+                    break
+                except Exception as e:
+                    rospy.logerr(f"Error: {str(e)}")
+                    print(f"Error: {e}")
+                finally:
+                    playerTurnDone=False
+                    # Clean up resources
+                    robot_running = False
+                    if robot_thread.is_alive():
+                        robot_thread.join(timeout=2)
+                    print("Resources cleaned up.")                
         print("Game over.")
-            
+    
     except KeyboardInterrupt:
         print("\nGame interrupted by user.")
     except Exception as e:
