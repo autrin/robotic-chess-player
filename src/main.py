@@ -172,7 +172,7 @@ def main():
         print("-" * 60)
 
     while not game.board.is_game_over():
-        if(playerTurnDone==False): #once true, does the rest of the turn
+        if(playerTurnDone==True): #once true, does the rest of the turn
             move, scanned_board = prompt_for_move(game, cam, detector)
 
             board_before = game.board.copy()
