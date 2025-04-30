@@ -7,7 +7,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from jh1.visual import instantiate_detector, find_april_tags, count_clusters, TagVariationalCluster, PIECE_TAG_IDS, \
+from jh1.visual import instantiate_detector, find_april_tags, count_clusters, VariCluster, PIECE_TAG_IDS, \
     HomographySolver
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
@@ -19,11 +19,11 @@ img = cam.read_frame()
 
 detector = instantiate_detector()
 detections = find_april_tags(img, detector)
-clusters: List[TagVariationalCluster] = count_clusters(detections)
+clusters: List[VariCluster] = count_clusters(detections)
 
 #%%
-corners_tags: List[Optional[TagVariationalCluster]] = [None] * 4
-pieces_tags: List[TagVariationalCluster] = []
+corners_tags: List[Optional[VariCluster]] = [None] * 4
+pieces_tags: List[VariCluster] = []
 
 for cluster in clusters:
     print(cluster.tag_id)
