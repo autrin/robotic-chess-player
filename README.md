@@ -57,3 +57,8 @@ roslaunch ur_robot_driver ur10e_griper_bringup.launch
 
 roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
 ```
+
+1. robot driver
+2. external control
+3. gripper (if not initialized don't do anyting)
+4. test (run code)
