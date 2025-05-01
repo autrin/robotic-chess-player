@@ -5,7 +5,7 @@ Chess Movement Controller
 This module connects the chess game logic with the UR10e robot arm,
 controlling movement for executing chess moves in the physical world.
 """
-
+import traceback
 import rospy
 import numpy as np
 import math
@@ -407,17 +407,17 @@ class ChessMovementController:
         try:
             # Safety check - ensure position is within workspace limits
             # TODO: you might need to adjust the numbers
-            workspace_limits = {
-                'x': (0.2, 0.8), # min max in meters
-                'y': (0.0, 0.6),
-                'z': (0.05, 0.4)
-            }
+            # workspace_limits = {
+            #     'x': (0.2, 0.8), # min max in meters
+            #     'y': (0.0, 0.6),
+            #     'z': (0.05, 0.4)
+            # }
 
-            if (position[0] < workspace_limits['x'][0] or position[0] > workspace_limits['x'][1] or
-                position[1] < workspace_limits['y'][0] or position[1] > workspace_limits['y'][1] or
-                position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
-                rospy.logerr(f"Position {position} is outside of safe workspace limits!")
-                return False
+            # if (position[0] < workspace_limits['x'][0] or position[0] > workspace_limits['x'][1] or
+            #     position[1] < workspace_limits['y'][0] or position[1] > workspace_limits['y'][1] or
+            #     position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
+            #     rospy.logerr(f"Position {position} is outside of safe workspace limits!")
+            #     return False
                 
             # In a real implementation, use proper IK or MoveIt
             # For now, use our simplified joint angles calculation
@@ -447,7 +447,7 @@ class ChessMovementController:
             current_pos = self.robot.get_joint_pos()
             
             # Keep the same arm position, just open the gripper
-            gripper_open_position = current_pos[:6] + [0.0]  # 0.0 is open
+            gripper_open_position = tuple(list(current_pos)[:6] + [0.0])  # 0.0 is open
             
             rospy.loginfo("Opening gripper")
             self.robot.command_robot(gripper_open_position, 3.0)
@@ -456,7 +456,7 @@ class ChessMovementController:
             return True
             
         except Exception as e:
-            rospy.logerr(f"Error opening gripper: {e}")
+            rospy.logerr(f"Error opening gripper: {traceback.format_exc()}")
             return False
     
     def _close_gripper(self, position=0.7) -> bool:
@@ -472,9 +472,10 @@ class ChessMovementController:
         try:
             # Get current joint position
             current_pos = self.robot.get_joint_pos()
+            rospy.loginfo(f"{current_pos=}  {position=}")
             
             # Keep the same arm position, just close the gripper
-            gripper_close_position = current_pos[:6] + [position]
+            gripper_close_position = tuple(list(current_pos)[:6] + [position])
             
             rospy.loginfo(f"Closing gripper to position {position}")
             self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
@@ -483,7 +484,7 @@ class ChessMovementController:
             return True
             
         except Exception as e:
-            rospy.logerr(f"Error closing gripper: {e}")
+            rospy.logerr(f"Error closing gripper: {traceback.format_exc()}")
             return False
     
     def test_board_calibration(self) -> bool:
