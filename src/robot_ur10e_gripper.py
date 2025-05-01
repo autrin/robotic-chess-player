@@ -113,26 +113,32 @@ class RobotUR10eGripper:
             FollowJointTrajectoryAction,
         )
 
-    def command_robot(self, joint_angles, duration):
+    def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
         if(self._gripper_status):
             if(len(joint_angles) != 7):
                 rospy.logerr("Joint angles should have 7 elements: 6 for UR10e and 1 for gripper")
-                return
+                return False
         else:
             if(len(joint_angles) != 6):
                 rospy.logerr("Joint angles should have 6 elements: 6 for UR10e")
-                return
+                return False
             
         self._command_ur10e(joint_angles[:6], duration)
         if(self._gripper_status):
             self._command_gripper(joint_angles[6])
+            rospy.loginfo(f"Finished command gripper")
+            return True
+        
+        rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
+        return False
 
 
-    def _command_ur10e(self, joint_angles, duration):
+    def _command_ur10e(self, joint_angles, duration) -> bool:
+        rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
         if(len(joint_angles) != 6):
             rospy.logerr("Joint angles should have 6 for UR10e")
-            return
+            return False
 
         timeout = rospy.Duration(5)
         if not self._ur10e_client.wait_for_server(timeout):
@@ -153,10 +159,12 @@ class RobotUR10eGripper:
         self._ur10e_client.wait_for_result()
 
         result = self._ur10e_client.get_result()
-        rospy.loginfo("Trajectory execution finished in state {}".format(result.error_code))
+        success = (result.error_code == 0)  # 0 typically means SUCCESS
+        rospy.loginfo("Trajectory execution finished in state {}".format(result.error_code))    
+        return success
 
-
-    def _command_gripper(self, position, speed = 0.05, force = 0):
+    def _command_gripper(self, position, speed = 0.05, force = 0) -> bool:
+        rospy.loginfo(f"Attempting to command gripper at {position=}")
         goal = CommandRobotiqGripperGoal()
         goal.position = position
         goal.emergency_release = False
@@ -164,8 +172,17 @@ class RobotUR10eGripper:
         goal.force = force
         self._robotiq_client.send_goal(goal)
         self._robotiq_client.wait_for_result()
+        result = self._robotiq_client.get_result()
+        if result is not None:
+            status = self._robotiq_client.get_state()  # Get action state
+            rospy.loginfo(f"Gripper command finished with status: {status}")
+            return status == actionlib.GoalStatus.SUCCEEDED
+        
+        rospy.logerr("Gripper command failed - null result returned")
+        return False
 
     def get_joint_pos(self):
+        
         if(self._gripper_status):
             return self._pos_ur10e + self._pos_gripper
         else:
