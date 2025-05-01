@@ -148,10 +148,10 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
-def robot_thread_function(robot):
+def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
     global ai_move, move_executed, robot_running
-    
+    rospy.loginfo(f"ai_move: {ai_move}, move_executed: {move_executed}, robot_running: {robot_running}")
     while robot_running:
         current_move = ai_move
         if current_move:
