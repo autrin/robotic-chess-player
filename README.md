@@ -30,7 +30,7 @@
 	roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test
 
 	• Run test mode (no vision) with the real robot:
-	roslaunch sd02_joseph‑hoane_1 chess_robot.launch chess_robot:=test sim:=false robot_ip:=192.168.1.100
+	roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test sim:=false
 
 	In all cases:
 
@@ -48,3 +48,12 @@ pip install -e ./src
 
 ```
 Google slides for progress: https://docs.google.com/presentation/d/1KjLXtcGOjq-ztTGnWDBwuNPuuBlknc9xajZgTyLYn-0/edit?usp=sharing
+
+
+
+##
+```
+roslaunch ur_robot_driver ur10e_griper_bringup.launch
+
+roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
+```
