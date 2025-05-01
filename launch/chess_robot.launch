@@ -1,7 +1,7 @@
 <launch>
   <!-- Arguments -->
   <arg name="sim" default="true"/>
-  <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/>
+  <!-- <arg name="robot_ip" default="192.168.1.100" unless="$(arg sim)"/> -->
   <arg name="chess_robot" default=""/> <!-- Empty for normal mode, "test" for test mode -->
   
   <!-- Launch our simulator when in simulation mode -->
@@ -10,16 +10,11 @@
   <!-- Load UR10e driver (only when not in sim mode) -->
   <group unless="$(arg sim)">
     <include file="$(find ur_robot_driver)/launch/ur10e_griper_bringup.launch">
-      <arg name="robot_ip" value="$(arg robot_ip)"/>
     </include>
   </group>
 
   <!-- Load Robotiq gripper driver with correct launch file -->
   <include file="$(find robotiq_2f_gripper_control)/launch/robotiq_action_server.launch">
-    <arg name="sim" value="$(arg sim)"/>
-    <arg name="stroke" value="0.085"/> <!-- For 85mm gripper, use 0.140 for 140mm -->
-    <arg name="joint_name" value="finger_joint"/>
-    <arg name="comport" value="/dev/ttyUSB0" unless="$(arg sim)"/>
   </include>
 
   <!-- For visualization in simulation mode -->
