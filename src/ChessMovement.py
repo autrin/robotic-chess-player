@@ -35,8 +35,8 @@ class ChessMovementController:
         #     rospy.init_node('chess_movement_controller', anonymous=True)
     
         # Initialize the robot control interface
+        rospy.loginfo("Creating RobotUR10eGripper object in ChessMovementController...")
         self.robot = RobotUR10eGripper(is_gripper_up=True)
-        self.simulation_mode = simulation_mode
 
         # TODO
         """
