@@ -94,6 +94,7 @@ class RobotSim:
 
     def run(self):
         rate = rospy.Rate(10)
+        rospy.loginfo("Running...")
         while not rospy.is_shutdown():
             self._gripper_joint_state_pub.publish(self._get_gripper_joint_state())
             self._gripper_status_pub.publish(self._get_gripper_status())
@@ -171,6 +172,7 @@ class RobotSim:
         rospy.loginfo("Load controller: %s", req.name)
 
         res = LoadControllerResponse()
+        rospy.loginfo("After loading controller response...")
         res.ok = True
         return res
     
