@@ -51,13 +51,27 @@ Google slides for progress: https://docs.google.com/presentation/d/1KjLXtcGOjq-z
 
 
 
-##
+## real hardware
 ```
 roslaunch ur_robot_driver ur10e_griper_bringup.launch
 
 roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
-```
 
+rosrun sd02_joseph-hoane_1 main.py test
+	(or remove test for visualization)
+```
+## in sim mode:
+```
+rosrun sd02_joseph-hoane_1 simulator.py
+
+roslaunch robotiq_2f_gripper_control robotiq_action_server.launch sim:=true
+
+rosrun sd02_joseph-hoane_1 main.py test
+```
+There is also this: roslaunch ur_gazebo ur10e_bringup.launch that might be used insead of simulator I think. (They use different controllers.)
+
+
+The order of the realhardware
 1. robot driver
 2. external control
 3. gripper (if not initialized don't do anyting)
