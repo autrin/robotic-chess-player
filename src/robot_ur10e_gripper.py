@@ -94,7 +94,7 @@ class RobotUR10eGripper:
         # gripper setup
         self._gripper_status = is_gripper_up
         rospy.loginfo(f"_gripper_status: {self._gripper_status}")
-            # Initialize the joint states by waiting for the first message
+        # Initialize the joint states by waiting for the first message
         if(self._gripper_status):
             try:
                 # Add timeout of 2 seconds to wait_for_message
