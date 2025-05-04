@@ -87,31 +87,49 @@ class RobotUR10eGripper:
             rospy.logerr("Could not reach controller switch service. Msg: {}".format(err))
             sys.exit(-1)
 
-        self._switch_controller(JOINT_TRAJECTORY_CONTROLLERS[0]) # only this controller is implemented
+        # uses 2 OR 4 for sim with gazebo
+        self._switch_controller(JOINT_TRAJECTORY_CONTROLLERS[0]) # only this controller is implemented 
 
 
         # gripper setup
         self._gripper_status = is_gripper_up
-
-        # Initialize the joint states by waiting for the first message
+        rospy.loginfo(f"_gripper_status: {self._gripper_status}")
+            # Initialize the joint states by waiting for the first message
         if(self._gripper_status):
-            data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState)
-            self._pos_gripper = data_gripper.position
-            self._vel_gripper = data_gripper.velocity
-            rospy.Subscriber("/gripper_joint_states" , JointState, self._callback_gripper_joint_state)
-            # rospy.Subscriber("/robotiq_2f_gripper_msgs/RobotiqGripperStatus" , RobotiqGripperStatus, self._callback_gripper_status)
+            try:
+                # Add timeout of 2 seconds to wait_for_message
+                data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState, timeout=2.0)
+                self._pos_gripper = data_gripper.position
+                self._vel_gripper = data_gripper.velocity
+            except rospy.ROSException as e:
+                rospy.logwarn(f"Timeout waiting for gripper joint states: {e}")
+                # Initialize with default values
+                self._pos_gripper = [0.0]  # Default to open position
+                self._vel_gripper = [0.0]
+                
+            rospy.Subscriber("/gripper_joint_states", JointState, self._callback_gripper_joint_state)
             self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action', CommandRobotiqGripperAction)
-
+        
+        rospy.loginfo("gripper setup finished.")
+        
         # ur10e setup
-        data_ur10e = rospy.wait_for_message("/joint_states", JointState)
-        self._pos_ur10e = data_ur10e.position
-        self._vel_ur10e = data_ur10e.velocity
+        try:
+            data_ur10e = rospy.wait_for_message("/joint_states", JointState, timeout=2.0)
+            self._pos_ur10e = data_ur10e.position
+            self._vel_ur10e = data_ur10e.velocity
+        except rospy.ROSException as e:
+            rospy.logwarn(f"Timeout waiting for ur10e joint states: {e}")
+            # Initialize with default values
+            self._pos_ur10e = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # Default positions
+            self._vel_ur10e = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+            
         rospy.Subscriber("/joint_states" , JointState, self._callback_ur10e_joint_state)
 
         self._ur10e_client = actionlib.SimpleActionClient(
             JOINT_TRAJECTORY_CONTROLLERS[0] + "/follow_joint_trajectory",
             FollowJointTrajectoryAction,
         )
+        rospy.loginfo("ur10e setup finished.")
 
     def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
@@ -233,12 +251,14 @@ class RobotUR10eGripper:
             + CONFLICTING_CONTROLLERS
         )
         other_ctrl.remove(target_controller)
-
+        rospy.loginfo("List controllers request...")
         srv = ListControllersRequest()
         resp = self._list_srv(srv)
-
+        rospy.loginfo(f"response from request: {resp}")
+        
         for controller in resp.controller:
             if controller.name == target_controller and controller.state == "running":
+                rospy.loginfo("Returning from _switch_controller()")
                 return
             
         srv = LoadControllerRequest()
