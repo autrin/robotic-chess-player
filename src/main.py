@@ -148,6 +148,16 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
+def is_capture(move: str, game: GameState) -> bool:
+    # Check if the move is a capture by looking at the current board state
+    from_square = chess.parse_square(move[0:2])
+    to_square = chess.parse_square(move[2:4])
+    chess_move = chess.Move(from_square, to_square)
+    
+    # Mark as capture if there's a piece at the destination or if it's en passant
+    is_capture = game.board.is_capture(chess_move)
+    return is_capture
+
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
     global ai_move, move_executed, robot_running
@@ -156,12 +166,13 @@ def robot_thread_function(robot: ChessMovementController):
         current_move = ai_move
         if current_move:
             try:
-                rospy.loginfo(f"Robot executing move: {current_move}")
-                success = robot.execute_move(current_move)
+                move_uci, is_capture = current_move  # Unpack move and capture info
+                rospy.loginfo(f"Robot executing move: {move_uci} (is_capture: {is_capture})")
+                success = robot.execute_move(move_uci, is_capture)
                 if success:
-                    rospy.loginfo(f"Robot successfully executed move: {current_move}")
+                    rospy.loginfo(f"Robot successfully executed move: {move_uci}")
                 else:
-                    rospy.logerr(f"Robot failed to execute move: {current_move}")
+                    rospy.logerr(f"Robot failed to execute move: {move_uci}")
             except Exception as e:
                 rospy.logerr(f"Error executing move: {str(e)}")
             finally:
@@ -172,12 +183,12 @@ def robot_thread_function(robot: ChessMovementController):
     
     rospy.loginfo("Robot thread shutting down")
 
-def set_robot_move(move):
+def set_robot_move(move, is_captured: bool):
     """Set the move for the robot to execute and wait for completion"""
     global ai_move, move_executed
-    
+
     # Signal the robot thread to execute the move
-    ai_move = move
+    ai_move = (move, is_captured)
     move_executed.clear()
     
     # Wait for the robot to complete the move
@@ -228,7 +239,8 @@ def main():
                 move = game.get_engine_move()
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 rospy.loginfo(f"Robot executing engine's move: {move}")
-                success = set_robot_move(move)
+                is_captured = is_capture(move, game)
+                success = set_robot_move(move, is_captured)
                 if success:
                     # Update the game state
                     game.offer_move(move, by_white=True)
