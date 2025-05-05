@@ -304,94 +304,84 @@ def main():
 
                 except KeyboardInterrupt:
                     break
-                except Exception as e:
-                    rospy.logerr(f"Error: {str(e)}")
-                    print(f"Error: {e}")
-                finally:
-                    # Clean up resources
-                    robot_running = False
-                    if robot_thread.is_alive():
-                        robot_thread.join(timeout=2)
-                    print("Resources cleaned up.")
-                    
-            rospy.loginfo("Exiting test mode")
-            return
-        
         # OPTION 2: FULL MODE (vision-based)
-        rospy.loginfo(f"Running in FULL mode (sim={simulation_mode})")
-        cam = WebcamSource(cam_id=0)
-        detector = instantiate_detector()
-        
-        # Engine plays first if it's white
-        if engine_is_white:
-            move = game.get_engine_move()
-            print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
-            is_captured = is_capture(move, game)
-            # Execute the move on the robot
-            success = set_robot_move(move, is_captured)
-            if success:
-                print("Robot completed the engine's move")
+        else:
+            rospy.loginfo(f"Running in FULL mode (sim={simulation_mode})")
+            cam = WebcamSource(cam_id=0)
+            detector = instantiate_detector()
             
-            # Verify the move was made correctly on the board
-            scanned_board = verify_move(move, game, cam, detector)
-            # Update the game state
-            game.offer_move(move, by_white=True)
-            # Short delay after move completes
-            time.sleep(2)
-            print("FEN:", game.get_fen())
-            print("-" * 60)
-
-        rospy.loginfo("Press Ctrl+C to exit.")
-
-        # Main game loop
-        while not game.board.is_game_over():
-            # Wait for human player's move
-            move, scanned_board = prompt_for_move(game, cam, detector)
-            
-            # validate the move
-            board_before = game.board.copy()
-            if game.offer_move(move):
-                print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
-                print("FEN:", game.get_fen())
-                print("Stockfish:", engine.get_eval_score())
-            else:
-                print("Move rejected. Retaining previous board state.")
-                print("FEN:", board_before.fen())
-                print("-" * 60)
-                continue
-
-            # Engine's turn
-            if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
+            # Engine plays first if it's white
+            if engine_is_white:
                 move = game.get_engine_move()
-                print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
+                print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 is_captured = is_capture(move, game)
                 # Execute the move on the robot
                 success = set_robot_move(move, is_captured)
                 if success:
                     print("Robot completed the engine's move")
-                else:
-                    print("Robot failed to execute move. Please try again.")
-                    continue
+                
                 # Verify the move was made correctly on the board
                 scanned_board = verify_move(move, game, cam, detector)
                 # Update the game state
-                game.offer_move(move, by_white=game.engine_plays_white)
+                game.offer_move(move, by_white=True)
+                # Short delay after move completes
+                time.sleep(2)
                 print("FEN:", game.get_fen())
-                print("Stockfish:", engine.get_eval_score())
                 print("-" * 60)
 
-        print("Game over.")
-        
+            rospy.loginfo("Press Ctrl+C to exit.")
+
+            # Main game loop
+            while not game.board.is_game_over():
+                # Wait for human player's move
+                move, scanned_board = prompt_for_move(game, cam, detector)
+                
+                # validate the move
+                board_before = game.board.copy()
+                if game.offer_move(move):
+                    print(f"Detected move: {move} ({board_before.san(chess.Move.from_uci(move))})")
+                    print("FEN:", game.get_fen())
+                    print("Stockfish:", engine.get_eval_score())
+                else:
+                    print("Move rejected. Retaining previous board state.")
+                    print("FEN:", board_before.fen())
+                    print("-" * 60)
+                    continue
+
+                # Engine's turn
+                if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
+                    move = game.get_engine_move()
+                    print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
+                    is_captured = is_capture(move, game)
+                    # Execute the move on the robot
+                    success = set_robot_move(move, is_captured)
+                    if success:
+                        print("Robot completed the engine's move")
+                    else:
+                        print("Robot failed to execute move. Please try again.")
+                        continue
+                    # Verify the move was made correctly on the board
+                    scanned_board = verify_move(move, game, cam, detector)
+                    # Update the game state
+                    game.offer_move(move, by_white=game.engine_plays_white)
+                    print("FEN:", game.get_fen())
+                    print("Stockfish:", engine.get_eval_score())
+                    print("-" * 60)
+
+            print("Game over.")
+            
     except KeyboardInterrupt:
         print("\nGame interrupted by user.")
     except Exception as e:
         rospy.logerr(f"Error in game: {str(e)}")
+        print(f"Error: {e}")
     finally:
         # Clean up resources
         robot_running = False
         if robot_thread.is_alive():
             robot_thread.join(timeout=2)
-        cam.release()
+        if 'cam' in locals():
+            cam.release()
         print("Resources cleaned up.")
 
 if __name__ == "__main__":
