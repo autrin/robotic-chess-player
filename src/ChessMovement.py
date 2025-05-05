@@ -447,10 +447,10 @@ class ChessMovementController:
             current_pos = self.robot.get_joint_pos()
             
             # Keep the same arm position, just open the gripper
-            gripper_open_position = tuple(list(current_pos)[:6] + [0.0])  # 0.0 is open
+            gripper_open_position = tuple(list(current_pos)[:6] + [0.9])  # 1.0 is open
             
             rospy.loginfo("Opening gripper")
-            self.robot.command_robot(gripper_open_position, 3.0)
+            self.robot.command_robot(gripper_open_position, 5.0)
             time.sleep(0.5)  # Give time for the gripper to open
             
             return True
