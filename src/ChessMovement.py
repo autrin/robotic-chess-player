@@ -104,8 +104,8 @@ class ChessMovementController:
         Between games or during pause
         """
         self.positions = { # TODO
-            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453, -2.0474611721434535, -1.5897491613971155, 2.020841360092163, 0.9], # Home position (gripper open)
-            "observe": [0, -1.0, 0.5, -1.0, -1.57, 0, 0],  # Position to observe the board. Adjust to see the entire large board
+            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453, -2.0474611721434535, -1.5897491613971155, 2.020841360092163, 0.90], # Home position (gripper open)
+            "observe": [1.5139759222613733, -1.1724217695048829, 1.270115613937378, -1.9291945896544398, -1.569782559071676, 2.0213046073913574, 0.90], # Position to observe the board. Adjust to see the entire large board
             "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],# Preparation position
             "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, 0] # Position away from the board
         }
