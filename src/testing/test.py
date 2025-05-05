@@ -8,7 +8,7 @@ Date: 2025-02-16
 Version: 1.0
 """
 
-from robot_ur10e_gripper import RobotUR10eGripper
+from jh1.physical.robotics.robot_ur10e_gripper import RobotUR10eGripper
 import rospy
 
 if __name__ == '__main__':

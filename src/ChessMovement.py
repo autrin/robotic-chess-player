@@ -7,12 +7,10 @@ controlling movement for executing chess moves in the physical world.
 """
 import traceback
 import rospy
-import numpy as np
-import math
 import time
-from typing import List, Tuple, Optional
+from typing import List
 from geometry_msgs.msg import Pose
-from robot_ur10e_gripper import RobotUR10eGripper
+from jh1.physical.robotics.robot_ur10e_gripper import RobotUR10eGripper
 
 class ChessMovementController:
     """
