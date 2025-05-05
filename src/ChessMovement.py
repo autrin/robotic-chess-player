@@ -459,7 +459,7 @@ class ChessMovementController:
             rospy.logerr(f"Error opening gripper: {traceback.format_exc()}")
             return False
     
-    def _close_gripper(self, position=0.7) -> bool:
+    def _close_gripper(self, position=0.5) -> bool: # TODO the closing is the piece size approximately
         """
         Close the gripper to grasp a piece.
         
