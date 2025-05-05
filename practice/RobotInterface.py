@@ -7,6 +7,8 @@ from sensor_msgs.msg import JointState
 from geometry_msgs.msg import Pose, Point, Quaternion
 import numpy as np
 import time
+
+
 # no need to use this file. chessMovementController uses ur10eripper file that was sent by client
 # the simulation part is usefull to be used in chessMovementController later
 
@@ -15,46 +17,47 @@ class RobotArmController:
         # Check if we're in simulation mode
         self.sim_mode = rospy.get_param('~sim', True)
         rospy.loginfo(f"Robot arm initializing in {'simulation' if self.sim_mode else 'real'} mode")
-        
+
         # Initialize connection if not in simulation mode
         if not self.sim_mode:
             # Connect to the UR10e action server
             self.traj_client = actionlib.SimpleActionClient(
-                'scaled_pos_joint_traj_controller/follow_joint_trajectory', 
+                'scaled_pos_joint_traj_controller/follow_joint_trajectory',
                 FollowJointTrajectoryAction)
-            
+
             rospy.loginfo("Waiting for UR10e action server...")
             server_exists = self.traj_client.wait_for_server(rospy.Duration(5.0))
             if server_exists:
                 rospy.loginfo("Connected to UR10e action server")
             else:
-                rospy.logwarn("Could not connect to UR10e action server, will operate in simulation mode")
+                rospy.logwarn(
+                    "Could not connect to UR10e action server, will operate in simulation mode")
                 self.sim_mode = True
         else:
             rospy.loginfo("Running in simulation mode - robot movements will be simulated")
             self.traj_client = None
-            
+
         # Define joint names
         self.joint_names = [
-            'shoulder_pan_joint', 
-            'shoulder_lift_joint', 
+            'shoulder_pan_joint',
+            'shoulder_lift_joint',
             'elbow_joint',
-            'wrist_1_joint', 
-            'wrist_2_joint', 
+            'wrist_1_joint',
+            'wrist_2_joint',
             'wrist_3_joint'
         ]
-        
+
         # Pre-defined positions (in joint space)
         self.positions = {
             "home": [0, -1.57, 0, -1.57, 0, 0],
             "high": [0, -1.0, 0.5, -1.0, -1.57, 0],  # Safety position above board
-            "low": [0, -1.2, 1.0, -1.3, -1.57, 0],   # Position for grabbing/placing pieces
+            "low": [0, -1.2, 1.0, -1.3, -1.57, 0],  # Position for grabbing/placing pieces
             "backup": [0.5, -1.0, 1.0, -1.5, -1.57, 0]  # Backup position away from the board
         }
-        
+
         # Current joint states
         self.current_joints = self.positions["home"]  # Default to home position in simulation
-        
+
         # Subscribe to joint states if not in simulation
         if not self.sim_mode:
             self.joint_sub = rospy.Subscriber('/joint_states', JointState, self._joint_state_cb)
@@ -76,7 +79,7 @@ class RobotArmController:
             if name in msg.name:
                 idx = msg.name.index(name)
                 positions.append(msg.position[idx])
-        
+
         if len(positions) == 6:
             self.current_joints = positions
 
@@ -93,32 +96,32 @@ class RobotArmController:
         if len(joint_positions) != 6:
             rospy.logerr("Expected 6 joint positions")
             return False
-        
+
         if self.sim_mode:
             # In simulation mode, just simulate movement
             rospy.loginfo(f"SIM: Moving to joint positions {joint_positions}")
             time.sleep(duration)  # Simulate movement time
             self.current_joints = joint_positions
             return True
-            
+
         # Create trajectory message
         traj = JointTrajectory()
         traj.joint_names = self.joint_names
-        
+
         # Create trajectory point
         point = JointTrajectoryPoint()
         point.positions = joint_positions
         point.time_from_start = rospy.Duration(duration)
         traj.points.append(point)
-        
+
         # Create goal
         goal = FollowJointTrajectoryGoal()
         goal.trajectory = traj
-        
+
         # Send goal and wait
         self.traj_client.send_goal(goal)
         success = self.traj_client.wait_for_result(rospy.Duration(duration + 5.0))
-        
+
         if success:
             rospy.loginfo("Successfully moved to position")
             return True
@@ -136,7 +139,7 @@ class RobotArmController:
             rospy.loginfo(f"SIM: Moving to position ({x}, {y}, {z})")
             time.sleep(duration)  # Simulate movement time
             return True
-            
+
         # TODO: Implement inverse kinematics or use MoveIt for this
         # For now, just log that this would move to the position
         rospy.loginfo(f"Would move to position ({x}, {y}, {z})")

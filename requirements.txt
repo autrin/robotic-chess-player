@@ -6,3 +6,4 @@ mss
 setuptools
 pillow
 pandas
+mujoco

@@ -10,8 +10,9 @@ import sounddevice as sd
 import vosk
 import json
 import random
-import src.FilePathFinder as FilePathFinder
-#from sensor_msgs.msg import JointState
+import pandas as pd
+
+# from sensor_msgs.msg import JointState
 
 
 FLOAT_TOLERANCE_PRECISE = 1e-9
@@ -21,15 +22,25 @@ JOINT_MAX = []
 JOINT_MIN = []
 
 
-def initRobot(velocityScale = 1.0, accelerationScale = 1.0, maxPlanTime = 100):
+def getPath(name, csvFile="./paths.csv"):
+    paths = pd.read_csv(csvFile)["path"]
+    if name == "chessEngine":
+        return paths[0]
+    elif name == "voiceModel":
+        return paths[1]
+    else:
+        return ""
+
+
+def initRobot(velocityScale=1.0, accelerationScale=1.0, maxPlanTime=100):
     # Initialize MoveIt and ROS
     moveit_commander.roscpp_initialize(sys.argv)
     rospy.init_node("raise_arm", anonymous=True)
     robot = moveit_commander.RobotCommander()
     scene = moveit_commander.PlanningSceneInterface()
     group = moveit_commander.MoveGroupCommander("manipulator")
-    
-    if velocityScale >= 0 :
+
+    if velocityScale >= 0:
         if velocityScale - 3.14 >= FLOAT_TOLERANCE_PRECISE:
             velocityScale = 3.14
         group.set_max_velocity_scaling_factor(velocityScale)
@@ -41,15 +52,13 @@ def initRobot(velocityScale = 1.0, accelerationScale = 1.0, maxPlanTime = 100):
     return group, robot, scene
 
 
-
-def getVoiceModelandQ(model_path = FilePathFinder.getPath("voiceModel")):
+def getVoiceModelandQ(model_path=getPath("voiceModel")):
     model = vosk.Model(model_path)
     q = queue.Queue()
     return model, q
 
-    
 
-def setChessEngine(depth,level,enginePath=FilePathFinder.getPath("chessEngine")):
+def setChessEngine(depth, level, enginePath=getPath("chessEngine")):
     if level > 20:
         level = 20
     stockfish = Stockfish(enginePath)
@@ -57,20 +66,23 @@ def setChessEngine(depth,level,enginePath=FilePathFinder.getPath("chessEngine"))
     stockfish.set_skill_level(20)
     return stockfish
 
-def setFenPos(stockfish,fen_position = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"):
+
+def setFenPos(stockfish, fen_position="rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"):
     stockfish.set_fen_position(fen_position)
+
 
 def getMove(stockfish):
     bm = stockfish.get_best_move()
     print(f"AI's bestMove: {bm}")
     return bm
 
-#the angles are in radians 1 rad * pi= 180 deg
-def rotateJointsAbs(group,posList = [0, -1.57, 1.57, -1.57, -1.57, 0]):
-    group.go(posList,wait=True)
+
+# the angles are in radians 1 rad * pi= 180 deg
+def rotateJointsAbs(group, posList=[0, -1.57, 1.57, -1.57, -1.57, 0]):
+    group.go(posList, wait=True)
     group.stop()
     group.clear_pose_targets()
-    
+
 
 def audio_callback(indata, frames, time, status):
     """Callback function to receive audio data from the microphone."""
@@ -78,7 +90,8 @@ def audio_callback(indata, frames, time, status):
         print(status)
     q.put(bytes(indata))
 
-def recognize_speech(model,q):
+
+def recognize_speech(model, q):
     """Captures speech from the microphone and returns it as a string."""
     recognized_text = ""
 
@@ -97,27 +110,29 @@ def recognize_speech(model,q):
                 print("Recognized:", recognized_text)
                 return recognized_text  # Return the recognized text immediately
 
-def getRandomJointConfig(): #all joints support +-360 deg, but it raises an error for some joints
+
+def getRandomJointConfig():  # all joints support +-360 deg, but it raises an error for some joints
     ls = []
-    ls.append(random.randint(-628,628)/100.0)
-    ls.append(random.randint(-314,0)/100.0)
-    ls.append(random.randint(-314,314)/100.0)
-    ls.append(random.randint(-314,314)/100.0)
-    ls.append(random.randint(-314,314)/100.0) 
-    ls.append(random.randint(-314,314)/100.0) #last writst angle max and min???
+    ls.append(random.randint(-628, 628) / 100.0)
+    ls.append(random.randint(-314, 0) / 100.0)
+    ls.append(random.randint(-314, 314) / 100.0)
+    ls.append(random.randint(-314, 314) / 100.0)
+    ls.append(random.randint(-314, 314) / 100.0)
+    ls.append(random.randint(-314, 314) / 100.0)  # last writst angle max and min???
     print(ls)
     return ls
 
+
 def moveArmWithText(text):
     if text == "rotate base":
-        rotateJointsAbs(group,posList=[6.28,0,0,0,0,0])
+        rotateJointsAbs(group, posList=[6.28, 0, 0, 0, 0, 0])
     elif text == "reverse rotate":
-        rotateJointsAbs(group,posList=[-6.28,0,0,0,0,0])
+        rotateJointsAbs(group, posList=[-6.28, 0, 0, 0, 0, 0])
     elif text == "initialize":
         rotateJointsAbs(group)
     elif text == "random random random":
-        rotateJointsAbs(group,getRandomJointConfig())
-        
+        rotateJointsAbs(group, getRandomJointConfig())
+
     elif text == "quit":
         return 'q'
     return 'c'
@@ -126,13 +141,10 @@ def moveArmWithText(text):
 group, robot, scene = initRobot()
 model, q = getVoiceModelandQ()
 
-
-
 while True:
-    ret = moveArmWithText(recognize_speech(model,q))
+    ret = moveArmWithText(recognize_speech(model, q))
     if ret == 'q':
         break
-
 
 # # Get current pose
 # pose_goal = group.get_current_pose().pose
