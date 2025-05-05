@@ -11,7 +11,6 @@ class GameState:
     Handles gameplay logic including board state and integration with the engine.
     """
 
-
     def __init__(self, engine: Engine, engine_plays_white: bool) -> None:
         """
         Initialize gameplay with the given engine.
@@ -23,7 +22,6 @@ class GameState:
         self.board: chess.Board = chess.Board()
         self.engine_plays_white = engine_plays_white
 
-
     def set_fen(self, fen: str) -> None:
         """
         Set the current position using a FEN string.
@@ -33,7 +31,6 @@ class GameState:
         self.board.set_fen(fen)
         self.engine.set_position(fen)
 
-
     def get_fen(self) -> str:
         """
         Get the current board state in FEN format.
@@ -41,7 +38,6 @@ class GameState:
         :return: FEN string of current board position.
         """
         return self.board.fen()
-
 
     def get_engine_move(self) -> Optional[str]:
         """
@@ -54,7 +50,6 @@ class GameState:
             return book_move
 
         return self.engine.get_best_move()
-
 
     def make_engine_move(self) -> str:
         """
@@ -72,7 +67,6 @@ class GameState:
         self.board.push_uci(move)
         self.engine.set_position(self.board.fen())
         return move
-
 
     def offer_move(self, move: str, by_white: Optional[bool] = None) -> bool:
         """
@@ -95,13 +89,11 @@ class GameState:
         self.engine.set_position(self.board.fen())
         return True
 
-
     def is_white_turn(self) -> bool:
         """
         Return True if it's White's turn to move.
         """
         return self.board.turn == chess.WHITE
-
 
     def set_engine_side(self, is_white: bool) -> None:
         """
@@ -110,7 +102,6 @@ class GameState:
         :param is_white: True if engine plays White, False if Black.
         """
         self.engine_plays_white = is_white
-
 
     def get_board_array(self) -> List2D[str]:
         """
@@ -121,20 +112,17 @@ class GameState:
         """
         return GameState._board_to_array(self.board)
 
-
     def print_board(self) -> None:
         """
         Print the current board in ASCII format.
         """
         print(self.board)
 
-
     def get_algebraic(self, uci: str) -> str:
         try:
             return self.board.san(chess.Move.from_uci(uci))
         except (AssertionError, ValueError):
             return "<Illegal>"
-
 
     @staticmethod
     def get_move_diff(game_state, new_board_array: List2D[str]) -> Optional[str]:
@@ -149,7 +137,6 @@ class GameState:
             if GameState._board_to_array(tmp_board) == new_board_array:
                 return move.uci()
         return None
-
 
     @staticmethod
     def _board_to_array(board: chess.Board) -> List2D[str]:

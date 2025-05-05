@@ -8,11 +8,10 @@ class Topology:
         self.waypoints: List[Waypoint] = waypoints
         self.adjacency: Dict[int, int] = connectivity
 
-
     @staticmethod
     def standard_board(
-        piece_elevation: float,
-        travel_elevation: float,
+            piece_elevation: float,
+            travel_elevation: float,
     ) -> 'Topology':
         """
         TODO

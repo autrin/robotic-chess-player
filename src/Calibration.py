@@ -1,18 +1,19 @@
 from jh1.physical.robotics.robot_ur10e_gripper import RobotUR10eGripper
 import rospy
 
+
 class Calibration:
     """
         Assign the insatnce of RobotUr10eGripper to Calibration::robot
         The calibration_points and robot variables are static in case we need to
         access the calibration points elsewhere
     """
-    calibration_points = {"corner1":None, "corner2":None, "corner3" : None, "corner4":None}
+    calibration_points = {"corner1": None, "corner2": None, "corner3": None, "corner4": None}
     robot: RobotUR10eGripper = None
 
     def init(self):
         pass
-    
+
     @staticmethod
     def calibrate():
         """
@@ -33,9 +34,9 @@ class Calibration:
 
         except Exception as e:
             rospy.loginfo("Calibration failed!")
-            pass 
+            pass
         return
-    
+
     @staticmethod
     def get_calibrated_pos_of_corners():
         """
@@ -51,4 +52,3 @@ class Calibration:
             return None
         else:
             return Calibration.calibration_points
-

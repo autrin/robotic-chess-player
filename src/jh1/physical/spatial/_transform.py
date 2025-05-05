@@ -6,10 +6,10 @@ from jh1.typealias import Vec2, Vec3
 
 class Transform3D:
     def __init__(
-        self,
-        position: Vec3,
-        scale: Vec3,
-        rotation: Rotation
+            self,
+            position: Vec3,
+            scale: Vec3,
+            rotation: Rotation
     ):
         self.position: Vec3 = position
         self.scale: Vec3 = scale
@@ -33,10 +33,10 @@ class Transform3D:
 
 class Transform2D:
     def __init__(
-        self,
-        position: Vec2,
-        scale: float,
-        rotation_rad: float
+            self,
+            position: Vec2,
+            scale: float,
+            rotation_rad: float
     ):
         self.position: np.ndarray = position
         self.scale: float = scale
