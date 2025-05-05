@@ -176,7 +176,7 @@ class ChessMovementController:
         ]
         return joint_values
     
-    def execute_move(self, move: str) -> bool:
+    def execute_move(self, move: str, is_capture: bool = None) -> bool:
         """
         Execute a chess move (e.g., 'e2e4').
         
@@ -217,7 +217,7 @@ class ChessMovementController:
             
             # Check for capture - if there's a piece at the destination
             # This would need to come from your chess engine/board state
-            is_capture = False  # You would determine this from your chess engine
+            # is_capture = False  # TODO You would determine this from the chess engine
             
             # Execute the standard move
             success = self._move_piece(from_pos, to_pos, is_capture)
