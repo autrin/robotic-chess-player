@@ -194,7 +194,7 @@ def set_robot_move(move, is_captured: bool):
     move_executed.clear()
     
     # Wait for the robot to complete the move
-    if not move_executed.wait(timeout=45):
+    if not move_executed.wait(timeout=100):
         rospy.logerr("Robot movement timed out")
         return False
     return True
