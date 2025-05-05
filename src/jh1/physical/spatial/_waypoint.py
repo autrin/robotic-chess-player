@@ -6,4 +6,3 @@ class Waypoint:
         self.uid: int = uid
         self.label: str = label
         self.local_pos: Vec3 = local_pos
-

@@ -63,7 +63,8 @@ def _generate_image_perturbation() -> Tuple[float, ...]:
     return d_theta, d_scale, d_shear, tx, ty, d_luma, d_contrast
 
 
-def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=50) -> Dict[int, List[Vec2]]:
+def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=50) -> Dict[
+    int, List[Vec2]]:
     """
     Applies randomized affine transformations to detect AprilTags more robustly across augmented versions.
 
@@ -133,7 +134,8 @@ def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=5
             borderMode=cv2.BORDER_REPLICATE
         )
         # Apply brightness and contrast adjustments
-        gray_affine_sp: Array2D[uint8] = cv2.convertScaleAbs(gray_affine_sp, alpha=d_contrast, beta=d_luma)
+        gray_affine_sp: Array2D[uint8] = cv2.convertScaleAbs(gray_affine_sp, alpha=d_contrast,
+                                                             beta=d_luma)
 
         # Run the apriltag detector on the perturbed image
         tags_affine_sp: apriltag.Detection = detector.detect(gray_affine_sp)

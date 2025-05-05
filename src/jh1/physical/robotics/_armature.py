@@ -28,7 +28,6 @@ class Armature:
         self.arm.stop()
         self.arm.clear_pose_targets()
 
-
     def move_to_pose(self, pose: Pose):
         """Moves the robot end-effector to a specified pose."""
         self.arm.set_pose_target(pose)

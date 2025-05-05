@@ -19,13 +19,14 @@ from jh1.visual.video import WebcamSource
 from ChessMovement import ChessMovementController
 import threading
 import time
-import os 
+import os
 
 """
 A standalone vision-based chess system
 """
 # If resources are in a parent directory named 'resources'
-resources_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "resources")
+resources_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                             "resources")
 ENGINE_PATH = "/usr/games/stockfish"
 OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 
@@ -33,6 +34,7 @@ OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 move_executed = threading.Event()
 ai_move = None
 robot_running = True
+
 
 def capture_board_state(cam, detector):
     print("Reading frame...")
@@ -67,7 +69,6 @@ def update_plot(img, solver, board_bins, certainty_grid):
     fig, ax = plt.subplots(figsize=(12, 8))
     ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
-
     def project(pt):
         pt = np.array(pt, dtype=np.float32)
         if solver.adjust:
@@ -76,7 +77,6 @@ def update_plot(img, solver, board_bins, certainty_grid):
         vec = np.array([pt[0], pt[1], 1.0])
         img_pt_h = np.linalg.inv(solver.mat_homography) @ vec
         return tuple(img_pt_h[:2] / img_pt_h[2])
-
 
     for i in range(9):
         ax.plot(*zip(project((i + 1, 1)), project((i + 1, 9))), color="tab:blue", linewidth=1)
@@ -100,7 +100,8 @@ def update_plot(img, solver, board_bins, certainty_grid):
             if tags:
                 label = ", ".join(PIECE_TAG_IDS.get(t.tag_id, str(t.tag_id)) for t in tags)
                 center = project((j + 1.5, i + 1.5))
-                ax.text(*center, label, fontsize=10, ha="center", va="center", weight="bold", color="black")
+                ax.text(*center, label, fontsize=10, ha="center", va="center", weight="bold",
+                        color="black")
 
     sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
@@ -148,10 +149,12 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
+
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
     global ai_move, move_executed, robot_running
-    rospy.loginfo(f"ai_move: {ai_move}, move_executed: {move_executed}, robot_running: {robot_running}")
+    rospy.loginfo(
+        f"ai_move: {ai_move}, move_executed: {move_executed}, robot_running: {robot_running}")
     while robot_running:
         current_move = ai_move
         if current_move:
@@ -169,36 +172,38 @@ def robot_thread_function(robot: ChessMovementController):
                 ai_move = None
                 move_executed.set()
         time.sleep(0.1)
-    
+
     rospy.loginfo("Robot thread shutting down")
+
 
 def set_robot_move(move):
     """Set the move for the robot to execute and wait for completion"""
     global ai_move, move_executed
-    
+
     # Signal the robot thread to execute the move
     ai_move = move
     move_executed.clear()
-    
+
     # Wait for the robot to complete the move
     if not move_executed.wait(timeout=30):
         rospy.logerr("Robot movement timed out")
         return False
     return True
 
+
 def main():
     global move_executed, ai_move, robot_running
-    
+
     rospy.loginfo("Starting Chess Robot System...")
 
-    test_mode       = (len(sys.argv) > 1 and sys.argv[1] == 'test')
+    test_mode = (len(sys.argv) > 1 and sys.argv[1] == 'test')
     simulation_mode = rospy.get_param('sim', True)
     rospy.loginfo(f"Command-line args: {sys.argv}")
     rospy.loginfo(f"Test mode: {test_mode}, Simulation mode: {simulation_mode}")
-    
+
     # Get user preference for engine color
     engine_is_white = input("Should the engine play as White? (y/n): ").strip().lower() == 'y'
-    
+
     # Initialize chess engine (for both test and normal mode)
     engine = Engine(
         engine_path=ENGINE_PATH,
@@ -210,19 +215,19 @@ def main():
 
     # Initialize robot movement controller - simulation mode is independent of test mode
     robot = ChessMovementController(simulation_mode=simulation_mode, robot_is_white=engine_is_white)
-    
+
     # Start robot movement thread
     robot_running = True
     robot_thread = threading.Thread(target=robot_thread_function, args=(robot,))
     robot_thread.daemon = True
     robot_thread.start()
-    
+
     try:
         # OPTION 1: TEST MODE - simple chess move testing without vision
         if test_mode:
             rospy.loginfo(f"Running in TEST mode (sim={simulation_mode})")
             robot.test_board_calibration()
-            
+
             # Engine plays first if it's white
             if engine_is_white:
                 move = game.get_engine_move()
@@ -236,7 +241,7 @@ def main():
                     print(f"FEN: {game.get_fen()}")
                     print("Stockfish:", engine.get_eval_score())
                     print("-" * 60)
-            
+
             rospy.loginfo("Enter 'quit' to exit test mode.")
             # Test mode game loop
             while not game.board.is_game_over() and not rospy.is_shutdown():
@@ -248,7 +253,7 @@ def main():
                     if len(human_move) != 4:
                         print("Invalid move format. Please use format like 'e2e4'")
                         continue
-                    
+
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
@@ -299,15 +304,15 @@ def main():
                     if robot_thread.is_alive():
                         robot_thread.join(timeout=2)
                     print("Resources cleaned up.")
-                    
+
             rospy.loginfo("Exiting test mode")
             return
-        
+
         # OPTION 2: FULL MODE (vision-based)
         rospy.loginfo(f"Running in FULL mode (sim={simulation_mode})")
         cam = WebcamSource(cam_id=0)
         detector = instantiate_detector()
-        
+
         # Engine plays first if it's white
         if engine_is_white:
             move = game.get_engine_move()
@@ -316,7 +321,7 @@ def main():
             success = set_robot_move(move)
             if success:
                 print("Robot completed the engine's move")
-            
+
             # Verify the move was made correctly on the board
             scanned_board = verify_move(move, game, cam, detector)
             # Update the game state
@@ -332,7 +337,7 @@ def main():
         while not game.board.is_game_over():
             # Wait for human player's move
             move, scanned_board = prompt_for_move(game, cam, detector)
-            
+
             # validate the move
             board_before = game.board.copy()
             if game.offer_move(move):
@@ -365,7 +370,7 @@ def main():
                 print("-" * 60)
 
         print("Game over.")
-        
+
     except KeyboardInterrupt:
         print("\nGame interrupted by user.")
     except Exception as e:
@@ -377,6 +382,7 @@ def main():
             robot_thread.join(timeout=2)
         cam.release()
         print("Resources cleaned up.")
+
 
 if __name__ == "__main__":
     main()
