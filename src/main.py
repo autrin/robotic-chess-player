@@ -155,8 +155,10 @@ def is_capture(move: str, game: GameState) -> bool:
     chess_move = chess.Move(from_square, to_square)
     
     # Mark as capture if there's a piece at the destination or if it's en passant
-    is_capture = game.board.is_capture(chess_move)
-    return is_capture
+    is_captured = game.board.is_capture(chess_move)
+    print(f"is_captured {is_captured}", flush=True)
+
+    return is_captured
 
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
@@ -192,7 +194,7 @@ def set_robot_move(move, is_captured: bool):
     move_executed.clear()
     
     # Wait for the robot to complete the move
-    if not move_executed.wait(timeout=30):
+    if not move_executed.wait(timeout=45):
         rospy.logerr("Robot movement timed out")
         return False
     return True
