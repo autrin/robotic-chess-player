@@ -264,7 +264,8 @@ def main():
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
-                        if set_robot_move(human_move):
+                        is_captured = is_capture(move, game)
+                        if set_robot_move(human_move, is_captured):
                             game.print_board()
                             print(f"FEN: {game.get_fen()}")
                             print("Stockfish:", engine.get_eval_score())
@@ -285,7 +286,8 @@ def main():
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            if set_robot_move(engine_move):
+                            is_captured = is_capture(move, game)
+                            if set_robot_move(engine_move, is_captured):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")
                                 print("Stockfish:", engine.get_eval_score())
@@ -324,8 +326,9 @@ def main():
         if engine_is_white:
             move = game.get_engine_move()
             print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
+            is_captured = is_capture(move, game)
             # Execute the move on the robot
-            success = set_robot_move(move)
+            success = set_robot_move(move, is_captured)
             if success:
                 print("Robot completed the engine's move")
             
@@ -361,8 +364,9 @@ def main():
             if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
                 move = game.get_engine_move()
                 print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
+                is_captured = is_capture(move, game)
                 # Execute the move on the robot
-                success = set_robot_move(move)
+                success = set_robot_move(move, is_captured)
                 if success:
                     print("Robot completed the engine's move")
                 else:
