@@ -264,7 +264,7 @@ def main():
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
-                        is_captured = is_capture(move, game)
+                        is_captured = is_capture(human_move, game)
                         if set_robot_move(human_move, is_captured):
                             game.print_board()
                             print(f"FEN: {game.get_fen()}")
@@ -286,7 +286,7 @@ def main():
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            is_captured = is_capture(move, game)
+                            is_captured = is_capture(engine_move, game)
                             if set_robot_move(engine_move, is_captured):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")
