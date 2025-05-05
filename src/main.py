@@ -148,17 +148,13 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
-def is_capture(move: str, game: GameState) -> bool:
-    # Check if the move is a capture by looking at the current board state
+def is_capture(move: str, board: chess.Board) -> bool:
+    """Check if the move captures an opponent's piece"""
     from_square = chess.parse_square(move[0:2])
     to_square = chess.parse_square(move[2:4])
-    chess_move = chess.Move(from_square, to_square)
     
-    # Mark as capture if there's a piece at the destination or if it's en passant
-    is_captured = game.board.is_capture(chess_move)
-    print(f"is_captured {is_captured}", flush=True)
-
-    return is_captured
+    # Check if there's a piece at the destination square
+    return board.piece_at(to_square) is not None
 
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
@@ -241,7 +237,8 @@ def main():
                 move = game.get_engine_move()
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 rospy.loginfo(f"Robot executing engine's move: {move}")
-                is_captured = is_capture(move, game)
+                before = game.board.copy()
+                is_captured = is_capture(move, before)
                 success = set_robot_move(move, is_captured)
                 if success:
                     # Update the game state
@@ -266,7 +263,7 @@ def main():
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
-                        is_captured = is_capture(human_move, game)
+                        is_captured = is_capture(human_move, before)
                         if set_robot_move(human_move, is_captured):
                             game.print_board()
                             print(f"FEN: {game.get_fen()}")
@@ -285,10 +282,11 @@ def main():
                     # engine's reply
                     if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
                         engine_move = game.get_engine_move()
+                        before = game.board.copy()
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            is_captured = is_capture(engine_move, game)
+                            is_captured = is_capture(engine_move, before)
                             if set_robot_move(engine_move, is_captured):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")
@@ -316,7 +314,8 @@ def main():
             if engine_is_white:
                 move = game.get_engine_move()
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
-                is_captured = is_capture(move, game)
+                before = game.board.copy()
+                is_captured = is_capture(move, before)
                 # Execute the move on the robot
                 success = set_robot_move(move, is_captured)
                 if success:
@@ -354,7 +353,8 @@ def main():
                 if game.board.turn == (chess.WHITE if engine_is_white else chess.BLACK):
                     move = game.get_engine_move()
                     print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
-                    is_captured = is_capture(move, game)
+                    before = game.board.copy()
+                    is_captured = is_capture(move, before)
                     # Execute the move on the robot
                     success = set_robot_move(move, is_captured)
                     if success:
