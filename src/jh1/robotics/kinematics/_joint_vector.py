@@ -16,6 +16,17 @@ class JointVector:
     wrist_2: float
     wrist_3: float
 
+    def adaptive_leveling(self) -> 'JointVector':
+        return JointVector(
+            self.shoulder_pan,
+            self.shoulder_lift,
+            self.elbow,
+            3 * np.pi / 2 - ( self.shoulder_lift + self.elbow),
+            # 0,
+            -np.pi / 2,
+            -np.pi / 2
+        )
+
     def as_list(self) -> List[float]:
         return [
             self.shoulder_pan,
