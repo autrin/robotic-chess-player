@@ -22,11 +22,12 @@ class Armature:
     @staticmethod
     def inverse_kinematics(target: Vec3) -> JointVector:
         _2pi = 2 * np.pi
+        _pi_over_2 = np.pi / 2
         eps = 1e-2
 
         return ur10e_inverse_kinematics(
             target,
-            initial_q=JointVector.from_list([2.2015, -1.7744, 1.1871, -2.0474, -np.pi / 2, 0]),
-            joint_lower_bounds=[-_2pi, -_2pi, -_2pi, -_2pi, -np.pi / 2 - eps, -eps],
-            joint_upper_bounds=[_2pi, _2pi, _2pi, _2pi, -np.pi / 2 + eps, eps]
+            initial_q=JointVector.from_topic([1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003, -_pi_over_2, _pi_over_2]),
+            joint_lower_bounds=[-_2pi, -_2pi, -_2pi, -_2pi, -_pi_over_2 - eps, _pi_over_2 - eps],
+            joint_upper_bounds=[_2pi, _2pi, _2pi, _2pi, -_pi_over_2 + eps, _pi_over_2 + eps]
         )
