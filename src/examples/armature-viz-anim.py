@@ -8,7 +8,7 @@ from jh1.robotics import Armature
 from jh1.robotics.kinematics import JointVector
 
 
-def animate_joint_vectors(joint_vectors, steps_per_segment=20, interval_ms=150, fixed_mask=None):
+def animate_joint_vectors(joint_vectors, steps_per_segment=10, interval_ms=150, fixed_mask=None):
     if fixed_mask is None:
         fixed_mask = [0] * len(
             Armature.forward_kinematics(joint_vectors[0]))  # Assume all controllable
@@ -38,8 +38,8 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=20, interval_ms=150, 
 
     ax.set_box_aspect([1, 1, 1])
     reach = 1.4
-    ax.set_xlim(-reach, reach)
-    ax.set_ylim(-reach, reach)
+    ax.set_xlim(-reach, 0)
+    ax.set_ylim(-reach, 0)
     ax.set_zlim(0, reach)
 
     def init():
@@ -74,7 +74,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=20, interval_ms=150, 
             prev_pos = positions_list[i]
             tline = ax.plot(
                 prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
-                color="tab:purple", linewidth=1, alpha=0.3
+                color="tab:purple", linewidth=1, alpha=0
             )[0]
             trail_lines.append(tline)
 
@@ -117,8 +117,14 @@ if __name__ == '__main__':
         SQUARE_IK_LOOKUP['h1'].angles_ik,
         SQUARE_IK_LOOKUP['h8'].angles_ik,
         SQUARE_IK_LOOKUP['a8'].angles_ik,
-        SQUARE_IK_LOOKUP['e2'].angles_ik,
-        SQUARE_IK_LOOKUP['e4'].angles_ik,
+        SQUARE_IK_LOOKUP['a1'].angles_ik,
+        SQUARE_IK_LOOKUP['c1_up'].angles_ik,
+        SQUARE_IK_LOOKUP['c1'].angles_ik,
+        SQUARE_IK_LOOKUP['c1_up'].angles_ik,
+        SQUARE_IK_LOOKUP['f4_up'].angles_ik,
+        SQUARE_IK_LOOKUP['f4'].angles_ik,
+        SQUARE_IK_LOOKUP['f4_up'].angles_ik,
+        SQUARE_IK_LOOKUP['home'].angles_ik,
 
         # JointVector.from_topic([2.113312069569723, -1.2614153188518067, 0.6471139192581177, -2.404459138909811, -1.5351746718036097, 1.085855484008789]),
         # JointVector.from_topic([1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003, -1.6312678495990198, 1.6715844869613647]),
