@@ -121,5 +121,5 @@ def ur10e_adaptive_inverse_kinematics(
         raise RuntimeError(f"IK did not converge: {result.message}")
 
 
-    print(f"[ur10e_adaptive_inverse_kinematics] IK solution converged!")
+    print(f"[ur10e_adaptive_inverse_kinematics] IK solution converged! ({result.cost=:.4e}, {result.nfev=})")
     return JointVector.from_upper_joints(*result.x.tolist())
