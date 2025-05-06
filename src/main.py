@@ -7,8 +7,9 @@ import time
 import chess
 import rospy
 
-from ChessMovement import ChessMovementController
-from jh1.core import Engine, GameState
+from jh1.core import Engine, GameState, ChessMovementController, Orchestrator
+from jh1.robotics import Skeleton
+from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
 from jh1.utils.visualize import board_overlay_plot
 from jh1.visual import (
     instantiate_detector,
@@ -175,8 +176,19 @@ def main():
     )
     game = GameState(engine, engine_plays_white=engine_is_white)
 
+    skeleton: Skeleton = Skeleton(RobotUR10eGripper(is_gripper_up=True))
+    orchestrator: Orchestrator = Orchestrator(
+        skeleton=skeleton,
+        require_viz=True,
+        require_approval=True
+    )
+
     # Initialize robot movement controller - simulation mode is independent of test mode
-    robot = ChessMovementController(simulation_mode=simulation_mode, robot_is_white=engine_is_white)
+    robot = ChessMovementController(
+        orchestrator=orchestrator,
+        simulation_mode=simulation_mode,
+        robot_is_white=engine_is_white
+    )
 
     # Start robot movement thread
     robot_running = True

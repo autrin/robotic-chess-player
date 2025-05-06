@@ -31,13 +31,13 @@ WAYPOINT_TABLE: Dict[str, Waypoint] = {}
 
 HOME_WAYPOINT = WAYPOINT_TABLE["home"] = Waypoint(
     label="home",
-    pos=Skeleton.forward_kinematics(home_jv),
+    pos=Skeleton.forward_kinematics(home_jv)[-1],
     jv=home_jv
 )
 
 DISCARD_WAYPOINT = WAYPOINT_TABLE["discard"] = Waypoint(
     label="discard",
-    pos=Skeleton.forward_kinematics(discard_jv),
+    pos=Skeleton.forward_kinematics(discard_jv)[-1],
     jv=discard_jv
 )
 
