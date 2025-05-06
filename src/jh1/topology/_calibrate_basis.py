@@ -9,6 +9,8 @@ from ._waypoint import Waypoint
 ## --- EDIT THESE ---
 up_height_meters = 0.08
 home_jv = JointVector.from_topic([2.449476, -1.842133, 1.006606, 0, 0, 0]).adaptive_leveling()
+discard_jv = JointVector.from_topic([3.449476, -1.642133, 1.006606, 0, 0, 0]).adaptive_leveling()
+
 a8 = Skeleton.forward_kinematics(JointVector.from_topic(
     [1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003,
      -1.6312678495990198, 1.6715844869613647]
@@ -25,6 +27,26 @@ h1 = Skeleton.forward_kinematics(JointVector.from_topic(
 UP_LABEL_SUFFIX = "_up"
 
 ## --- GENERATE BASIS VECTORS AND WAYPOINTS ---
+WAYPOINT_TABLE: Dict[str, Waypoint] = {}
+
+HOME_WAYPOINT = WAYPOINT_TABLE["home"] = Waypoint(
+    label="home",
+    pos=Skeleton.forward_kinematics(home_jv),
+    jv=home_jv
+)
+
+DISCARD_WAYPOINT = WAYPOINT_TABLE["discard"] = Waypoint(
+    label="discard",
+    pos=Skeleton.forward_kinematics(discard_jv),
+    jv=discard_jv
+)
+
+discard_up_pos = DISCARD_WAYPOINT.pos + np.array([0, 0, up_height_meters])
+DISCARD_UP_WAYPOINT = WAYPOINT_TABLE["discard_up"] = Waypoint(
+    label="discard_up",
+    pos=discard_up_pos,
+    jv=Skeleton.adaptive_inverse_kinematics(discard_up_pos)
+)
 
 x_dir = (h8 - a8) / 7
 y_dir = (h1 - h8) / 7
@@ -38,25 +60,17 @@ for i, file in enumerate(files):
         pos = a8 + i * x_dir + (8 - rank) * y_dir
         board[f"{file}{rank}"] = pos
 
-SQUARE_IK_LOOKUP: Dict[str, Waypoint] = {}
-
 for k, v in board.items():
     print(f"[calibrate_basis] Generating IK waypoints for square {k}")
-    SQUARE_IK_LOOKUP[k] = Waypoint(
+    WAYPOINT_TABLE[k] = Waypoint(
         label=k,
         pos=v,
         jv=Skeleton.adaptive_inverse_kinematics(v)
     )
 
     v_up = v + np.array([0, 0, up_height_meters])
-    SQUARE_IK_LOOKUP[k + UP_LABEL_SUFFIX] = Waypoint(
+    WAYPOINT_TABLE[k + UP_LABEL_SUFFIX] = Waypoint(
         label=k,
         pos=v_up,
         jv=Skeleton.adaptive_inverse_kinematics(v_up)
     )
-
-HOME_WAYPOINT = SQUARE_IK_LOOKUP["home"] = Waypoint(
-    label="home",
-    pos=Skeleton.forward_kinematics(home_jv),
-    jv=home_jv
-)
