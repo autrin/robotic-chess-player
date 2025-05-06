@@ -1,11 +1,13 @@
 #! /usr/bin/env python3
-import chess
-import cv2
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
-import rospy
+import os
 import sys
+import threading
+import time
+
+import chess
+import rospy
+
+from ChessMovement import ChessMovementController
 from jh1.core import Engine, GameState
 from jh1.utils.visualize import board_overlay_plot
 from jh1.visual import (
@@ -15,12 +17,7 @@ from jh1.visual import (
     PIECE_TAG_IDS,
     HomographySolver,
 )
-from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
-from ChessMovement import ChessMovementController
-import threading
-import time
-import os
 
 """
 A standalone vision-based chess system
