@@ -1,13 +1,11 @@
 from collections import Counter
 from typing import Dict, Tuple, List
 
-import numpy as np
 import cv2
 import pupil_apriltags as apriltag
 
-from jh1.typealias import *
-from jh1.visual import VariCluster
 from jh1.utils.mathematics.affine import *
+from jh1.visual import VariCluster
 
 
 def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
@@ -24,7 +22,7 @@ def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
     gray: Array2D[uint8] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray: Array2D[uint8] = cv2.equalizeHist(gray)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    gray: Array2D[np.float64] = clahe.apply(gray)
+    gray: Array2D[uint8] = clahe.apply(gray)
     return adjust_gamma(gray)
 
 
