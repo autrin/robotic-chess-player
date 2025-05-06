@@ -34,3 +34,5 @@ class JointVector:
         if len(joint_list) != 6:
             raise ValueError("UR10e has exactly 6 joints.")
         return JointVector(*joint_list)
+
+    JOINT_LABELS = ["shoulder_pan", "shoulder_lift", "elbow", "wrist_1", "wrist_2", "wrist_3"]

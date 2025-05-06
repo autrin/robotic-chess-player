@@ -10,7 +10,7 @@ import rospy
 import time
 from typing import List
 from geometry_msgs.msg import Pose
-from jh1.physical.robotics.robot_ur10e_gripper import RobotUR10eGripper
+from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
 
 
 class ChessMovementController:

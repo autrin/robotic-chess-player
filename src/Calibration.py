@@ -1,4 +1,4 @@
-from jh1.physical.robotics.robot_ur10e_gripper import RobotUR10eGripper
+from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
 import rospy
 
 
