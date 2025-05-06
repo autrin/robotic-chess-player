@@ -8,4 +8,4 @@ from jh1.typealias import Vec3
 class Waypoint:
     label: str
     pos: Vec3
-    angles_ik: JointVector
+    jv: JointVector
