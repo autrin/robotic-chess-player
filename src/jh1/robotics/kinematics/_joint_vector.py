@@ -17,14 +17,10 @@ class JointVector:
     wrist_3: float
 
     def adaptive_leveling(self) -> 'JointVector':
-        return JointVector(
+        return JointVector.from_upper_joints(
             self.shoulder_pan,
             self.shoulder_lift,
-            self.elbow,
-            3 * np.pi / 2 - ( self.shoulder_lift + self.elbow),
-            # 0,
-            -np.pi / 2,
-            -np.pi / 2
+            self.elbow
         )
 
     def as_list(self) -> List[float]:
@@ -52,13 +48,24 @@ class JointVector:
         ]
 
     @staticmethod
-    def from_list(joint_list):
+    def from_upper_joints(shoulder_pan: float, shoulder_lift: float, elbow: float) -> 'JointVector':
+        return JointVector(
+            shoulder_pan,
+            shoulder_lift,
+            elbow,
+            - np.pi / 2 - shoulder_lift - elbow,
+            -np.pi / 2,
+            -np.pi / 2
+        )
+
+    @staticmethod
+    def from_list(joint_list) -> 'JointVector':
         if len(joint_list) != 6:
             raise ValueError("UR10e has exactly 6 joints.")
         return JointVector(*joint_list)
 
     @staticmethod
-    def from_topic(joint_list):
+    def from_topic(joint_list) -> 'JointVector':
         """
         The order that the subscriber outputs is different from the expected order. Specifically:
             - elbow_joint

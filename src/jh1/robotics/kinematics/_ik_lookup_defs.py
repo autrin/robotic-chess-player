@@ -3,7 +3,7 @@ import numpy as np
 
 # @formatter:off
 SQUARE_IK_LOOKUP = {
-    'home': JointVector.from_topic([2.4494758288012903, -1.842133184472555, 1.006606101989746, -2.13765873531484,-1.580822769795553, np.pi / 2]),
+
     'a1': JointVector(
         shoulder_pan=0.7470078958301468, shoulder_lift=-1.1080852273595168, elbow=2.0310686677053202,
         wrist_1=-2.444532478515727, wrist_2=-1.5708938970134838, wrist_3=1.5707963267948966
