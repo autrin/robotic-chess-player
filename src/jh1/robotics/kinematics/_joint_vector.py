@@ -35,4 +35,26 @@ class JointVector:
             raise ValueError("UR10e has exactly 6 joints.")
         return JointVector(*joint_list)
 
+    @staticmethod
+    def from_topic(joint_list):
+        """
+        The order that the subscriber outputs is different from the expected order. Specifically:
+            - elbow_joint
+            - shoulder_lift_joint
+            - shoulder_pan_joint
+            - wrist_1_joint
+            - wrist_2_joint
+            - wrist_3_joint
+        """
+        if len(joint_list) != 6:
+            raise ValueError("UR10e has exactly 6 joints.")
+        return JointVector(
+            joint_list[2],
+            joint_list[1],
+            joint_list[0],
+            joint_list[3],
+            joint_list[4],
+            joint_list[5]
+        )
+
     JOINT_LABELS = ["shoulder_pan", "shoulder_lift", "elbow", "wrist_1", "wrist_2", "wrist_3"]
