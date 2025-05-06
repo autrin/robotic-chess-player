@@ -4,6 +4,7 @@ import rospy
 import moveit_commander
 from geometry_msgs.msg import Pose
 
+
 class UR10eControl:
     def __init__(self):
         # Initialize MoveIt Commander and ROS node
@@ -18,8 +19,6 @@ class UR10eControl:
         self.arm.set_pose_reference_frame("base_link")
         self.arm.allow_replanning(True)
 
-    
-    
     def move_to_joint_positions(self, joint_positions):
         """Moves the arm to a specific joint configuration."""
         self.arm.set_joint_value_target(joint_positions)
@@ -29,24 +28,24 @@ class UR10eControl:
             rospy.logerr("Failed to reach joint configuration!")
         self.arm.stop()
         self.arm.clear_pose_targets()
-        
+
     def reset_position(self):
         """Moves the robot to a predefined reset position where wrist 3 is parallel to the ground and facing downward."""
         rospy.loginfo("Moving to reset position...")
         reset_joint_positions = [
-            0.0,    # shoulder_pan (base rotation)
+            0.0,  # shoulder_pan (base rotation)
             -1.57,  # shoulder_lift (move arm forward)
-            1.57,   # elbow (keep forearm vertical)
+            1.57,  # elbow (keep forearm vertical)
             -1.57,  # wrist_1 (ensure wrist faces downward)
             -1.57,  # wrist_2 (align wrist with forearm)
-            0.0     # wrist_3 (keep parallel to the ground)
+            0.0  # wrist_3 (keep parallel to the ground)
         ]
 
         self.move_to_joint_positions(reset_joint_positions)
 
     def move_wrist_vertical(self, distance=-0.6):
         """Moves the wrist vertically by changing the Z-coordinate while maintaining orientation."""
-        rospy.loginfo(f"Moving wrist {'up' if distance>0 else 'down'} by {distance} meters...")
+        rospy.loginfo(f"Moving wrist {'up' if distance > 0 else 'down'} by {distance} meters...")
         current_pose = self.arm.get_current_pose().pose
 
         current_pose.position.z += distance  # Move downward by the given distance
@@ -56,7 +55,8 @@ class UR10eControl:
         success = self.arm.go(wait=True)
 
         if success:
-            rospy.loginfo(f"Wrist moved {'up' if distance>0 else 'down'} by {distance} successfully!")
+            rospy.loginfo(
+                f"Wrist moved {'up' if distance > 0 else 'down'} by {distance} successfully!")
         else:
             rospy.logerr("Failed to move wrist vertically.")
 
@@ -67,7 +67,6 @@ class UR10eControl:
         """Moves the wrist to the specified (x, y) position while keeping the Z coordinate and wrist orientation unchanged."""
         rospy.loginfo(f"Moving wrist to position: x={x}, y={y}...")
 
-
         current_pose = self.arm.get_current_pose().pose
 
         current_z = current_pose.position.z
@@ -77,7 +76,7 @@ class UR10eControl:
         current_pose.position.y = y
         current_pose.position.z = current_z  # Preserve the Z value
 
-        current_pose.orientation = current_orientation  
+        current_pose.orientation = current_orientation
         self.arm.set_pose_target(current_pose)
 
         # Execute the movement
@@ -90,7 +89,6 @@ class UR10eControl:
 
         self.arm.stop()
         self.arm.clear_pose_targets()
-
 
     def move_piece(self, pick_x, pick_y, drop_x, drop_y, move_distance=0.6):
         """Simulates the pick-and-drop routine by moving the wrist to the pick and drop locations."""
@@ -127,6 +125,7 @@ class UR10eControl:
 
         rospy.loginfo("Pick-and-drop routine complete.")
 
+
 if __name__ == "__main__":
     robot = UR10eControl()
 
@@ -140,10 +139,10 @@ if __name__ == "__main__":
     # robot.move_wrist_vertical(0.6)
 
     # robot.move_wrist_to_position(0.2, 0.5)
-    
+
     robot.move_piece(0.5, 0.2, 0.2, 0.5)
 
-# You can call this for different positions
+    # You can call this for different positions
     robot.move_piece(0.6, 0.3, 0.1, 0.4)
-    
+
     rospy.signal_shutdown("Task Complete")

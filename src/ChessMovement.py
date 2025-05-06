@@ -7,12 +7,11 @@ controlling movement for executing chess moves in the physical world.
 """
 import traceback
 import rospy
-import numpy as np
-import math
 import time
-from typing import List, Tuple, Optional
+from typing import List
 from geometry_msgs.msg import Pose
-from robot_ur10e_gripper import RobotUR10eGripper
+from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
+
 
 class ChessMovementController:
     """
@@ -35,7 +34,7 @@ class ChessMovementController:
         # Initialize ROS node if not already done
         # if not rospy.core.is_initialized():
         #     rospy.init_node('chess_movement_controller', anonymous=True)
-    
+
         # Initialize the robot control interface
         self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.simulation_mode = simulation_mode
@@ -51,11 +50,11 @@ class ChessMovementController:
             is located in the robot's workspace.
         """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
-        self.square_size = 0.05715            # Square size in meters. 2 inches (50.8mm) per square
-        self.hover_height = 0.15              # Height above board for safety movements
-        self.piece_height = 0.0254           # Height of chess pieces
-        self.approach_height = 0.05          # Height from which to approach a piece. 2 inches - more clearance for safe approach
-        
+        self.square_size = 0.05715  # Square size in meters. 2 inches (50.8mm) per square
+        self.hover_height = 0.15  # Height above board for safety movements
+        self.piece_height = 0.0254  # Height of chess pieces
+        self.approach_height = 0.05  # Height from which to approach a piece. 2 inches - more clearance for safe approach
+
         # Pre-defined joint positions
         """
         - home:
@@ -115,7 +114,7 @@ class ChessMovementController:
         # TODO Define two storage areas for captured pieces
         self.captured_storage = {
             'white': {'x': 0.6, 'y': 0.2, 'z': 0.1, 'next_idx': 0},  # Right side of board
-            'black': {'x': 0.6, 'y': 0.4, 'z': 0.1, 'next_idx': 0}   # Left side of board
+            'black': {'x': 0.6, 'y': 0.4, 'z': 0.1, 'next_idx': 0}  # Left side of board
         }
 
         # Keep an internal representation of the board to determine if a square has a piece
@@ -124,13 +123,13 @@ class ChessMovementController:
         # Initialize robot position
         self._go_to_safe_position()
         rospy.loginfo("ChessMovementController initialized and ready")
-    
+
     def _go_to_safe_position(self):
         """Move the robot to a safe starting position."""
         rospy.loginfo("Moving to home position...")
-        self.robot.command_robot(self.positions["home"], 5.0) #! might be better to be faster here
+        self.robot.command_robot(self.positions["home"], 5.0)  # ! might be better to be faster here
         time.sleep(0.5)  # Short delay to ensure movement completes
-    
+
     def square_to_position(self, square: str) -> List[float]:
         """
         Convert chess square (e.g., 'e4') to physical position.
@@ -144,18 +143,18 @@ class ChessMovementController:
         if len(square) != 2 or not ('a' <= square[0] <= 'h') or not ('1' <= square[1] <= '8'):
             rospy.logerr(f"Invalid chess square: {square}")
             raise ValueError(f"Invalid chess square: {square}")
-            
+
         col = ord(square[0]) - ord('a')
         row = int(square[1]) - 1
-        
+
         # Calculate position (adjust based on board orientation)
         # In this setup, a1 is at board_origin, h8 is at the far corner
         x = self.board_origin[0] + col * self.square_size + (self.square_size / 2)
         y = self.board_origin[1] + row * self.square_size + (self.square_size / 2)
         z = self.board_origin[2]  # Base height of the board
-        
+
         return [x, y, z]
-        
+
     def joint_angles_for_position(self, position, gripper_open=True):
         """
         Simple cartesian to joint angle conversion.
@@ -189,16 +188,16 @@ class ChessMovementController:
             True if move was executed successfully, False otherwise
         """
         rospy.loginfo(f"Executing move: {move}")
-        
+
         try:
             # Parse the move
             if len(move) < 4:
                 rospy.logerr(f"Invalid move format: {move}")
                 return False
-                
+
             from_square = move[0:2]
             to_square = move[2:4]
-            
+
             # Special case for castling
             if from_square == 'e1' and to_square == 'g1':  # White kingside castling
                 success = self._execute_castling('white', 'kingside')
@@ -212,31 +211,32 @@ class ChessMovementController:
             elif from_square == 'e8' and to_square == 'c8':  # Black queenside castling
                 success = self._execute_castling('black', 'queenside')
                 return success
-            
+
             # Get positions
             from_pos = self.square_to_position(from_square)
             to_pos = self.square_to_position(to_square)
-            
+
             # Check for capture - if there's a piece at the destination
             # This would need to come from your chess engine/board state
             # is_capture = False  # TODO You would determine this from the chess engine
             
             # Execute the standard move
             success = self._move_piece(from_pos, to_pos, is_capture)
-            
+
             if success:
                 rospy.loginfo(f"Successfully completed move {move}")
             else:
                 rospy.logerr(f"Failed to complete move {move}")
-                
+
             return success
-            
+
         except Exception as e:
             rospy.logerr(f"Error executing move: {e}")
             self._go_to_safe_position()
             return False
-        
-    def _move_piece(self, from_pos: List[float], to_pos: List[float], is_capture: bool = False) -> bool:
+
+    def _move_piece(self, from_pos: List[float], to_pos: List[float],
+                    is_capture: bool = False) -> bool:
         """
         Handle the actual movement sequence with safety positions.
         
@@ -254,16 +254,16 @@ class ChessMovementController:
                 # Move to position above destination
                 above_dest = [to_pos[0], to_pos[1], to_pos[2] + self.hover_height]
                 self._move_to_cartesian(above_dest, gripper_open=True)
-                
+
                 # Lower to pick up the captured piece
                 self._move_to_cartesian(to_pos, gripper_open=True)
-                
+
                 # Close gripper to grab the captured piece
                 self._close_gripper()
-                
+
                 # Lift the captured piece
                 self._move_to_cartesian(above_dest, gripper_open=False)
-                
+
                 # Move captured piece to the side of the board (could be a predefined position)
                 # captured_storage = [0.6, 0.3, 0.2]  # TODO Location where captured pieces are stored
                 # Get appropriate storage position based on piece color
@@ -273,71 +273,72 @@ class ChessMovementController:
                 # piece_color = 'black'  # Since the robot is white in most setups, captured pieces are black. Won't work for test mode
                 captured_storage = self._move_captured_piece_to_storage(piece_color)
                 self._move_to_cartesian(captured_storage, gripper_open=False)
-                
+
                 # Release the captured piece
                 self._open_gripper()
-                
+
                 # Move up from captured storage
-                above_storage = [captured_storage[0], captured_storage[1], captured_storage[2] + 0.1]
+                above_storage = [captured_storage[0], captured_storage[1],
+                                 captured_storage[2] + 0.1]
                 self._move_to_cartesian(above_storage, gripper_open=True)
-            
+
             # Step 1: Move to observation position
             self.robot.command_robot(self.positions["observe"], 5.0)
-            
+
             # Step 2: Move above source position
             above_source = [from_pos[0], from_pos[1], from_pos[2] + self.hover_height]
             self._move_to_cartesian(above_source, gripper_open=True)
-            
+
             # Step 3: Lower to pick up piece
             self._move_to_cartesian(from_pos, gripper_open=True)
-            
+
             # Step 4: Grab piece
             self._close_gripper()
-            
+
             # Step 5: Lift piece
             self._move_to_cartesian(above_source, gripper_open=False)
-            
+
             # Step 6: Move to position above destination
             above_dest = [to_pos[0], to_pos[1], to_pos[2] + self.hover_height]
             self._move_to_cartesian(above_dest, gripper_open=False)
-            
+
             # Step 7: Lower to place piece
             self._move_to_cartesian(to_pos, gripper_open=False)
-            
+
             # Step 8: Release piece
             self._open_gripper()
-            
+
             # Step 9: Move up
             self._move_to_cartesian(above_dest, gripper_open=True)
-            
+
             # Step 10: Return to observation position
             self.robot.command_robot(self.positions["observe"], 5.0)
-            
+
             return True
-            
+
         except Exception as e:
             rospy.logerr(f"Error in _move_piece: {e}")
             # Try to return to a safe position
             self._go_to_safe_position()
             return False
-        
+
     def _move_captured_piece_to_storage(self, piece_color):
         """Move a captured piece to the appropriate storage area."""
         storage = self.captured_storage['white' if piece_color == 'black' else 'black']
-        
+
         # Calculate position with offset to avoid piece collisions
         offset_x = (storage['next_idx'] % 4) * 0.03  # 3cm spacing in X
         offset_y = (storage['next_idx'] // 4) * 0.03  # 3cm spacing in Y
-        
+
         storage_pos = [
             storage['x'] + offset_x,
             storage['y'] + offset_y,
             storage['z']
         ]
-        
+
         # Increment the index for next captured piece
         storage['next_idx'] += 1
-        
+
         return storage_pos
 
     def _execute_castling(self, color: str, side: str) -> bool:
@@ -375,26 +376,26 @@ class ChessMovementController:
                     king_to = 'c8'
                     rook_from = 'a8'
                     rook_to = 'd8'
-            
+
             # First move the king
             king_from_pos = self.square_to_position(king_from)
             king_to_pos = self.square_to_position(king_to)
             success = self._move_piece(king_from_pos, king_to_pos)
             if not success:
                 return False
-            
+
             # Then move the rook
             rook_from_pos = self.square_to_position(rook_from)
             rook_to_pos = self.square_to_position(rook_to)
             success = self._move_piece(rook_from_pos, rook_to_pos)
-            
+
             return success
-            
+
         except Exception as e:
             rospy.logerr(f"Error executing castling: {e}")
             self._go_to_safe_position()
             return False
-    
+
     def _move_to_cartesian(self, position: List[float], gripper_open: bool = True) -> bool:
         """
         Move to a cartesian position.
@@ -420,23 +421,23 @@ class ChessMovementController:
             #     position[2] < workspace_limits['z'][0] or position[2] > workspace_limits['z'][1]):
             #     rospy.logerr(f"Position {position} is outside of safe workspace limits!")
             #     return False
-                
+
             # In a real implementation, use proper IK or MoveIt
             # For now, use our simplified joint angles calculation
             joint_values = self.joint_angles_for_position(position, gripper_open)
-            
+
             # Execute the move
             rospy.loginfo(f"Moving to position: {position}")
             success = self.robot.command_robot(joint_values, 5.0)
             if not success:
                 rospy.logwarn(f"Movement to {position} may not have completed sucessfully")
                 return False
-            
+
             return True
         except Exception as e:
             rospy.logerr(f"Error in _move_to_cartesian: {e}")
             return False
-    
+
     def _open_gripper(self) -> bool:
         """
         Open the gripper.
@@ -447,16 +448,16 @@ class ChessMovementController:
         try:
             # Get current joint position
             current_pos = self.robot.get_joint_pos()
-            
+
             # Keep the same arm position, just open the gripper
             gripper_open_position = tuple(list(current_pos)[:6] + [self.GRIPPER_OPEN])
             
             rospy.loginfo("Opening gripper")
             self.robot.command_robot(gripper_open_position, 5.0)
             time.sleep(0.5)  # Give time for the gripper to open
-            
+
             return True
-            
+
         except Exception as e:
             rospy.logerr(f"Error opening gripper: {traceback.format_exc()}")
             return False
@@ -485,13 +486,13 @@ class ChessMovementController:
             rospy.loginfo(f"Closing gripper to position {grip_position}")
             self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
             time.sleep(0.5)  # Give time for the gripper to close
-            
+
             return True
-            
+
         except Exception as e:
             rospy.logerr(f"Error closing gripper: {traceback.format_exc()}")
             return False
-    
+
     def test_board_calibration(self) -> bool:
         """
         Test the calibration of the board by moving to each corner.
@@ -501,48 +502,49 @@ class ChessMovementController:
         """
         try:
             rospy.loginfo("Testing board calibration...")
-            
+
             # Move to the preparation position
             self.robot.command_robot(self.positions["observe"], 5.0)
-            
+
             # Move to each corner with a slight hover
             for square in ['a1', 'a8', 'h8', 'h1']:
                 position = self.square_to_position(square)
                 above_position = [position[0], position[1], position[2] + self.hover_height]
-                
+
                 # Move above the square
                 rospy.loginfo(f"Moving to above {square}")
                 self._move_to_cartesian(above_position)
                 time.sleep(1.0)
-            
+
             # Return to safe position
             self.robot.command_robot(self.positions["observe"], 2.0)
-            
+
             rospy.loginfo("Board calibration test complete")
             return True
-            
+
         except Exception as e:
             rospy.logerr(f"Error in board calibration test: {e}")
             self._go_to_safe_position()
             return False
+
 
 if __name__ == "__main__":
     try:
         # Initialize node if not already done
         if not rospy.core.is_initialized():
             rospy.init_node('chess_movement_controller', anonymous=True)
-        
+
         # Create the controller
         controller = ChessMovementController(simulation_mode=True)
-        
+
         # Test board calibration
         controller.test_board_calibration()
-        
+
         # Test a move
         controller.execute_move('e2e4')
-        
+
         rospy.loginfo("Tests complete")
-        
+
     except rospy.ROSInterruptException:
         pass
     except Exception as e:

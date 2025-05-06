@@ -10,12 +10,12 @@ def main():
 
     # Move to reset position (wrist down, parallel to ground)
     reset_joint_vec = JointVector(
-        0.0,     # shoulder_pan
-        -1.57,   # shoulder_lift
-        1.57,    # elbow
-        -1.57,   # wrist_1
-        -1.57,   # wrist_2
-        0.0      # wrist_3
+        0.0,  # shoulder_pan
+        -1.57,  # shoulder_lift
+        1.57,  # elbow
+        -1.57,  # wrist_1
+        -1.57,  # wrist_2
+        0.0  # wrist_3
     )
     robot.apply_joint_vector(reset_joint_vec)
 
@@ -28,7 +28,9 @@ def main():
     rospy.signal_shutdown("Task Complete")
 
 
-def pick_and_place(robot: Armature, gripper: Effector, pick_x, pick_y, drop_x, drop_y, move_distance=0.6):
+def pick_and_place(
+        robot: Armature, gripper: Effector,
+        pick_x, pick_y, drop_x, drop_y, move_distance=0.6):
     rospy.loginfo("Starting pick-and-place sequence...")
 
     # Move to pick position
