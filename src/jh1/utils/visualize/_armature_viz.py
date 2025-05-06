@@ -11,9 +11,9 @@ from jh1.utils.mathematics.affine import aff3_mat4
 
 
 def draw_chessboard(
-        ax, a1, a8, h1, h8, nx=8, ny=8,
-        color1="#e1f7ec", color2="#5aad82", a1_color="#753947", alpha=0.5
-    ):
+    ax, a1, a8, h1, nx=8, ny=8,
+    color1="#e1f7ec", color2="#5aad82", a1_color="#753947", alpha=0.5
+):
     """
     Draw an nx×ny chessboard whose *cell centers* at a1,a8,h1,h8 are given.
     """
@@ -21,8 +21,8 @@ def draw_chessboard(
     # 1) Build local board axes and origin
     a1, a8, h1 = map(np.asarray, (a1, a8, h1))
     # two in‐plane vectors
-    v2 = (a8 - a1) * 8 / 7  # from a1 toward a8 (rank file direction)
-    v1 = (h1 - a1) * 8 / 7  # from a1 toward h1 (file rank direction)
+    v1 = 8 / 7 * (h1 - a1)
+    v2 = 8 / 7 * (a8 - a1)
     # normalized orthonormal frame
     ex = v1 / np.linalg.norm(v1)
     ey = v2 / np.linalg.norm(v2)
@@ -33,9 +33,11 @@ def draw_chessboard(
     # 2) scale from 1 local‐unit to one cell
     #    (local X, Y run 0…nx and 0…ny to span the board)
     s = np.array(
-        [np.linalg.norm(v1) / nx,
-         np.linalg.norm(v2) / ny,
-         1.0], dtype=np.float64
+        [
+            np.linalg.norm(v1) / nx,
+            np.linalg.norm(v2) / ny,
+            1.0
+        ], dtype=np.float64
     )
     origin = a1 - (R * s[np.newaxis, :]) @ np.array([0.5, 0.5, 0.0])
 
@@ -64,7 +66,7 @@ def draw_chessboard(
             )
 
 
-def animate_joint_vectors(joint_vectors, steps_per_segment=16, interval_ms=150):
+def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
     fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
 
     ctrl_indices = [i for i, m in enumerate(fixed_mask) if m == 0]
@@ -101,7 +103,6 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=16, interval_ms=150):
         a1=SQUARE_IK_LOOKUP["a1"].pos,
         a8=SQUARE_IK_LOOKUP["a8"].pos,
         h1=SQUARE_IK_LOOKUP["h1"].pos,
-        h8=SQUARE_IK_LOOKUP["h8"].pos,
     )
 
     def init():
@@ -136,7 +137,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=16, interval_ms=150):
             prev_pos = positions_list[i]
             tline = ax.plot(
                 prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
-                color="tab:purple", linewidth=1, alpha=0.2
+                color="tab:purple", linewidth=1, alpha=0.13
             )[0]
             trail_lines.append(tline)
 
