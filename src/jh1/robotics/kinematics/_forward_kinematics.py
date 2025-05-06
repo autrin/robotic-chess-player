@@ -1,7 +1,7 @@
 import numpy as np
 
 from jh1.utils.mathematics.affine import se3_rigid_mat4, rot_azimuth_so3, rot_pitch_so3
-from ._constants import (
+from ._armature_defs import (
     UR10E_BASE_ROT_R,
     UR10E_R_Y_90,
     UR10E_ARMATURE_D1,

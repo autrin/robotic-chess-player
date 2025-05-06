@@ -1,5 +1,5 @@
 # from .robot_ur10e_gripper import RobotUR10eGripper
-from jh1.physical.robotics.kinematics import JointVector, ur10e_forward_kinematics
+from jh1.robotics.kinematics import JointVector, ur10e_forward_kinematics
 
 from jh1.typealias import *
 
