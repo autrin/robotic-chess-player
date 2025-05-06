@@ -55,7 +55,8 @@ def ur10e_inverse_kinematics(
         bounds=(lower_bounds, upper_bounds),
         xtol=tol,
         ftol=tol,
-        max_nfev=max_iter
+        max_nfev=max_iter,
+        method="lm"
     )
 
     if not result.success:
@@ -114,7 +115,8 @@ def ur10e_adaptive_inverse_kinematics(
         bounds=(lower_bounds, upper_bounds),
         xtol=tol,
         ftol=tol,
-        max_nfev=max_iter
+        max_nfev=max_iter,
+        method="lm"
     )
 
     if not result.success:
