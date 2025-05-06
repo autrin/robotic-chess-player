@@ -9,12 +9,14 @@ class Orchestrator:
         armature: Armature,
         require_viz: bool = True,
         require_approval: bool = True,
-        min_duration_secs: float = 1.25
+        min_duration_secs: float = 1.25,
+        std_duration_secs: float = 4.0,
     ):
         self.armature: Armature = armature
         self.require_viz = require_viz
         self.require_approval = require_approval
-        self.min_duration_secs: float = min_duration_secs
+        self.min_duration_secs = min_duration_secs
+        self.standard_duration_secs = std_duration_secs
 
     def set_minimum_duration(self, min_duration_secs: float) -> 'Orchestrator':
         self.min_duration_secs = min_duration_secs
@@ -23,7 +25,8 @@ class Orchestrator:
     def pick_and_drop_sequence(
         self,
         start_square: str, end_square: str,
-        home_waypoint: Waypoint = HOME_WAYPOINT
+        home_waypoint: Waypoint = HOME_WAYPOINT,
+        speed_meters_per_sec: float = 0.085
     ) -> bool:
         start_w = SQUARE_IK_LOOKUP[start_square]
         start_w_up = SQUARE_IK_LOOKUP[start_square + "_up"]
@@ -49,6 +52,16 @@ class Orchestrator:
         if self.require_approval:
             print("\n\nPlease approve the proposed movement (y/n):")
             if not Orchestrator.prompt_approval(): return False
+
+        self.armature.issue_arm_command(
+            joint_vector=home_waypoint.angles_ik,
+            duration=self.standard_duration_secs
+        )
+        self.armature.issue_aggregated_command(
+            joint_vector=start_w_up.angles_ik,
+            gripper_span=Armature.GRIPPER_OPEN_POSITION,
+            duration=self.standard_duration_secs
+        )
 
         return True
 
