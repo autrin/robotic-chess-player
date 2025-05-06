@@ -55,14 +55,14 @@ def transl_2d_mat3(tx: float, ty: float) -> Mat3x3:
     )
 
 
-def shift_center_mat3(cx: float, cy: float) -> Mat3x3:
+def shift_origin_mat3(cx: float, cy: float) -> Mat3x3:
     """
     Creates a matrix M ∈ SE(2) that translates the coordinate origin to an offset center (cx, cy).
     """
     return transl_2d_mat3(-cx, -cy)
 
 
-def unshift_center_mat3(cx: float, cy: float) -> Mat3x3:
+def unshift_origin_mat3(cx: float, cy: float) -> Mat3x3:
     """
     Creates a matrix M ∈ SE(2) that translates the coordinate origin back from an offset center
     (cx, cy) back to (0,0).
@@ -70,12 +70,32 @@ def unshift_center_mat3(cx: float, cy: float) -> Mat3x3:
     return transl_2d_mat3(cx, cy)
 
 
+def aff2_mat3(theta: float, scale: Vec2, shear: float, translation: Vec2) -> Mat3x3:
+    """
+    Build a 3x3 affine transform matrix M ∈ Aff(2) in 2D (homogeneous) from rotation, scale, shear,
+    and translation.
+    """
+    c, s = np.cos(theta), np.sin(theta)
+    r = np.array([[c, -s],
+                  [s, c]])
+
+    sh = np.array([[1, shear],
+                   [0, 1]])
+
+    rs = r @ sh * scale[np.newaxis, :]
+
+    mat = np.eye(3)
+    mat[:2, :2] = rs
+    mat[:2, 2] = translation
+    return mat
+
+
 def compose_mat3(matrices: List[Mat3x3]) -> Mat3x3:
     """
     Compose a sequence of 3×3 matrices.
     """
-    result = np.eye(3, dtype=np.float64)
-    for mat in matrices: result = result @ mat
+    result = matrices[0]
+    for mat in matrices[1:]: result = result @ mat
     return result
 
 
@@ -126,7 +146,7 @@ def transl_3d_mat4(tx: float, ty: float, tz: float) -> Mat4x4:
     return mat
 
 
-def se3_transform_mat4(r: Mat3x3, t: Vec3) -> Mat4x4:
+def se3_rigid_mat4(r: Mat3x3, t: Vec3) -> Mat4x4:
     """
     Construct a full 3D rigid-body transformation matrix from rotation R and translation t.
 
@@ -139,7 +159,8 @@ def se3_transform_mat4(r: Mat3x3, t: Vec3) -> Mat4x4:
     mat[:3, 3] = t
     return mat
 
-def aff3_transform_mat4(r: Mat3x3, t: Vec3, s: Vec3) -> Mat4x4:
+
+def aff3_mat4(r: Mat3x3, t: Vec3, s: Vec3) -> Mat4x4:
     """
     Construct a 4×4 affine transformation matrix from rotation R, translation t, and scaling s.
 
