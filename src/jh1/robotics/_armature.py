@@ -1,3 +1,6 @@
+import numpy as np
+
+
 # from .robot_ur10e_gripper import RobotUR10eGripper
 from jh1.robotics.kinematics import JointVector, ur10e_forward_kinematics, ur10e_inverse_kinematics
 
@@ -18,7 +21,12 @@ class Armature:
 
     @staticmethod
     def inverse_kinematics(target: Vec3) -> JointVector:
+        _2pi = 2 * np.pi
+        eps = 1e-2
+
         return ur10e_inverse_kinematics(
             target,
-            initial_q=JointVector.from_list([2.2015, -1.7744, 1.1871, -2.0474, -1.5897, 2.0208]),
+            initial_q=JointVector.from_list([2.2015, -1.7744, 1.1871, -2.0474, -np.pi / 2, 0]),
+            joint_lower_bounds=[-_2pi, -_2pi, -_2pi, -_2pi, -np.pi / 2 - eps, -eps],
+            joint_upper_bounds=[_2pi, _2pi, _2pi, _2pi, -np.pi / 2 + eps, eps]
         )
