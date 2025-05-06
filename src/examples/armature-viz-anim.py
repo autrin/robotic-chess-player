@@ -7,10 +7,6 @@ from jh1.utils.visualize import animate_joint_vectors
 if __name__ == '__main__':
     armature = Skeleton(None)
     orchestrator = Orchestrator(armature)
-    orchestrator.pick_and_drop_sequence(
-        start_square="a1",
-        end_square="c6"
-    )
 
     # joint_vectors = [
     #     # SQUARE_IK_LOOKUP['home'].angles_ik,

@@ -31,16 +31,23 @@ class Orchestrator:
         self.min_duration = min_duration_secs
         return self
 
-    def pick_and_drop_sequence(
+    def free_movement_sequence(self, start_square: str, end_square: str):
+        self.pick_and_drop_action_chain(
+            start_w_down=SQUARE_IK_LOOKUP[start_square],
+            end_w_down=SQUARE_IK_LOOKUP[end_square],
+            start_w_up=SQUARE_IK_LOOKUP[start_square + "_up"],
+            end_w_up=SQUARE_IK_LOOKUP[end_square + "_up"],
+            home_waypoint=HOME_WAYPOINT
+        )
+
+    def pick_and_drop_action_chain(
         self,
-        start_square: str, end_square: str,
+        start_w_down: Waypoint,
+        end_w_down: Waypoint,
+        start_w_up: Waypoint,
+        end_w_up: Waypoint,
         home_waypoint: Optional[Waypoint] = HOME_WAYPOINT,
     ) -> bool:
-        start_w_down = SQUARE_IK_LOOKUP[start_square]
-        start_w_up = SQUARE_IK_LOOKUP[start_square + "_up"]
-        end_w_down = SQUARE_IK_LOOKUP[end_square]
-        end_w_up = SQUARE_IK_LOOKUP[end_square + "_up"]
-
         if self.require_viz:
             print("\n\nDisplaying proposed robot movement sequence")
             ik_sequence = [
@@ -77,22 +84,11 @@ class Orchestrator:
             duration=self.compute_duration(home_waypoint, start_w_up, self.speed_meters_per_sec)
         )
 
-        # Descend to down position
-        self.skeleton.issue_arm_command(
-            joint_vector=start_w_down.jv,
-            duration=self.std_duration
-        )
-
-        # Close gripper
-        self.skeleton.issue_gripper_command(
-            gripper_span=Skeleton.GRIPPER_CLOSED_POSITION,
-            speed=0.05
-        )
-
-        # Ascend back to up position
-        self.skeleton.issue_arm_command(
-            joint_vector=start_w_up.jv,
-            duration=self.std_duration
+        # Grab the piece
+        self.descend_grip_ascend_chain(
+            w_up=start_w_up,
+            w_down=start_w_down,
+            new_gripper_span=Skeleton.GRIPPER_CLOSED_POSITION
         )
 
         # Move to destination, up position
@@ -101,22 +97,11 @@ class Orchestrator:
             duration=self.compute_duration(start_w_up, end_w_up, self.speed_meters_per_sec)
         )
 
-        # Descend to down position
-        self.skeleton.issue_arm_command(
-            joint_vector=end_w_down.jv,
-            duration=self.std_duration
-        )
-
-        # Open gripper
-        self.skeleton.issue_gripper_command(
-            gripper_span=Skeleton.GRIPPER_OPEN_POSITION,
-            speed=0.05
-        )
-
-        # Ascend back to up position
-        self.skeleton.issue_arm_command(
-            joint_vector=end_w_up.jv,
-            duration=self.std_duration
+        # Drop the piece
+        self.descend_grip_ascend_chain(
+            w_up=end_w_up,
+            w_down=end_w_down,
+            new_gripper_span=Skeleton.GRIPPER_OPEN_POSITION
         )
 
         # Move back to home position to end
@@ -126,6 +111,32 @@ class Orchestrator:
                 joint_vector=home_waypoint.jv,
                 duration=self.std_duration
             )
+        return True
+
+    def descend_grip_ascend_chain(
+        self,
+        w_up: Waypoint,
+        w_down: Waypoint,
+        new_gripper_span: float
+    ) -> bool:
+        # Descend to down position
+        self.skeleton.issue_arm_command(
+            joint_vector=w_down.jv,
+            duration=self.std_duration
+        )
+
+        # Issue new gripper span
+        self.skeleton.issue_gripper_command(
+            gripper_span=new_gripper_span,
+            speed=0.05
+        )
+
+        # Ascend back to up position
+        self.skeleton.issue_arm_command(
+            joint_vector=w_up.jv,
+            duration=self.std_duration
+        )
+
         return True
 
     def compute_duration(self, start: Waypoint, end: Waypoint, speed: float) -> float:
