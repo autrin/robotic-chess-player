@@ -17,17 +17,8 @@ class Armature:
     def __init__(self, robot: 'RobotUR10eGripper'):
         self.robot: 'RobotUR10eGripper' = robot
 
-    @staticmethod
-    def adaptive_leveling(q: JointVector) -> JointVector:
-        return JointVector.from_list([
-            q.shoulder_pan,
-            q.shoulder_lift,
-            q.elbow,
-            q.shoulder_lift - q.elbow,
-            -np.pi / 2,
-            -np.pi / 2
-        ])
-
+    def move_to(self, joint_vector: JointVector, gripper_span: float, duration: float) -> bool:
+        return self.robot.command_robot(joint_vector.as_command(gripper_span), duration)
 
     @staticmethod
     def forward_kinematics(q: JointVector) -> NDArray[Vec3]:
