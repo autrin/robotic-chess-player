@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d import Axes3D
 
 from jh1.robotics import Armature
-from jh1.robotics.kinematics import JointVector
+from jh1.robotics.kinematics import JointVector, SQUARE_IK_LOOKUP
 
 
 def animate_joint_vectors(joint_vectors, steps_per_segment=20, interval_ms=150, fixed_mask=None):
@@ -111,11 +111,19 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=20, interval_ms=150, 
 
 if __name__ == '__main__':
     joint_vectors = [
-        JointVector.from_topic([2.113312069569723, -1.2614153188518067, 0.6471139192581177, -2.404459138909811, -1.5351746718036097, 1.085855484008789]),
-        JointVector.from_topic([1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003, -1.6312678495990198, 1.6715844869613647]),
-        JointVector.from_topic([1.0309518019305628, -0.5775613945773621, 1.2293174266815186, -2.0083195171751917, -1.6719935576068323, 1.6715705394744873]),
-        JointVector.from_topic([1.0655153433429163, -0.5972040456584473, 0.8859420418739319, -2.010952135125631, -1.5819533506976526, 1.3885889053344727]),
-        JointVector.from_topic([2.4494758288012903, -1.842133184472555, 1.006606101989746, -2.13765873531484,-1.580822769795553, 1.3886008262634277])
+        SQUARE_IK_LOOKUP['home'],
+        SQUARE_IK_LOOKUP['a1'],
+        SQUARE_IK_LOOKUP['h1'],
+        SQUARE_IK_LOOKUP['h8'],
+        SQUARE_IK_LOOKUP['a8'],
+        SQUARE_IK_LOOKUP['e2'],
+        SQUARE_IK_LOOKUP['e4'],
+
+        # JointVector.from_topic([2.113312069569723, -1.2614153188518067, 0.6471139192581177, -2.404459138909811, -1.5351746718036097, 1.085855484008789]),
+        # JointVector.from_topic([1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003, -1.6312678495990198, 1.6715844869613647]),
+        # JointVector.from_topic([1.0309518019305628, -0.5775613945773621, 1.2293174266815186, -2.0083195171751917, -1.6719935576068323, 1.6715705394744873]),
+        # JointVector.from_topic([1.0655153433429163, -0.5972040456584473, 0.8859420418739319, -2.010952135125631, -1.5819533506976526, 1.3885889053344727]),
+        # JointVector.from_topic([2.4494758288012903, -1.842133184472555, 1.006606101989746, -2.13765873531484,-1.580822769795553, 1.3886008262634277])
 
         # JointVector.from_list([2.2015, -1.7744, 1.1871, -2.0474, -1.5897, 2.0208]),
         # # JointVector.from_list([1.5139, -1.1724, 1.2701, -1.9292, -1.5697, 2.0213]),
