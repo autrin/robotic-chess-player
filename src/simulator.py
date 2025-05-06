@@ -13,7 +13,8 @@ import rospy
 import actionlib
 from sensor_msgs.msg import JointState
 
-from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
+from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, \
+    CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryResult
 from trajectory_msgs.msg import JointTrajectoryPoint
 from controller_manager_msgs.srv import SwitchControllerResponse, SwitchController
@@ -26,7 +27,6 @@ from cartesian_control_msgs.msg import (
     FollowCartesianTrajectoryGoal,
     CartesianTrajectoryPoint,
 )
-
 
 import random
 
@@ -53,44 +53,46 @@ CARTESIAN_TRAJECTORY_CONTROLLERS = [
 CONFLICTING_CONTROLLERS = ["joint_group_vel_controller", "twist_controller"]
 
 
-
 class RobotSim:
     def __init__(self):
         rospy.init_node("robot_sim")
-        self._joint_names =[ 
+        self._joint_names = [
             "shoulder_pan_joint",
             "shoulder_lift_joint",
             "elbow_joint",
             "wrist_1_joint",
             "wrist_2_joint",
-            "wrist_3_joint", 
+            "wrist_3_joint",
             "finger_joint"]
-        
+
         self._ctrl_active = "forward_joint_traj_controller"
-        self._gripper_joint_state_pub = rospy.Publisher("/gripper_joint_states" , JointState, queue_size=10)
-        self._gripper_status_pub = rospy.Publisher("/robotiq_2f_gripper_msgs/RobotiqGripperStatus" , RobotiqGripperStatus, queue_size=10)
-        self._ur10e_joint_state_pub = rospy.Publisher("/joint_states" , JointState, queue_size=10)
-        
-        self._gripper_action_server = actionlib.SimpleActionServer('command_robotiq_action', 
-                                                            CommandRobotiqGripperAction, 
-                                                            execute_cb=self._gripper_execute_cb, 
-                                                            auto_start = False)
-        
-        self._ur10e_action_server = actionlib.SimpleActionServer(self._ctrl_active  + "/follow_joint_trajectory", 
-                                            FollowJointTrajectoryAction, 
-                                            execute_cb=self._ur10e_execute_cb, 
-                                            auto_start = False)
-        
+        self._gripper_joint_state_pub = rospy.Publisher("/gripper_joint_states", JointState,
+                                                        queue_size=10)
+        self._gripper_status_pub = rospy.Publisher("/robotiq_2f_gripper_msgs/RobotiqGripperStatus",
+                                                   RobotiqGripperStatus, queue_size=10)
+        self._ur10e_joint_state_pub = rospy.Publisher("/joint_states", JointState, queue_size=10)
+
+        self._gripper_action_server = actionlib.SimpleActionServer('command_robotiq_action',
+                                                                   CommandRobotiqGripperAction,
+                                                                   execute_cb=self._gripper_execute_cb,
+                                                                   auto_start=False)
+
+        self._ur10e_action_server = actionlib.SimpleActionServer(
+            self._ctrl_active + "/follow_joint_trajectory",
+            FollowJointTrajectoryAction,
+            execute_cb=self._ur10e_execute_cb,
+            auto_start=False)
+
         # provide service to switch controller
-        rospy.Service('controller_manager/switch_controller', SwitchController, self._switch_controller)
+        rospy.Service('controller_manager/switch_controller', SwitchController,
+                      self._switch_controller)
         rospy.Service('controller_manager/load_controller', LoadController, self._load_controller)
-        rospy.Service('controller_manager/list_controllers', ListControllers, self._list_controllers)
+        rospy.Service('controller_manager/list_controllers', ListControllers,
+                      self._list_controllers)
 
-
-        if(not rospy.is_shutdown()):
+        if (not rospy.is_shutdown()):
             self._gripper_action_server.start()
             self._ur10e_action_server.start()
-
 
     def run(self):
         rate = rospy.Rate(10)
@@ -102,13 +104,13 @@ class RobotSim:
             rate.sleep()
 
     def _ur10e_execute_cb(self, goal):
-        rospy.loginfo("Received ur10e command: " + str(goal.trajectory.points[0].positions)) 
+        rospy.loginfo("Received ur10e command: " + str(goal.trajectory.points[0].positions))
         result = FollowJointTrajectoryResult()
         rospy.sleep(goal.trajectory.points[0].time_from_start.to_sec())
         self._ur10e_action_server.set_succeeded(result)
 
     def _gripper_execute_cb(self, goal):
-        rospy.loginfo("Received gripper command: " + str(goal.position)) 
+        rospy.loginfo("Received gripper command: " + str(goal.position))
         result = self._get_gripper_status()
         rospy.sleep(0.5)
         self._gripper_action_server.set_succeeded(result)
@@ -132,10 +134,10 @@ class RobotSim:
         js.header.stamp = rospy.get_rostime()
         js.header.seq = 0
         js.name = [self._joint_names[-1]]
-        js.position = [random.uniform(0.1, 0.9)] # fake joint position
-        js.velocity = [random.uniform(0.1, 0.9)] # fake joint velocity
+        js.position = [random.uniform(0.1, 0.9)]  # fake joint position
+        js.velocity = [random.uniform(0.1, 0.9)]  # fake joint velocity
         return js
-    
+
     def _get_ur10e_joint_state(self):
         js = JointState()
         js.header.frame_id = ''
@@ -145,27 +147,24 @@ class RobotSim:
         js.position = [random.uniform(0.1, 0.9) for _ in range(6)]
         js.velocity = [random.uniform(0.1, 0.9) for _ in range(6)]
         return js
-    
+
     def _switch_controller(self, req):
 
-        
         self._ctrl_active = req.start_controllers[0]
         rospy.loginfo("Switch to controller: %s", req.start_controllers[0])
 
+        self._ur10e_action_server = actionlib.SimpleActionServer(
+            self._ctrl_active + "/follow_joint_trajectory",
+            FollowJointTrajectoryAction,
+            execute_cb=self._ur10e_execute_cb,
+            auto_start=False)
 
-        self._ur10e_action_server = actionlib.SimpleActionServer(self._ctrl_active  + "/follow_joint_trajectory", 
-                                            FollowJointTrajectoryAction, 
-                                            execute_cb=self._ur10e_execute_cb, 
-                                            auto_start = False)
-        
         self._ur10e_action_server.start()
 
         res = SwitchControllerResponse()
         res.ok = True
         return res
-    
 
-    
     def _load_controller(self, req):
 
         rospy.loginfo("Load controller: %s", req.name)
@@ -173,12 +172,12 @@ class RobotSim:
         res = LoadControllerResponse()
         res.ok = True
         return res
-    
+
     def _list_controllers(self, req):
         rospy.loginfo("List controllers")
 
         res = ListControllersResponse()
-        
+
         for i, name in enumerate(JOINT_TRAJECTORY_CONTROLLERS):
             joint_ctrl = ControllerState()
             joint_ctrl.name = name
@@ -193,5 +192,4 @@ if __name__ == '__main__':
         robot_simulator = RobotSim()
         robot_simulator.run()
     except rospy.ROSInterruptException:
-          pass
-    
+        pass
