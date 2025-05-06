@@ -26,8 +26,6 @@ last_time = time.time()
 
 results = {}
 
-
-
 while True:
     ret, frame = cap.read()
     if not ret:
@@ -43,7 +41,6 @@ while True:
         results = find_april_tags(frame, detector)
         cluster_counts = count_clusters(results)
 
-
     # Draw a dot for every detected position regardless of id
     for tag_id, positions in results.items():
         for pos in positions:
@@ -55,7 +52,8 @@ while True:
         text = f"{cluster.tag_id} {cluster.detection_count / n_perturbs:.0%}"
         center_int = (int(cluster.position[0]), int(cluster.position[1]))
         cv2.putText(frame, text, center_int, cv2.FONT_HERSHEY_SIMPLEX,
-                    0.4, (10, 10, 100 + (cluster.detection_count / n_perturbs) * 150), 1, cv2.LINE_AA)
+                    0.4, (10, 10, 100 + (cluster.detection_count / n_perturbs) * 150), 1,
+                    cv2.LINE_AA)
 
     cv2.imshow("AprilTags", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):

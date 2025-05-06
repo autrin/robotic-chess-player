@@ -8,8 +8,6 @@ class ActionChain:
         self.actions: List[AbstractAction] = []
         pass
 
-
     def then(self, action: AbstractAction):
         self.actions.append(action)
         return self
-

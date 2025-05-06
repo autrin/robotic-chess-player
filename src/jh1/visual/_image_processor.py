@@ -1,12 +1,11 @@
 from collections import Counter
 from typing import Dict, Tuple, List
 
-import numpy as np
 import cv2
 import pupil_apriltags as apriltag
 
-from jh1.typealias import *
-from ._vari_cluster import VariCluster
+from jh1.utils.mathematics.affine import *
+from jh1.visual import VariCluster
 
 
 def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
@@ -23,7 +22,7 @@ def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
     gray: Array2D[uint8] = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     gray: Array2D[uint8] = cv2.equalizeHist(gray)
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
-    gray: Array2D[float64] = clahe.apply(gray)
+    gray: Array2D[uint8] = clahe.apply(gray)
     return adjust_gamma(gray)
 
 
@@ -63,7 +62,8 @@ def _generate_image_perturbation() -> Tuple[float, ...]:
     return d_theta, d_scale, d_shear, tx, ty, d_luma, d_contrast
 
 
-def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=50) -> Dict[int, List[Vec2]]:
+def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=50) -> Dict[
+    int, List[Vec2]]:
     """
     Applies randomized affine transformations to detect AprilTags more robustly across augmented versions.
 
@@ -75,83 +75,50 @@ def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=5
     Returns:
         Dict[int, List[Vec2]]: Mapping from tag_id to list of (x, y) positions in original image space.
     """
-    # Convert to grayscale and get image dimensions
     gray: Array2D[uint8] = preprocess(img)
     h, w = gray.shape
-
-    # Dictionary to store detections with tag id as key and list of positions as value
     detections: Dict[int, List[Vec2]] = {}
 
-    # Pre-calculate image center for affine transforms
     cx, cy = w / 2, h / 2
-    mat_t1: Mat3x3 = np.array([[1, 0, -cx],
-                               [0, 1, -cy],
-                               [0, 0, 1]])
-    mat_t2: Mat3x3 = np.array([[1, 0, cx],
-                               [0, 1, cy],
-                               [0, 0, 1]])
+    mat_center_shift: Mat3x3 = shift_origin_mat3(cx, cy)
+    mat_center_unshift: Mat3x3 = unshift_origin_mat3(cx, cy)
 
     for _ in range(n_random):
         d_theta, d_scale, d_shear, tx, ty, d_luma, d_contrast = _generate_image_perturbation()
 
-        # Build the linear component transformation matrices (in homogeneous coordinates)
-        mat_rot: Mat3x3 = np.array([
-            [np.cos(d_theta), -np.sin(d_theta), 0],
-            [np.sin(d_theta), np.cos(d_theta), 0],
-            [0, 0, 1]
-        ])
-        mat_scale: Mat3x3 = np.array([
-            [d_scale, 0, 0],
-            [0, d_scale, 0],
-            [0, 0, 1]
-        ])
-        mat_shear: Mat3x3 = np.array([
-            [1, d_shear, 0],
-            [0, 1, 0],
-            [0, 0, 1]
+        mat_rot: Mat3x3 = rot_2d_mat3(d_theta)
+        mat_scale: Mat3x3 = scale_2d_mat3(d_scale)
+        mat_shear: Mat3x3 = shear_2d_mat3(d_shear)
+        mat_translate: Mat3x3 = transl_2d_mat3(tx, ty)
+
+        mat_affine: Mat3x3 = compose_mat3([
+            mat_center_unshift,
+            mat_translate,
+            mat_rot,
+            mat_shear,
+            mat_scale,
+            mat_center_shift
         ])
 
-        # Compose transformation: rotation, shear, then scaling.
-        mat_linear_trans: Mat3x3 = mat_rot @ mat_shear @ mat_scale
-
-        # Build translation matrix (in homogeneous coordinates)
-        mat_translate: Mat3x3 = np.array([
-            [1, 0, tx],
-            [0, 1, ty],
-            [0, 0, 1]
-        ])
-
-        # Total transformation: center shift, then transform, then shift back
-        mat_affine_trans: Mat3x3 = mat_t2 @ mat_translate @ mat_linear_trans @ mat_t1
-
-        # Apply the geometric transformation
         gray_affine_sp: Array2D[uint8] = cv2.warpAffine(
             src=gray,
-            M=mat_affine_trans[:2, :],  # 2x3 matrix for cv2.warpAffine
+            M=mat_affine[:2, :],
             dsize=(w, h),
             flags=cv2.INTER_LINEAR,
             borderMode=cv2.BORDER_REPLICATE
         )
-        # Apply brightness and contrast adjustments
-        gray_affine_sp: Array2D[uint8] = cv2.convertScaleAbs(gray_affine_sp, alpha=d_contrast, beta=d_luma)
 
-        # Run the apriltag detector on the perturbed image
-        tags_affine_sp: apriltag.Detection = detector.detect(gray_affine_sp)
+        gray_affine_sp = cv2.convertScaleAbs(gray_affine_sp, alpha=d_contrast, beta=d_luma)
 
-        # Compute the inverse affine transformation matrix
-        mat_affine_inv: Mat3x3 = np.linalg.inv(mat_affine_trans)
-        # noinspection PyTypeChecker
+        tags_affine_sp = detector.detect(gray_affine_sp)
+
+        mat_affine_inv = np.linalg.inv(mat_affine)
+
         for td in tags_affine_sp:
-            # Get the detection center in warped coordinates and convert to homogeneous coordinate
             center_affine_sp: Vec3 = np.array([td.center[0], td.center[1], 1])
-
-            # Inverse transform to get original image coordinates
             center: Vec3 = mat_affine_inv @ center_affine_sp
+            detections.setdefault(td.tag_id, []).append(np.array(center[0], center[1]))
 
-            # Add the position to the list for this tag id
-            detections.setdefault(td.tag_id, []).append((center[0], center[1]))
-
-    # Return the dictionary mapping tag id to a list of positions
     return detections
 
 

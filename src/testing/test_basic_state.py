@@ -23,6 +23,7 @@ class MockEngine(Engine):
     def get_book_move(self, board: chess.Board) -> Optional[str]:
         return self.book.get(board.fen())
 
+
 def test_mutate_fen():
     ng = MockEngine()
     gs = GameState(ng, engine_plays_white=True)
@@ -31,12 +32,14 @@ def test_mutate_fen():
     assert gs.get_fen() == fen
     assert ng.position == fen
 
+
 def test_engine_book():
     ng = MockEngine()
     gs = GameState(ng, engine_plays_white=True)
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     gs.set_fen(fen)
     assert gs.get_engine_move() == "e2e4"
+
 
 def test_offer_illegal():
     engine = MockEngine()
@@ -52,6 +55,7 @@ def test_offer_illegal():
     move = "e2e5"
     assert game.offer_move(move) is False
 
+
 def test_turn_order():
     engine = MockEngine()
     gs = GameState(engine, engine_plays_white=True)
@@ -64,6 +68,7 @@ def test_turn_order():
     # Wrong turn (not engine's)
     with pytest.raises(RuntimeError):
         gs.make_engine_move()
+
 
 def test_board_array():
     ng = MockEngine()
@@ -98,6 +103,7 @@ def test_algebraic():
     move = "e2e4"
     assert gs.get_algebraic(move) == "e4"
     assert gs.get_algebraic("e1e9") == "<Illegal>"
+
 
 def test_basic_diff():
     ng = MockEngine()
