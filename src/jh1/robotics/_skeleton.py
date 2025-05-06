@@ -43,32 +43,12 @@ class Skeleton:
         return ur10e_forward_kinematics(q.as_np())
 
     @staticmethod
-    def inverse_kinematics(target: Vec3) -> JointVector:
-        _2pi = 2 * np.pi
-        _pi_over_2 = np.pi / 2
-
-        return ur10e_inverse_kinematics(
-            target,
-            initial_q=JointVector.from_topic(
-                [1.9908, -1.0797, 1.2676, -2.4606, -_pi_over_2, _pi_over_2]
-            ),
-            joint_lower_bounds=[
-                -_2pi, -_2pi, -_2pi,
-                -_2pi, -_pi_over_2 - _EPSILON, _pi_over_2 - _EPSILON
-            ],
-            joint_upper_bounds=[
-                _2pi, _2pi, _2pi,
-                _2pi, -_pi_over_2 + _EPSILON, _pi_over_2 + _EPSILON
-            ]
-        )
-
-    @staticmethod
-    def adaptive_inverse_kinematics(
+    def partial_inverse_kinematics(
         target: Vec3,
         initial_q_hat: Optional[Union[JointVector, np.ndarray, list]] = _STANDARD_INITIAL_GUESS
     ) -> JointVector:
         _2pi = 2 * np.pi
-        return ur10e_adaptive_inverse_kinematics(
+        return ur10e_partial_inverse_kinematics(
             target,
             initial_q_hat,
             bone_joints_lower_bounds=[-_2pi, -np.pi, -_EPSILON],
