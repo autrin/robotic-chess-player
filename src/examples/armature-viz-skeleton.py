@@ -9,7 +9,7 @@ import numpy as np
 
 q = [2.2015, -1.7744, 1.1871, -2.0474, -1.5897, 2.0208]
 # q = [1.5139, -1.1724, 1.2701, -1.9292, -1.5697, 2.0213]
-positions = Armature.forward_kinematics(JointVector.from_list(q))
+positions = Armature.forward_kinematics(Armature.adaptive_leveling(JointVector.from_list(q)))
 
 # Mask indicating fixed (1) vs controllable (0) joints/frames
 fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
