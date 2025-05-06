@@ -9,7 +9,8 @@ from jh1.robotics.kinematics import JointVector
 
 def animate_joint_vectors(joint_vectors, steps_per_segment=30, interval_ms=100, fixed_mask=None):
     if fixed_mask is None:
-        fixed_mask = [0] * len(Armature.forward_kinematics(joint_vectors[0]))  # Assume all controllable
+        fixed_mask = [0] * len(
+            Armature.forward_kinematics(joint_vectors[0]))  # Assume all controllable
 
     ctrl_indices = [i for i, m in enumerate(fixed_mask) if m == 0]
 
@@ -107,11 +108,16 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=30, interval_ms=100, 
         )
     plt.show()
 
+
 if __name__ == '__main__':
     joint_vectors = [
         JointVector.from_list([2.2015, -1.7744, 1.1871, -2.0474, -1.5897, 2.0208]),
-        JointVector.from_list([1.5139, -1.1724, 1.2701, -1.9292, -1.5697, 2.0213]),
-        JointVector.from_list([1.7860, -1.0432, 1.3300, -2.3513, -1.5691, 2.0217])
+        # JointVector.from_list([1.5139, -1.1724, 1.2701, -1.9292, -1.5697, 2.0213]),
+        # JointVector.from_list([1.7860, -1.0432, 1.3300, -2.3513, -1.5691, 2.0217])
+        Armature.inverse_kinematics(np.array([-1, -1, 0.4])),
+        Armature.inverse_kinematics(np.array([-1, -0.5, 0.4])),
+        Armature.inverse_kinematics(np.array([-0.5, -0.5, 0.4])),
+        Armature.inverse_kinematics(np.array([-0.5, -1, 0.4]))
     ]
 
     fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
