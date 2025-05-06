@@ -18,7 +18,8 @@ import rospy
 import actionlib
 from sensor_msgs.msg import JointState
 
-from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
+from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, \
+    CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
 
 from control_msgs.msg import FollowJointTrajectoryAction, FollowJointTrajectoryGoal
 from trajectory_msgs.msg import JointTrajectoryPoint
@@ -31,7 +32,6 @@ from cartesian_control_msgs.msg import (
     FollowCartesianTrajectoryGoal,
     CartesianTrajectoryPoint,
 )
-
 
 # All of those controllers can be used to execute joint-based trajectories.
 # The scaled versions should be preferred over the non-scaled versions.
@@ -68,45 +68,48 @@ JOINT_NAMES_GRIPPER = [
 # be conflicting with the joint trajectory controllers
 CONFLICTING_CONTROLLERS = ["joint_group_vel_controller", "twist_controller"]
 
+
 class RobotUR10eGripper:
-    def __init__(self, is_gripper_up = True):
+    def __init__(self, is_gripper_up=True):
         rospy.init_node("ur10e_gripper")
-        
+
         self._timeout = rospy.Duration(5)
-        
+
         # controller setup
         self._switch_srv = rospy.ServiceProxy(
             "controller_manager/switch_controller", SwitchController
         )
         self._load_srv = rospy.ServiceProxy("controller_manager/load_controller", LoadController)
         self._list_srv = rospy.ServiceProxy("controller_manager/list_controllers", ListControllers)
-        
+
         try:
             self._switch_srv.wait_for_service(self._timeout.to_sec())
         except rospy.exceptions.ROSException as err:
             rospy.logerr("Could not reach controller switch service. Msg: {}".format(err))
             sys.exit(-1)
 
-        self._switch_controller(JOINT_TRAJECTORY_CONTROLLERS[0]) # only this controller is implemented
-
+        self._switch_controller(
+            JOINT_TRAJECTORY_CONTROLLERS[0])  # only this controller is implemented
 
         # gripper setup
         self._gripper_status = is_gripper_up
 
         # Initialize the joint states by waiting for the first message
-        if(self._gripper_status):
+        if self._gripper_status:
             data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState)
             self._pos_gripper = data_gripper.position
             self._vel_gripper = data_gripper.velocity
-            rospy.Subscriber("/gripper_joint_states" , JointState, self._callback_gripper_joint_state)
+            rospy.Subscriber("/gripper_joint_states", JointState,
+                             self._callback_gripper_joint_state)
             # rospy.Subscriber("/robotiq_2f_gripper_msgs/RobotiqGripperStatus" , RobotiqGripperStatus, self._callback_gripper_status)
-            self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action', CommandRobotiqGripperAction)
+            self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action',
+                                                                CommandRobotiqGripperAction)
 
         # ur10e setup
         data_ur10e = rospy.wait_for_message("/joint_states", JointState)
         self._pos_ur10e = data_ur10e.position
         self._vel_ur10e = data_ur10e.velocity
-        rospy.Subscriber("/joint_states" , JointState, self._callback_ur10e_joint_state)
+        rospy.Subscriber("/joint_states", JointState, self._callback_ur10e_joint_state)
 
         self._ur10e_client = actionlib.SimpleActionClient(
             JOINT_TRAJECTORY_CONTROLLERS[0] + "/follow_joint_trajectory",
@@ -115,28 +118,27 @@ class RobotUR10eGripper:
 
     def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
-        if(self._gripper_status):
-            if(len(joint_angles) != 7):
+        if self._gripper_status:
+            if len(joint_angles) != 7:
                 rospy.logerr("Joint angles should have 7 elements: 6 for UR10e and 1 for gripper")
                 return False
         else:
-            if(len(joint_angles) != 6):
+            if len(joint_angles) != 6:
                 rospy.logerr("Joint angles should have 6 elements: 6 for UR10e")
                 return False
-            
+
         self._command_ur10e(joint_angles[:6], duration)
-        if(self._gripper_status):
+        if self._gripper_status:
             self._command_gripper(joint_angles[6])
             rospy.loginfo(f"Finished command gripper")
             return True
-        
+
         rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
         return False
 
-
     def _command_ur10e(self, joint_angles, duration) -> bool:
         rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
-        if(len(joint_angles) != 6):
+        if len(joint_angles) != 6:
             rospy.logerr("Joint angles should have 6 for UR10e")
             return False
 
@@ -160,10 +162,10 @@ class RobotUR10eGripper:
 
         result = self._ur10e_client.get_result()
         success = (result.error_code == 0)  # 0 typically means SUCCESS
-        rospy.loginfo("Trajectory execution finished in state {}".format(result.error_code))    
+        rospy.loginfo("Trajectory execution finished in state {}".format(result.error_code))
         return success
 
-    def _command_gripper(self, position, speed = 0.05, force = 0) -> bool:
+    def _command_gripper(self, position, speed=0.05, force=0) -> bool:
         rospy.loginfo(f"Attempting to command gripper at {position=}")
         goal = CommandRobotiqGripperGoal()
         goal.position = position
@@ -177,23 +179,23 @@ class RobotUR10eGripper:
             status = self._robotiq_client.get_state()  # Get action state
             rospy.loginfo(f"Gripper command finished with status: {status}")
             return status == actionlib.GoalStatus.SUCCEEDED
-        
+
         rospy.logerr("Gripper command failed - null result returned")
         return False
 
     def get_joint_pos(self):
-        
-        if(self._gripper_status):
+
+        if self._gripper_status:
             return self._pos_ur10e + self._pos_gripper
         else:
             return self._pos_ur10e
-    
+
     def get_joint_vel(self):
-        if(self._gripper_status):
+        if self._gripper_status:
             return self._vel_ur10e + self._vel_gripper
         else:
             return self._vel_ur10e
-        
+
     def _callback_gripper_status(self, data):
         self._is_ready = data.is_ready
         self._is_reset = data.is_reset
@@ -204,7 +206,7 @@ class RobotUR10eGripper:
     def _callback_gripper_joint_state(self, data):
         self._pos_gripper = data.position
         self._vel_gripper = data.velocity
-    
+
     def _callback_ur10e_joint_state(self, data):
         self._pos_ur10e = data.position
         self._vel_ur10e = data.velocity
@@ -219,18 +221,18 @@ class RobotUR10eGripper:
         # robot_state["gripper:is_moving"] = self._is_moving
         # robot_state["gripper:obj_detected"] = self.obj_detected
         return robot_state
-    
+
     def _switch_controller(self, target_controller):
 
-        if(target_controller != JOINT_TRAJECTORY_CONTROLLERS[0]):
+        if target_controller != JOINT_TRAJECTORY_CONTROLLERS[0]:
             rospy.logerr("Only scaled_pos_joint_traj_controller is implemented!")
             return
 
         self._ctrl_active = target_controller
         other_ctrl = (
-            JOINT_TRAJECTORY_CONTROLLERS
-            + CARTESIAN_TRAJECTORY_CONTROLLERS
-            + CONFLICTING_CONTROLLERS
+                JOINT_TRAJECTORY_CONTROLLERS
+                + CARTESIAN_TRAJECTORY_CONTROLLERS
+                + CONFLICTING_CONTROLLERS
         )
         other_ctrl.remove(target_controller)
 
@@ -240,7 +242,7 @@ class RobotUR10eGripper:
         for controller in resp.controller:
             if controller.name == target_controller and controller.state == "running":
                 return
-            
+
         srv = LoadControllerRequest()
         print("Load controller: ", target_controller)
         srv.name = target_controller

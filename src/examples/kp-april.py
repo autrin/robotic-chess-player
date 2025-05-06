@@ -1,4 +1,4 @@
-#%%
+# %%
 from typing import List, Optional
 
 import cv2
@@ -7,21 +7,22 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-from jh1.visual import instantiate_detector, find_april_tags, count_clusters, VariCluster, PIECE_TAG_IDS, \
+from jh1.visual import instantiate_detector, find_april_tags, count_clusters, VariCluster, \
+    PIECE_TAG_IDS, \
     HomographySolver
 from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
 
-#%%
+# %%
 cam = WebcamSource(cam_id=0)
-#%%
+# %%
 img = cam.read_frame()
 
 detector = instantiate_detector()
 detections = find_april_tags(img, detector)
 clusters: List[VariCluster] = count_clusters(detections)
 
-#%%
+# %%
 corners_tags: List[Optional[VariCluster]] = [None] * 4
 pieces_tags: List[VariCluster] = []
 
@@ -31,7 +32,7 @@ for cluster in clusters:
         pieces_tags.append(cluster)
     elif cluster.get_vert_idx_if_corner() is not None:
         corners_tags[cluster.get_vert_idx_if_corner()] = cluster
-#%%
+# %%
 solver = HomographySolver(corners_tags)
 board_bins = solver.bin_pieces(pieces_tags)
 certainty_grid = HomographySolver.get_certainty_grid(board_bins)
@@ -42,6 +43,7 @@ norm = mpl.colors.Normalize(vmin=0, vmax=1)
 fig, ax = plt.subplots(figsize=(12, 8))
 ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
 
+
 def project_board_to_img(pt):
     pt = np.array(pt, dtype=np.float32)
     if solver.adjust:
@@ -51,6 +53,7 @@ def project_board_to_img(pt):
     img_pt_h = np.linalg.inv(solver.mat_homography) @ vec
     img_pt = img_pt_h[:2] / img_pt_h[2]
     return tuple(img_pt)
+
 
 # Draw projected 8x8 grid lines (board coordinates from 1 to 9)
 for i in range(9):

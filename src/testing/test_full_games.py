@@ -12,14 +12,11 @@ class EmptyEngine(Engine):
     def __init__(self):
         pass
 
-
     def set_position(self, fen: str) -> None:
         self.last_fen = fen
 
-
     def get_best_move(self):
         return None
-
 
     def get_book_move(self, board: chess.Board):
         return None
@@ -207,7 +204,8 @@ def test_diff_detection_from_snapshots(name, pgn_text):
         assert gs.board.fen() == exp_fen[i], f"{name}: FEN mismatch after move {move}"
 
         # Verify piece placement matches
-        assert gs.board.piece_map() == exp_piece_maps[i], f"{name}: Piece map mismatch after move {move}"
+        assert gs.board.piece_map() == exp_piece_maps[
+            i], f"{name}: Piece map mismatch after move {move}"
 
     # Verify full move sequence
     assert [m.uci() for m in gs.board.move_stack] == observed, f"{name}: Final move stack mismatch"

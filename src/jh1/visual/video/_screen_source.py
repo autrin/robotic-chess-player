@@ -11,12 +11,10 @@ class ScreenSource(AbstractVideoSource):
         self.sct = mss.mss()
         self.region = region or {"top": 0, "left": 0, "width": 1250, "height": 900}
 
-
     def read_frame(self) -> Array3D[uint8]:
         screenshot = self.sct.grab(self.region)
         frame = np.array(screenshot)
         return cv2.cvtColor(frame, cv2.COLOR_BGRA2BGR)
-
 
     def release(self):
         self.sct.close()

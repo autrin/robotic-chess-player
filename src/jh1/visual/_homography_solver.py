@@ -17,7 +17,6 @@ class HomographySolver:
     (0, 0), (10, 0), (10, 10), and (0, 10), in counter-clockwise order starting from bottom-left.
     """
 
-
     def __init__(self, corner_tags: List[Optional[VariCluster]], adjust: bool = True):
         """
         Initialize the HomographySolver.
@@ -33,14 +32,14 @@ class HomographySolver:
         self.adjust: bool = adjust
         self.mat_homography: Mat3x3 = self._compute_homography()
 
-
     def _compute_homography(self) -> Mat3x3:
         """
         Compute the homography matrix that maps image points to board coordinates.
 
         :return: 3x3 homography matrix as a NumPy array.
         """
-        image_pts: Array2D[np.float32] = np.array([tag.position for tag in self.corner_tags], dtype=np.float32)
+        image_pts: Array2D[np.float32] = np.array([tag.position for tag in self.corner_tags],
+                                                  dtype=np.float32)
         board_pts: Array2D[np.float32] = np.array([
             [0, 0],
             [10, 0],
@@ -49,7 +48,6 @@ class HomographySolver:
         ], dtype=np.float32)
         mat_h, _ = cv2.findHomography(image_pts, board_pts)
         return mat_h
-
 
     def project_point(self, img_pt: Vec2) -> Tuple[float, ...]:
         """
@@ -64,7 +62,6 @@ class HomographySolver:
         if self.adjust:
             board_pt = HomographySolver._adjust_for_center(board_pt)
         return tuple(board_pt)
-
 
     def bin_pieces(self, pieces: List[VariCluster]) -> List2D[List[VariCluster]]:
         """
@@ -82,11 +79,10 @@ class HomographySolver:
                 board_bins[i][j].append(tag)
         return board_bins
 
-
     @staticmethod
     def get_certainty_grid(
-        board_bins: List2D[List[VariCluster]],
-        scale: float = 50.0
+            board_bins: List2D[List[VariCluster]],
+            scale: float = 50.0
     ) -> Array2D[np.float64]:
         """
         Generate a heatmap-like certainty grid based on detection counts.
@@ -101,7 +97,6 @@ class HomographySolver:
                 total = sum(t.detection_count for t in board_bins[i][j])
                 certainty[i, j] = min(total / scale, 1.0)
         return certainty
-
 
     @staticmethod
     def _adjust_for_center(pt: Vec2) -> Vec2:
