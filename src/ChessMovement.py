@@ -20,7 +20,9 @@ class ChessMovementController:
     This class translates chess board coordinates to physical robot 
     positions and handles the pick-and-place sequences needed to move pieces.
     """
-
+    GRIPPER_OPEN = 0.9   # Value when gripper is fully open
+    GRIPPER_CLOSED = 0.5  # TODO Default value when gripper is holding a piece
+    
     def __init__(self, simulation_mode=True, robot_is_white=None):
         """
         Initialize the chess movement controller.
@@ -102,15 +104,11 @@ class ChessMovementController:
         When giving the player more space to interact with the board
         Between games or during pause
         """
-        self.positions = {  # TODO
-            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453,
-                     -2.0474611721434535, -1.5897491613971155, 2.020841360092163, 0.90],
-            # Home position (gripper open)
-            "observe": [1.5139759222613733, -1.1724217695048829, 1.270115613937378,
-                        -1.9291945896544398, -1.569782559071676, 2.0213046073913574, 0.90],
-            # Position to observe the board. Adjust to see the entire large board
-            "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, 0],  # Preparation position
-            "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, 0]  # Position away from the board
+        self.positions = { # TODO
+            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453, -2.0474611721434535, -1.5897491613971155, 2.020841360092163, self.GRIPPER_OPEN], # Home position (gripper open)
+            "observe": [1.5139759222613733, -1.1724217695048829, 1.270115613937378, -1.9291945896544398, -1.569782559071676, 2.0213046073913574, self.GRIPPER_OPEN], # Position to observe the board. Adjust to see the entire large board
+            "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, self.GRIPPER_OPEN],# Preparation position
+            "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, self.GRIPPER_OPEN] # Position away from the board
         }
 
         # TODO Define two storage areas for captured pieces
@@ -171,15 +169,15 @@ class ChessMovementController:
         joint_values = [
             -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
             -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
-            0.7 + 0.3 * (position[2] - self.board_origin[2]),  # Elbow - adjust based on Z
-            -1.1,  # Wrist 1
-            -1.57,  # Wrist 2
-            0.0,  # Wrist 3
-            0.0 if gripper_open else 0.7  # Gripper (0 = open, 0.7 = closed)
+            0.7 + 0.3 * (position[2] - self.board_origin[2]),   # Elbow - adjust based on Z
+            -1.1,                                               # Wrist 1
+            -1.57,                                              # Wrist 2
+            0.0,                                                # Wrist 3
+            self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED
         ]
         return joint_values
-
-    def execute_move(self, move: str) -> bool:
+    
+    def execute_move(self, move: str, is_capture: bool = None) -> bool:
         """
         Execute a chess move (e.g., 'e2e4').
         
@@ -220,8 +218,8 @@ class ChessMovementController:
 
             # Check for capture - if there's a piece at the destination
             # This would need to come from your chess engine/board state
-            is_capture = False  # You would determine this from your chess engine
-
+            # is_capture = False  # TODO You would determine this from the chess engine
+            
             # Execute the standard move
             success = self._move_piece(from_pos, to_pos, is_capture)
 
@@ -452,8 +450,8 @@ class ChessMovementController:
             current_pos = self.robot.get_joint_pos()
 
             # Keep the same arm position, just open the gripper
-            gripper_open_position = tuple(list(current_pos)[:6] + [0.9])  # 1.0 is open
-
+            gripper_open_position = tuple(list(current_pos)[:6] + [self.GRIPPER_OPEN])
+            
             rospy.loginfo("Opening gripper")
             self.robot.command_robot(gripper_open_position, 5.0)
             time.sleep(0.5)  # Give time for the gripper to open
@@ -463,14 +461,13 @@ class ChessMovementController:
         except Exception as e:
             rospy.logerr(f"Error opening gripper: {traceback.format_exc()}")
             return False
-
-    def _close_gripper(self,
-                       position=0.5) -> bool:  # TODO the closing is the piece size approximately
+    
+    def _close_gripper(self, position=None) -> bool: # TODO the closing is the piece size approximately
         """
         Close the gripper to grasp a piece.
         
         Args:
-            position: Gripper position (0.0 is open, 0.7 is closed)
+            position: Gripper position
             
         Returns:
             True if successful, False otherwise
@@ -479,13 +476,15 @@ class ChessMovementController:
             # Get current joint position
             current_pos = self.robot.get_joint_pos()
             rospy.loginfo(f"{current_pos=}  {position=}")
-
+            
+            # Use provided position or default to GRIPPER_CLOSED
+            grip_position = position if position is not None else self.GRIPPER_CLOSED
+        
             # Keep the same arm position, just close the gripper
-            gripper_close_position = tuple(list(current_pos)[:6] + [position])
-
-            rospy.loginfo(f"Closing gripper to position {position}")
-            self.robot.command_robot(gripper_close_position,
-                                     5.0)  # ! might need to make this faster
+            gripper_close_position = tuple(list(current_pos)[:6] + [grip_position])
+            
+            rospy.loginfo(f"Closing gripper to position {grip_position}")
+            self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
             time.sleep(0.5)  # Give time for the gripper to close
 
             return True
