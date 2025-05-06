@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from jh1.physical.topology import SQUARE_IK_LOOKUP
+from jh1.topology import WAYPOINT_TABLE
 from jh1.robotics import Skeleton
 from jh1.robotics.kinematics import JointVector
 from jh1.typealias import Mat4x4
@@ -100,9 +100,9 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
 
     draw_chessboard(
         ax,
-        a1=SQUARE_IK_LOOKUP["a1"].pos,
-        a8=SQUARE_IK_LOOKUP["a8"].pos,
-        h1=SQUARE_IK_LOOKUP["h1"].pos,
+        a1=WAYPOINT_TABLE["a1"].pos,
+        a8=WAYPOINT_TABLE["a8"].pos,
+        h1=WAYPOINT_TABLE["h1"].pos,
     )
 
     def init():

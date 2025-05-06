@@ -1,8 +1,5 @@
-from jh1.physical import Orchestrator
-from jh1.physical.topology import SQUARE_IK_LOOKUP
+from jh1.core import Orchestrator
 from jh1.robotics import Skeleton
-from jh1.robotics.kinematics import JointVector
-from jh1.utils.visualize import animate_joint_vectors
 
 if __name__ == '__main__':
     armature = Skeleton(None)
