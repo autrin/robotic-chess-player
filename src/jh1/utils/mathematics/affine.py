@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 from jh1.typealias import *
 import numpy as np
 
@@ -99,8 +99,63 @@ def compose_mat3(matrices: List[Mat3x3]) -> Mat3x3:
     return result
 
 
-# 3D transformations — homogeneous 4×4 matrices
+# 3D rotations - SO(3) matrices
 
+def rot_roll_so3(theta: float) -> Mat3x3:
+    """
+    Construct a 3D rotation matrix R ∈ SO(3) representing a rotation about the X-axis (roll).
+
+    Args:
+        theta (float): Rotation angle in radians.
+
+    Returns:
+        Mat3x3: 3×3 rotation matrix for X-axis rotation.
+    """
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [1, 0, 0],
+        [0, c, -s],
+        [0, s, c]
+    ], dtype=np.float64)
+
+
+def rot_pitch_so3(theta: float) -> Mat3x3:
+    """
+    Construct a 3D rotation matrix R ∈ SO(3) representing a rotation about the Y-axis (pitch).
+
+    Args:
+        theta (float): Rotation angle in radians.
+
+    Returns:
+        Mat3x3: 3×3 rotation matrix for Y-axis rotation.
+    """
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [c, 0, s],
+        [0, 1, 0],
+        [-s, 0, c]
+    ], dtype=np.float64)
+
+
+def rot_azimuth_so3(theta: float) -> Mat3x3:
+    """
+    Construct a 3D rotation matrix R ∈ SO(3) representing a rotation about the Z-axis (azimuth).
+
+    Args:
+        theta (float): Rotation angle in radians.
+
+    Returns:
+        Mat3x3: 3×3 rotation matrix for Z-axis rotation.
+    """
+    c, s = np.cos(theta), np.sin(theta)
+    return np.array([
+        [c, -s, 0],
+        [s, c, 0],
+        [0, 0, 1]
+    ], dtype=np.float64)
+
+
+# 3D transformations — homogeneous 4×4 matrices
 def rot_roll_mat4(theta: float) -> Mat4x4:
     """
     Construct a 3D rotation matrix R ∈ SE(3) ⋉ 0, representing a rotation about the X-axis (roll)
@@ -146,7 +201,7 @@ def transl_3d_mat4(tx: float, ty: float, tz: float) -> Mat4x4:
     return mat
 
 
-def se3_rigid_mat4(r: Mat3x3, t: Vec3) -> Mat4x4:
+def se3_rigid_mat4(r: Mat3x3, t: Union[Vec3, List[float]]) -> Mat4x4:
     """
     Construct a full 3D rigid-body transformation matrix from rotation R and translation t.
 
