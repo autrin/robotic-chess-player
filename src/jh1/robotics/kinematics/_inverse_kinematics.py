@@ -48,15 +48,14 @@ def ur10e_inverse_kinematics(
         ee_pos = ur10e_forward_kinematics(q_vec)[-1]
         return ee_pos - p_target
 
-    # Solve using Levenberg–Marquardt with bounds
+    # Solve using TRF with bounds
     result = least_squares(
         residual,
         q0,
         bounds=(lower_bounds, upper_bounds),
         xtol=tol,
         ftol=tol,
-        max_nfev=max_iter,
-        method="lm"
+        max_nfev=max_iter
     )
 
     if not result.success:
@@ -108,7 +107,7 @@ def ur10e_adaptive_inverse_kinematics(
         ee_fwd_pos = ur10e_forward_kinematics(q)[-1]
         return ee_fwd_pos - p_target
 
-    # Solve using Levenberg–Marquardt with bounds
+    # Solve using TRF with bounds
     result = least_squares(
         residual,
         q0,
@@ -116,7 +115,6 @@ def ur10e_adaptive_inverse_kinematics(
         xtol=tol,
         ftol=tol,
         max_nfev=max_iter,
-        method="lm"
     )
 
     if not result.success:

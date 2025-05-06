@@ -22,9 +22,11 @@ h1 = Armature.forward_kinematics(JointVector.from_topic(
      -1.5819533506976526, 1.3885889053344727]
 ))[-1]
 
+UP_LABEL_SUFFIX = "_up"
+
 ## --- GENERATE BASIS VECTORS AND WAYPOINTS ---
 
-x_dir = (h8 - a8) / 7
+x_dir = (a8 - h8) / 7
 y_dir = (h1 - h8) / 7
 
 z_base = (a8[2] + h8[2] + h1[2]) / 3
@@ -47,13 +49,13 @@ for k, v in board.items():
     )
 
     v_up = v + np.array([0, 0, up_height_meters])
-    SQUARE_IK_LOOKUP[k + "_up"] = Waypoint(
+    SQUARE_IK_LOOKUP[k + UP_LABEL_SUFFIX] = Waypoint(
         label=k,
         pos=v_up,
         angles_ik=Armature.adaptive_inverse_kinematics(v_up)
     )
 
-SQUARE_IK_LOOKUP["home"] = Waypoint(
+HOME_WAYPOINT = SQUARE_IK_LOOKUP["home"] = Waypoint(
     label="home",
     pos=Armature.forward_kinematics(home_jv),
     angles_ik=home_jv

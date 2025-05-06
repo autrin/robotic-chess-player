@@ -7,6 +7,7 @@ import numpy as np
 import rospy
 import sys
 from jh1.core import Engine, GameState
+from jh1.utils.visualize import board_overlay_plot
 from jh1.visual import (
     instantiate_detector,
     find_april_tags,
@@ -65,53 +66,7 @@ def capture_board_state(cam, detector):
     return img, solver, board_bins, certainty_grid
 
 
-def update_plot(img, solver, board_bins, certainty_grid):
-    fig, ax = plt.subplots(figsize=(12, 8))
-    ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-
-    def project(pt):
-        pt = np.array(pt, dtype=np.float32)
-        if solver.adjust:
-            center = np.array([5, 5], dtype=np.float32)
-            pt = (pt - center) * (9 / 8) + center
-        vec = np.array([pt[0], pt[1], 1.0])
-        img_pt_h = np.linalg.inv(solver.mat_homography) @ vec
-        return tuple(img_pt_h[:2] / img_pt_h[2])
-
-    for i in range(9):
-        ax.plot(*zip(project((i + 1, 1)), project((i + 1, 9))), color="tab:blue", linewidth=1)
-        ax.plot(*zip(project((1, i + 1)), project((9, i + 1))), color="tab:blue", linewidth=1)
-
-    cmap = mpl.colormaps.get_cmap("RdYlGn")
-    norm = mpl.colors.Normalize(vmin=0, vmax=1)
-
-    for i in range(GRID_SIZE):
-        for j in range(GRID_SIZE):
-            certainty = certainty_grid[i, j]
-            if certainty <= 0:
-                continue
-
-            corners = [(j + dx, i + dy) for dx, dy in [(1, 1), (2, 1), (2, 2), (1, 2)]]
-            img_corners = [project(c) for c in corners]
-            poly = plt.Polygon(img_corners, color=cmap(norm(certainty)), alpha=0.7)
-            ax.add_patch(poly)
-
-            tags = board_bins[i][j]
-            if tags:
-                label = ", ".join(PIECE_TAG_IDS.get(t.tag_id, str(t.tag_id)) for t in tags)
-                center = project((j + 1.5, i + 1.5))
-                ax.text(*center, label, fontsize=10, ha="center", va="center", weight="bold",
-                        color="black")
-
-    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    fig.colorbar(sm, ax=ax, fraction=0.026, pad=0.04).set_label("certainty", fontsize=9)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-
-
-def build_ocr_board(board_bins):
+def build_board(board_bins):
     return [
         [PIECE_TAG_IDS.get(tags[0].tag_id, "?") if tags else "." for tags in row]
         for row in reversed(board_bins[:8])
@@ -129,14 +84,14 @@ def prompt_for_move(game_state, cam, detector):
         if img is None:
             continue
 
-        update_plot(img, solver, board_bins, certainty_grid)
-        ocr_board = build_ocr_board(board_bins)
+        board_overlay_plot(img, solver, board_bins, certainty_grid)
+        board = build_board(board_bins)
         game_state.print_board()
-        print_board_array(ocr_board)
+        print_board_array(board)
 
-        move = GameState.get_move_diff(game_state, ocr_board)
+        move = GameState.get_move_diff(game_state, board)
         if move:
-            return move, ocr_board
+            return move, board
         print("No move detected. Adjust board and try again.")
 
 
@@ -149,13 +104,15 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
+
 def is_capture(move: str, board: chess.Board) -> bool:
     """Check if the move captures an opponent's piece"""
     from_square = chess.parse_square(move[0:2])
     to_square = chess.parse_square(move[2:4])
-    
+
     # Check if there's a piece at the destination square
     return board.piece_at(to_square) is not None
+
 
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
@@ -182,6 +139,7 @@ def robot_thread_function(robot: ChessMovementController):
         time.sleep(0.1)
 
     rospy.loginfo("Robot thread shutting down")
+
 
 def set_robot_move(move, is_captured: bool):
     """Set the move for the robot to execute and wait for completion"""
@@ -312,7 +270,7 @@ def main():
             rospy.loginfo(f"Running in FULL mode (sim={simulation_mode})")
             cam = WebcamSource(cam_id=0)
             detector = instantiate_detector()
-            
+
             # Engine plays first if it's white
             if engine_is_white:
                 move = game.get_engine_move()
@@ -323,7 +281,7 @@ def main():
                 success = set_robot_move(move, is_captured)
                 if success:
                     print("Robot completed the engine's move")
-                
+
                 # Verify the move was made correctly on the board
                 scanned_board = verify_move(move, game, cam, detector)
                 # Update the game state
@@ -339,7 +297,7 @@ def main():
             while not game.board.is_game_over():
                 # Wait for human player's move
                 move, scanned_board = prompt_for_move(game, cam, detector)
-                
+
                 # validate the move
                 board_before = game.board.copy()
                 if game.offer_move(move):
@@ -374,7 +332,7 @@ def main():
                     print("-" * 60)
 
             print("Game over.")
-            
+
     except KeyboardInterrupt:
         print("\nGame interrupted by user.")
     except Exception as e:
