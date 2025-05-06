@@ -45,19 +45,17 @@ discard_up_pos = DISCARD_WAYPOINT.pos + np.array([0, 0, up_height_meters])
 DISCARD_UP_WAYPOINT = WAYPOINT_TABLE["discard_up"] = Waypoint(
     label="discard_up",
     pos=discard_up_pos,
-    jv=Skeleton.adaptive_inverse_kinematics(discard_up_pos)
+    jv=Skeleton.partial_inverse_kinematics(discard_up_pos)
 )
 
-x_dir = (h8 - a8) / 7
-y_dir = (h1 - h8) / 7
-
-z_base = (a8[2] + h8[2] + h1[2]) / 3
+x_hat = (h8 - a8) / 7
+y_hat = (h1 - h8) / 7
 
 board = {}
 files = "abcdefgh"
 for i, file in enumerate(files):
     for rank in range(1, 9):
-        pos = a8 + i * x_dir + (8 - rank) * y_dir
+        pos = a8 + i * x_hat + (8 - rank) * y_hat
         board[f"{file}{rank}"] = pos
 
 for k, v in board.items():
@@ -65,12 +63,12 @@ for k, v in board.items():
     WAYPOINT_TABLE[k] = Waypoint(
         label=k,
         pos=v,
-        jv=Skeleton.adaptive_inverse_kinematics(v)
+        jv=Skeleton.partial_inverse_kinematics(v)
     )
 
     v_up = v + np.array([0, 0, up_height_meters])
     WAYPOINT_TABLE[k + UP_LABEL_SUFFIX] = Waypoint(
         label=k,
         pos=v_up,
-        jv=Skeleton.adaptive_inverse_kinematics(v_up)
+        jv=Skeleton.partial_inverse_kinematics(v_up)
     )

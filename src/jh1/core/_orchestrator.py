@@ -41,7 +41,7 @@ class Orchestrator:
             end_home=HOME_WAYPOINT
         )
 
-    def capture_movement_sequence(self, start_square: str, end_square: str):
+    def capture_sequence(self, start_square: str, end_square: str):
         start_w_down = WAYPOINT_TABLE[start_square]
         end_w_down = WAYPOINT_TABLE[end_square]
         start_w_up = WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX]
@@ -67,7 +67,7 @@ class Orchestrator:
             end_home=HOME_WAYPOINT
         )
 
-    def castling_movement_sequence(self, is_white: bool, is_long_castles: bool):
+    def castling_sequence(self, is_white: bool, is_long_castles: bool):
         rank = 1 if is_white else 8
         if is_long_castles:
             king_start_sq, king_end_sq = f"e{rank}", f"c{rank}"
@@ -94,7 +94,7 @@ class Orchestrator:
             end_home=HOME_WAYPOINT
         )
 
-    def en_passant_movement_sequence(
+    def en_passant_sequence(
         self,
         start_square: str,
         end_square: str
