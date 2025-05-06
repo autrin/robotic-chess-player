@@ -14,8 +14,17 @@ class Armature:
     def __init__(self, robot: 'RobotUR10eGripper'):
         self.robot: 'RobotUR10eGripper' = robot
 
-    def move_to(self, joint_vector: JointVector, gripper_span: float, duration: float) -> bool:
-        return self.robot.command_robot(joint_vector.as_command(gripper_span), duration)
+    def issue_aggregated_command(self, joint_vector: JointVector, gripper_span: float,
+                                 duration: float) -> bool:
+        return self.robot.command_robot(joint_vector.as_aggregated_command(gripper_span), duration)
+
+    def issue_arm_command(self, joint_vector: JointVector, duration: float) -> bool:
+        # noinspection PyProtectedMember
+        return self.robot._command_ur10e(joint_vector.as_command(), duration)
+
+    def issue_gripper_command(self, gripper_span: float, speed=0.05, force=0) -> bool:
+        # noinspection PyProtectedMember
+        return self.robot._command_gripper(gripper_span, speed, force)
 
     @staticmethod
     def forward_kinematics(q: JointVector) -> NDArray[Vec3]:
@@ -29,8 +38,8 @@ class Armature:
         return ur10e_inverse_kinematics(
             target,
             initial_q=JointVector.from_topic(
-                [1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003,
-                 -_pi_over_2, _pi_over_2]),
+                [1.9908, -1.0797, 1.2676, -2.4606, -_pi_over_2, _pi_over_2]
+            ),
             joint_lower_bounds=[
                 -_2pi, -_2pi, -_2pi,
                 -_2pi, -_pi_over_2 - _EPSILON, _pi_over_2 - _EPSILON
@@ -43,13 +52,16 @@ class Armature:
 
     @staticmethod
     def adaptive_inverse_kinematics(
-            target: Vec3,
-            initial_q_hat: Optional[Union[JointVector, np.ndarray, list]] = _STANDARD_INITIAL_GUESS
+        target: Vec3,
+        initial_q_hat: Optional[Union[JointVector, np.ndarray, list]] = _STANDARD_INITIAL_GUESS
     ) -> JointVector:
         _2pi = 2 * np.pi
         return ur10e_adaptive_inverse_kinematics(
             target,
             initial_q_hat,
-            bone_joints_lower_bounds=[-_2pi, -np.pi, _EPSILON],
+            bone_joints_lower_bounds=[-_2pi, -np.pi, -_EPSILON],
             bone_joints_upper_bounds=[_2pi, _EPSILON, np.pi]
         )
+
+    GRIPPER_OPEN_POSITION = 0.025
+    GRIPPER_CLOSED_POSITION = 0.05

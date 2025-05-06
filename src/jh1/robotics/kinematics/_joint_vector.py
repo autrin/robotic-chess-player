@@ -36,7 +36,7 @@ class JointVector:
     def as_np(self) -> NDArray[float64]:
         return np.array(self.as_list())
 
-    def as_command(self, gripper: float) -> List[float]:
+    def as_command(self) -> List[float]:
         return [
             self.elbow,
             self.shoulder_lift,
@@ -44,8 +44,10 @@ class JointVector:
             self.wrist_1,
             self.wrist_2,
             self.wrist_3,
-            gripper
         ]
+
+    def as_aggregated_command(self, gripper: float) -> List[float]:
+        return self.as_command() + [gripper]
 
     @staticmethod
     def from_upper_joints(shoulder_pan: float, shoulder_lift: float, elbow: float) -> 'JointVector':
