@@ -45,12 +45,9 @@ class Armature:
             initial_q_hat: Optional[Union[JointVector, np.ndarray, list]] = None
     ) -> JointVector:
         _2pi = 2 * np.pi
-        _pi_over_2 = np.pi / 2
-        eps = 1e-2
-
         return ur10e_adaptive_inverse_kinematics(
             target,
             initial_q_hat,
-            joint_lower_bounds=[-_2pi, -_2pi, -_2pi, -_2pi, -_2pi, _pi_over_2 - eps],
-            joint_upper_bounds=[_2pi, _2pi, _2pi, _2pi, -_2pi + eps, _pi_over_2 + eps]
+            bone_joints_lower_bounds=[-_2pi, -_2pi, -_2pi],
+            bone_joints_upper_bounds=[_2pi, _2pi, _2pi]
         )

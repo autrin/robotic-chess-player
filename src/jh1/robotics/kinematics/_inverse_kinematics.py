@@ -13,7 +13,7 @@ def ur10e_inverse_kinematics(
     initial_q: Optional[Union[JointVector, np.ndarray, list]] = None,
     joint_lower_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
     joint_upper_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
-    tol: float = 1e-4,
+    tol: float = 1e-5,
     max_iter: int = 10000
 ) -> JointVector:
     """
@@ -69,9 +69,9 @@ def ur10e_inverse_kinematics(
 def ur10e_adaptive_inverse_kinematics(
     target_pos: Vec3,
     initial_q_hat: Optional[Union[JointVector, np.ndarray, list]] = None,
-    joint_lower_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
-    joint_upper_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
-    tol: float = 1e-4,
+    bone_joints_lower_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
+    bone_joints_upper_bounds: Optional[Union[Sequence[float], np.ndarray]] = None,
+    tol: float = 1e-5,
     max_iter: int = 10000
 ) -> JointVector:
     """
@@ -81,30 +81,31 @@ def ur10e_adaptive_inverse_kinematics(
     p_target = np.asarray(target_pos, dtype=float)
 
 
-    print(f"[ur10e_inverse_kinematics] Solving IK for {target_pos}")
+    print(f"[ur10e_adaptive_inverse_kinematics] Solving IK for {target_pos}")
 
     # Initial guess
     if initial_q_hat is None:
         q0 = np.zeros(3)
     elif isinstance(initial_q_hat, JointVector):
-        q0 = initial_q_hat.as_np()[:]
+        q0 = np.array([initial_q_hat.shoulder_pan, initial_q_hat.shoulder_lift, initial_q_hat.elbow])
     else:
         q0 = np.array(initial_q_hat, dtype=float)
 
     # Joint limits
-    if joint_lower_bounds is None:
-        lower_bounds = np.full(6, -2 * np.pi)
+    if bone_joints_lower_bounds is None:
+        lower_bounds = np.full(3, -2 * np.pi)
     else:
-        lower_bounds = np.array(joint_lower_bounds, dtype=float)
-    if joint_upper_bounds is None:
-        upper_bounds = np.full(6,  2 * np.pi)
+        lower_bounds = np.array(bone_joints_lower_bounds, dtype=float)
+    if bone_joints_upper_bounds is None:
+        upper_bounds = np.full(3,  2 * np.pi)
     else:
-        upper_bounds = np.array(joint_upper_bounds, dtype=float)
+        upper_bounds = np.array(bone_joints_upper_bounds, dtype=float)
 
 
-    def residual(q_vec):
-        target_linkage_pos = ur10e_forward_kinematics(q_vec)[-1]
-        return target_linkage_pos - p_target
+    def residual(q_hat):
+        q = JointVector.from_upper_joints(*q_hat).as_np()
+        ee_fwd_pos = ur10e_forward_kinematics(q)[-1]
+        return ee_fwd_pos - p_target
 
     # Solve using Levenberg–Marquardt with bounds
     result = least_squares(
@@ -120,5 +121,5 @@ def ur10e_adaptive_inverse_kinematics(
         raise RuntimeError(f"IK did not converge: {result.message}")
 
 
-    print(f"[ur10e_inverse_kinematics] IK solution converged!")
-    return JointVector.from_list(result.x.tolist())
+    print(f"[ur10e_adaptive_inverse_kinematics] IK solution converged!")
+    return JointVector.from_upper_joints(*result.x.tolist())
