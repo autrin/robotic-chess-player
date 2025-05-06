@@ -26,7 +26,7 @@ UP_LABEL_SUFFIX = "_up"
 
 ## --- GENERATE BASIS VECTORS AND WAYPOINTS ---
 
-x_dir = (a8 - h8) / 7
+x_dir = (h8 - a8) / 7
 y_dir = (h1 - h8) / 7
 
 z_base = (a8[2] + h8[2] + h1[2]) / 3

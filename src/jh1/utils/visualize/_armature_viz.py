@@ -21,8 +21,8 @@ def draw_chessboard(
     # 1) Build local board axes and origin
     a1, a8, h1 = map(np.asarray, (a1, a8, h1))
     # two in‐plane vectors
-    v1 = (h1 - a1)  # from a1 toward h1 (file rank direction)
-    v2 = (a8 - a1)  # from a1 toward a8 (rank file direction)
+    v2 = (a8 - a1) * 8 / 7  # from a1 toward a8 (rank file direction)
+    v1 = (h1 - a1) * 8 / 7  # from a1 toward h1 (file rank direction)
     # normalized orthonormal frame
     ex = v1 / np.linalg.norm(v1)
     ey = v2 / np.linalg.norm(v2)
@@ -64,7 +64,7 @@ def draw_chessboard(
             )
 
 
-def animate_joint_vectors(joint_vectors, steps_per_segment=10, interval_ms=150):
+def animate_joint_vectors(joint_vectors, steps_per_segment=16, interval_ms=150):
     fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
 
     ctrl_indices = [i for i, m in enumerate(fixed_mask) if m == 0]
@@ -92,9 +92,9 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=10, interval_ms=150):
 
     ax.set_box_aspect([1, 1, 1])
     reach = 1.4
-    ax.set_xlim(-reach * 0.6, reach * 0.1)
-    ax.set_ylim(-reach * 0.6, reach * 0.1)
-    ax.set_zlim(0, reach * 0.6)
+    ax.set_xlim(-reach * 0.8, reach * 0.1)
+    ax.set_ylim(-reach * 0.8, reach * 0.1)
+    ax.set_zlim(0, reach * 0.8)
 
     draw_chessboard(
         ax,
@@ -136,7 +136,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=10, interval_ms=150):
             prev_pos = positions_list[i]
             tline = ax.plot(
                 prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
-                color="tab:purple", linewidth=1, alpha=0
+                color="tab:purple", linewidth=1, alpha=0.2
             )[0]
             trail_lines.append(tline)
 
