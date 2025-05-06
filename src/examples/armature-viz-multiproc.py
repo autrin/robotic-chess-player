@@ -67,9 +67,11 @@ positions.append(T[:3, 3])
 
 positions = np.array(positions)
 
+fixed_mask = np.array([1, 0, 0, 1, 0, ])
+
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
-ax.plot(positions[:, 0], positions[:, 1], positions[:, 2], '-o')
+ax.plot(positions[:, 0], positions[:, 1], positions[:, 2], '-o', )
 ax.set_xlabel('X (m)')
 ax.set_ylabel('Y (m)')
 ax.set_zlabel('Z (m)')
