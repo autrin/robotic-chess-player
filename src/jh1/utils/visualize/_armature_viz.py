@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from jh1.physical.topology import SQUARE_IK_LOOKUP
-from jh1.robotics import Armature
+from jh1.robotics import Skeleton
 from jh1.robotics.kinematics import JointVector
 from jh1.typealias import Mat4x4
 from jh1.utils.mathematics.affine import aff3_mat4
@@ -80,7 +80,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
     all_q.append(joint_vectors[-1].as_np())
 
     positions_list = [
-        Armature.forward_kinematics(JointVector.from_list(q.tolist()))
+        Skeleton.forward_kinematics(JointVector.from_list(q.tolist()))
         for q in all_q
     ]
 
@@ -164,7 +164,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
     fig.subplots_adjust(left=0, right=1, bottom=0, top=0.9)
 
     for q in joint_vectors:
-        pos = Armature.forward_kinematics(q)
+        pos = Skeleton.forward_kinematics(q)
         ee_pos = pos[-1]  # Last frame = end-effector
         ax.scatter(
             [ee_pos[0]], [ee_pos[1]], [ee_pos[2]],

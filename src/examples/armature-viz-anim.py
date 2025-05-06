@@ -1,11 +1,11 @@
 from jh1.physical import Orchestrator
 from jh1.physical.topology import SQUARE_IK_LOOKUP
-from jh1.robotics import Armature
+from jh1.robotics import Skeleton
 from jh1.robotics.kinematics import JointVector
 from jh1.utils.visualize import animate_joint_vectors
 
 if __name__ == '__main__':
-    armature = Armature(None)
+    armature = Skeleton(None)
     orchestrator = Orchestrator(armature)
     orchestrator.pick_and_drop_sequence(
         start_square="a1",

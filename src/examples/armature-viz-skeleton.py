@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 
-from jh1.robotics import Armature
+from jh1.robotics import Skeleton
 from jh1.robotics.kinematics import JointVector
 from jh1.utils.mathematics.affine import *
 from jh1.robotics.kinematics._armature_defs import *
@@ -11,7 +11,7 @@ q = [2.2015, -1.7744, 1.2579,
      -2.0474, -1.5897, 2.0208]
 # q = [1.5139, -1.1724, 1.2701, -1.9292, -1.5697, 2.0213]
 q = JointVector.from_list(q).adaptive_leveling().as_list()
-positions = Armature.forward_kinematics(JointVector.from_list(q))
+positions = Skeleton.forward_kinematics(JointVector.from_list(q))
 
 # Mask indicating fixed (1) vs controllable (0) joints/frames
 fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
