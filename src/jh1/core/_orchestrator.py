@@ -1,7 +1,6 @@
 from typing import Optional
 
 import numpy as np
-import rospy
 
 from jh1.topology import *
 from jh1.robotics import Skeleton
@@ -36,8 +35,8 @@ class Orchestrator:
         self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
             end_down=WAYPOINT_TABLE[end_square],
-            start_up=WAYPOINT_TABLE[start_square + "_up"],
-            end_up=WAYPOINT_TABLE[end_square + "_up"],
+            start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
+            end_up=WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX],
             start_home=HOME_WAYPOINT,
             end_home=HOME_WAYPOINT
         )
@@ -45,8 +44,8 @@ class Orchestrator:
     def capture_movement_sequence(self, start_square: str, end_square: str):
         start_w_down = WAYPOINT_TABLE[start_square]
         end_w_down = WAYPOINT_TABLE[end_square]
-        start_w_up = WAYPOINT_TABLE[start_square + "_up"]
-        end_w_up = WAYPOINT_TABLE[end_square + "_up"]
+        start_w_up = WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX]
+        end_w_up = WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX]
 
         # Pick up the captured piece and discard it
         self.pick_and_drop_action_chain(
@@ -64,6 +63,61 @@ class Orchestrator:
             end_down=end_w_down,
             start_up=start_w_up,
             end_up=end_w_up,
+            start_home=None,
+            end_home=HOME_WAYPOINT
+        )
+
+    def castling_movement_sequence(self, is_white: bool, is_long_castles: bool):
+        rank = 1 if is_white else 8
+        if is_long_castles:
+            king_start_sq, king_end_sq = f"e{rank}", f"c{rank}"
+            rook_start_sq, rook_end_sq = f"a{rank}", f"d{rank}"
+        else:
+            king_start_sq, king_end_sq = f"e{rank}", f"g{rank}"
+            rook_start_sq, rook_end_sq = f"h{rank}", f"f{rank}"
+
+        self.pick_and_drop_action_chain(
+            start_down=WAYPOINT_TABLE[king_start_sq],
+            end_down=WAYPOINT_TABLE[king_end_sq],
+            start_up=WAYPOINT_TABLE[king_start_sq + UP_LABEL_SUFFIX],
+            end_up=WAYPOINT_TABLE[king_end_sq + UP_LABEL_SUFFIX],
+            start_home=HOME_WAYPOINT,
+            end_home=None
+        )
+
+        self.pick_and_drop_action_chain(
+            start_down=WAYPOINT_TABLE[rook_start_sq],
+            end_down=WAYPOINT_TABLE[rook_end_sq],
+            start_up=WAYPOINT_TABLE[rook_start_sq + UP_LABEL_SUFFIX],
+            end_up=WAYPOINT_TABLE[rook_end_sq + UP_LABEL_SUFFIX],
+            start_home=None,
+            end_home=HOME_WAYPOINT
+        )
+
+    def en_passant_movement_sequence(
+        self,
+        start_square: str,
+        end_square: str
+    ):
+        # In en passant, the captured pawn previously moved from rank 2 to 4 or 7 to 5, the pawn
+        # capturing it will move from rank 4 to 3 or 5 to 6. Hence, the captured pawn's square will
+        # be the file of the end square cross the rank of the start square.
+        captured_square = end_square[0] + start_square[1]
+
+        self.pick_and_drop_action_chain(
+            start_down=WAYPOINT_TABLE[captured_square],
+            end_down=DISCARD_WAYPOINT,
+            start_up=WAYPOINT_TABLE[captured_square + UP_LABEL_SUFFIX],
+            end_up=DISCARD_UP_WAYPOINT,
+            start_home=HOME_WAYPOINT,
+            end_home=None
+        )
+
+        self.pick_and_drop_action_chain(
+            start_down=WAYPOINT_TABLE[start_square],
+            end_down=WAYPOINT_TABLE[end_square],
+            start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
+            end_up=WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX],
             start_home=None,
             end_home=HOME_WAYPOINT
         )
@@ -100,7 +154,6 @@ class Orchestrator:
 
         # Move to home position to start
         if start_home is not None:
-            rospy.loginfo("Moving arm to home position")
             self.skeleton.issue_arm_command(
                 joint_vector=start_home.jv,
                 duration=self.std_duration
@@ -110,8 +163,7 @@ class Orchestrator:
         self.skeleton.issue_aggregated_command(
             joint_vector=start_up.jv,
             gripper_span=Skeleton.GRIPPER_OPEN_POSITION,
-            duration=self.compute_duration(start_home, start_up,
-                                           self.speed_meters_per_sec)
+            duration=self.compute_duration(start_home, start_up, self.speed_meters_per_sec)
         )
 
         # Grab the piece
@@ -136,7 +188,6 @@ class Orchestrator:
 
         # Move back to home position to end
         if end_home is not None:
-            rospy.loginfo("Moving arm to home position")
             self.skeleton.issue_arm_command(
                 joint_vector=end_home.jv,
                 duration=self.std_duration
