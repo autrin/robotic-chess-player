@@ -138,3 +138,21 @@ def se3_transform_mat4(r: Mat3x3, t: Vec3) -> Mat4x4:
     mat[:3, :3] = r
     mat[:3, 3] = t
     return mat
+
+def aff3_transform_mat4(r: Mat3x3, t: Vec3, s: Vec3) -> Mat4x4:
+    """
+    Construct a 4×4 affine transformation matrix from rotation R, translation t, and scaling s.
+
+    - R: 3×3 rotation matrix (assumed to be in SO(3))
+    - t: 3D translation vector
+    - s: 3D scaling factors for x, y, z axes
+
+    The resulting matrix is in Aff(3):
+        T = [ R * diag(s) | t ]
+            [     0       | 1 ]
+    """
+    mat = np.eye(4, dtype=np.float64)
+    scaled_r = r * s[np.newaxis, :]  # Element-wise scale columns of R
+    mat[:3, :3] = scaled_r
+    mat[:3, 3] = t
+    return mat
