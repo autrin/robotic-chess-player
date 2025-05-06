@@ -11,3 +11,12 @@ normalized is 1/sqrt2 + 1/sqrt2\*i + 0\*j + 0\*k, which represents a 90 degree r
 
 Forward kinematics is implemented in \_forward\_kinematics.py, which returns a position array given
 a 6-dimensional angle configuration vector.
+
+Now, we need semantically associate the FK method with the UR10e Armature class. I define a joint
+vector dataclass that forces named parameterization of the underlying 6-dim vector. This is separate
+from the end-effector gripper span. Then, define a pair of FK and IK static methods in Armature:
+
+```
+forward_kinematics(q: JointVector) -> NDArray[Vec3]
+inverse_kinematics(target: Vec3) -> JointVector
+```
