@@ -4,7 +4,7 @@ import numpy as np
 
 from jh1.typealias import *
 
-from typing import Tuple
+from typing import Tuple, List
 
 
 @dataclass
@@ -16,18 +16,29 @@ class JointVector:
     wrist_2: float
     wrist_3: float
 
-    def as_tuple(self) -> Tuple[float, float, float, float, float, float]:
-        return (
+    def as_list(self) -> List[float]:
+        return [
             self.shoulder_pan,
             self.shoulder_lift,
             self.elbow,
             self.wrist_1,
             self.wrist_2,
             self.wrist_3,
-        )
+        ]
 
     def as_np(self) -> NDArray[float64]:
-        return np.array(self.as_tuple())
+        return np.array(self.as_list())
+
+    def as_command(self, gripper: float) -> List[float]:
+        return [
+            self.elbow,
+            self.shoulder_lift,
+            self.shoulder_pan,
+            self.wrist_1,
+            self.wrist_2,
+            self.wrist_3,
+            gripper
+        ]
 
     @staticmethod
     def from_list(joint_list):
