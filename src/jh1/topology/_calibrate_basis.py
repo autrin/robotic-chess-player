@@ -7,7 +7,7 @@ from jh1.robotics.kinematics import JointVector
 from ._waypoint import Waypoint
 
 ## --- EDIT THESE ---
-up_height_meters = 0.08
+STANDARD_UP_HEIGHT = 0.08
 home_jv = JointVector.from_topic([2.449476, -1.842133, 1.006606, 0, 0, 0]).adaptive_leveling()
 discard_jv = JointVector.from_topic([3.449476, -1.642133, 1.006606, 0, 0, 0]).adaptive_leveling()
 
@@ -41,7 +41,7 @@ DISCARD_WAYPOINT = WAYPOINT_TABLE["discard"] = Waypoint(
     jv=discard_jv
 )
 
-discard_up_pos = DISCARD_WAYPOINT.pos + np.array([0, 0, up_height_meters])
+discard_up_pos = DISCARD_WAYPOINT.pos + np.array([0, 0, STANDARD_UP_HEIGHT])
 DISCARD_UP_WAYPOINT = WAYPOINT_TABLE["discard_up"] = Waypoint(
     label="discard_up",
     pos=discard_up_pos,
@@ -66,7 +66,7 @@ for k, v in board.items():
         jv=Skeleton.partial_inverse_kinematics(v)
     )
 
-    v_up = v + np.array([0, 0, up_height_meters])
+    v_up = v + np.array([0, 0, STANDARD_UP_HEIGHT])
     WAYPOINT_TABLE[k + UP_LABEL_SUFFIX] = Waypoint(
         label=k,
         pos=v_up,

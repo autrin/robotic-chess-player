@@ -200,7 +200,10 @@ def main():
         # OPTION 1: TEST MODE - simple chess move testing without vision
         if test_mode:
             rospy.loginfo(f"Running in TEST mode (sim={simulation_mode})")
-            robot.test_board_calibration()
+
+            # !!!! TODO: temporarily comment for faster testing
+            # robot.test_board_calibration()
+            # !!!!
 
             # Engine plays first if it's white
             if engine_is_white:

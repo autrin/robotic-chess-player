@@ -66,7 +66,7 @@ def draw_chessboard(
             )
 
 
-def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
+def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
     fixed_mask = [1, 0, 0, 1, 0, 1, 0, 0, 0]
 
     ctrl_indices = [i for i, m in enumerate(fixed_mask) if m == 0]
@@ -94,9 +94,10 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=12, interval_ms=150):
 
     ax.set_box_aspect([1, 1, 1])
     reach = 1.4
-    ax.set_xlim(-reach * 0.8, reach * 0.1)
-    ax.set_ylim(-reach * 0.8, reach * 0.1)
-    ax.set_zlim(0, reach * 0.8)
+    ax.view_init(elev=25, azim=-150)
+    ax.set_xlim(-reach * 0.6, 0)
+    ax.set_ylim(-reach * 0.8, -reach * 0.2)
+    ax.set_zlim(0, reach * 0.6)
 
     draw_chessboard(
         ax,
