@@ -13,6 +13,7 @@ from geometry_msgs.msg import Pose
 
 from jh1.core import Orchestrator
 from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
+from jh1.topology import *
 
 
 class ChessMovementController:
@@ -43,7 +44,7 @@ class ChessMovementController:
 
         # Initialize the robot control interface
         # self.robot = RobotUR10eGripper(is_gripper_up=True)
-        self.robot = None
+        self.robot: RobotUR10eGripper = orchestrator.skeleton.robot
         self.simulation_mode = simulation_mode
 
         # TODO
@@ -58,7 +59,7 @@ class ChessMovementController:
         """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
         self.square_size = 0.05715  # Square size in meters. 2 inches (50.8mm) per square
-        self.hover_height = 0.15  # Height above board for safety movements
+        self.hover_height = STANDARD_UP_HEIGHT  # Height above board for safety movements
         self.piece_height = 0.0254  # Height of chess pieces
         self.approach_height = 0.05  # Height from which to approach a piece. 2 inches - more clearance for safe approach
 
@@ -157,16 +158,7 @@ class ChessMovementController:
             rospy.logerr(f"Invalid chess square: {square}")
             raise ValueError(f"Invalid chess square: {square}")
 
-        col = ord(square[0]) - ord('a')
-        row = int(square[1]) - 1
-
-        # Calculate position (adjust based on board orientation)
-        # In this setup, a1 is at board_origin, h8 is at the far corner
-        x = self.board_origin[0] + col * self.square_size + (self.square_size / 2)
-        y = self.board_origin[1] + row * self.square_size + (self.square_size / 2)
-        z = self.board_origin[2]  # Base height of the board
-
-        return [x, y, z]
+        return WAYPOINT_TABLE[square].pos.tolist()
 
     def joint_angles_for_position(self, position, gripper_open=True):
         """
@@ -179,15 +171,17 @@ class ChessMovementController:
             List of 7 joint angles (6 arm joints + gripper)
         """
         # Simple approximation for joint angles based on position
-        joint_values = [
-            -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
-            -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
-            0.7 + 0.3 * (position[2] - self.board_origin[2]),  # Elbow - adjust based on Z
-            -1.1,  # Wrist 1
-            -1.57,  # Wrist 2
-            0.0,  # Wrist 3
-            self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED
-        ]
+        # joint_values = [
+        #     -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
+        #     -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
+        #     0.7 + 0.3 * (position[2] - self.board_origin[2]),  # Elbow - adjust based on Z
+        #     -1.1,  # Wrist 1
+        #     -1.57,  # Wrist 2
+        #     0.0,  # Wrist 3
+        #     self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED
+        # ]
+        joint_values = self.orchestrator.skeleton.partial_inverse_kinematics(position).as_command()
+        joint_values.append(self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED)
         return joint_values
 
     def execute_move(
@@ -201,7 +195,8 @@ class ChessMovementController:
 
         Args:
             move: Chess move in algebraic notation (e.g. 'e2e4')
-
+            is_capture: Whether a move was a capture
+            is_en_passant: Whether a move was an en-passant capture
         Returns:
             True if move was executed successfully, False otherwise
         """
@@ -502,7 +497,7 @@ class ChessMovementController:
             rospy.loginfo("Testing board calibration...")
 
             # Move to the preparation position
-            self.robot.command_robot(self.positions["observe"], 5.0)
+            self.robot.command_robot(self.positions["observe"], 3.0)
 
             # Move to each corner with a slight hover
             for square in ['a1', 'a8', 'h8', 'h1']:

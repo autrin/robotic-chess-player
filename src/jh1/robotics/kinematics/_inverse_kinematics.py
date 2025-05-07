@@ -21,7 +21,7 @@ def ur10e_partial_inverse_kinematics(
     p_target = np.asarray(target_pos, dtype=float)
 
 
-    print(f"[ur10e_partial_inverse_kinematics] Solving IK for {target_pos}")
+    # print(f"[ur10e_partial_inverse_kinematics] Solving IK for {target_pos}")
 
     # Initial guess
     if initial_q_hat is None:
@@ -61,5 +61,5 @@ def ur10e_partial_inverse_kinematics(
         raise RuntimeError(f"IK did not converge: {result.message}")
 
 
-    print(f"[ur10e_partial_inverse_kinematics] IK solution converged! ({result.cost=:.4e}, {result.nfev=})")
+    # print(f"[ur10e_partial_inverse_kinematics] IK solution converged! ({result.cost=:.4e}, {result.nfev=})")
     return JointVector.from_upper_joints(*result.x.tolist())

@@ -1,6 +1,8 @@
 from typing import Optional
 
 import numpy as np
+import multiprocessing as mp
+import time
 
 from jh1.topology import *
 from jh1.robotics import Skeleton
@@ -16,7 +18,7 @@ class Orchestrator:
         min_duration: float = 1.25,
         max_duration: float = 8.0,
         std_duration: float = 3.0,
-        speed_meters_per_sec: float = 0.065
+        speed_meters_per_sec: float = 0.1397
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -30,9 +32,9 @@ class Orchestrator:
         self.min_duration = min_duration_secs
         return self
 
-    def free_movement_sequence(self, start_square: str, end_square: str):
+    def free_movement_sequence(self, start_square: str, end_square: str) -> bool:
         # Simply move the piece to the desired end square
-        self.pick_and_drop_action_chain(
+        return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
             end_down=WAYPOINT_TABLE[end_square],
             start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
@@ -41,24 +43,24 @@ class Orchestrator:
             end_home=HOME_WAYPOINT
         )
 
-    def capture_sequence(self, start_square: str, end_square: str):
+    def capture_sequence(self, start_square: str, end_square: str) -> bool:
         start_w_down = WAYPOINT_TABLE[start_square]
         end_w_down = WAYPOINT_TABLE[end_square]
         start_w_up = WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX]
         end_w_up = WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX]
 
         # Pick up the captured piece and discard it
-        self.pick_and_drop_action_chain(
+        if not self.pick_and_drop_action_chain(
             start_down=end_w_down,
             end_down=DISCARD_WAYPOINT,
             start_up=end_w_up,
             end_up=DISCARD_UP_WAYPOINT,
             start_home=HOME_WAYPOINT,
             end_home=None
-        )
+        ): return False
 
         # Move the capturing piece from start to end square without returning to home
-        self.pick_and_drop_action_chain(
+        return self.pick_and_drop_action_chain(
             start_down=start_w_down,
             end_down=end_w_down,
             start_up=start_w_up,
@@ -67,7 +69,7 @@ class Orchestrator:
             end_home=HOME_WAYPOINT
         )
 
-    def castling_sequence(self, is_white: bool, is_long_castles: bool):
+    def castling_sequence(self, is_white: bool, is_long_castles: bool) -> bool:
         rank = 1 if is_white else 8
         if is_long_castles:
             king_start_sq, king_end_sq = f"e{rank}", f"c{rank}"
@@ -76,16 +78,16 @@ class Orchestrator:
             king_start_sq, king_end_sq = f"e{rank}", f"g{rank}"
             rook_start_sq, rook_end_sq = f"h{rank}", f"f{rank}"
 
-        self.pick_and_drop_action_chain(
+        if not self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[king_start_sq],
             end_down=WAYPOINT_TABLE[king_end_sq],
             start_up=WAYPOINT_TABLE[king_start_sq + UP_LABEL_SUFFIX],
             end_up=WAYPOINT_TABLE[king_end_sq + UP_LABEL_SUFFIX],
             start_home=HOME_WAYPOINT,
             end_home=None
-        )
+        ): return False
 
-        self.pick_and_drop_action_chain(
+        return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[rook_start_sq],
             end_down=WAYPOINT_TABLE[rook_end_sq],
             start_up=WAYPOINT_TABLE[rook_start_sq + UP_LABEL_SUFFIX],
@@ -98,22 +100,22 @@ class Orchestrator:
         self,
         start_square: str,
         end_square: str
-    ):
+    ) -> bool:
         # In en passant, the captured pawn previously moved from rank 2 to 4 or 7 to 5, the pawn
         # capturing it will move from rank 4 to 3 or 5 to 6. Hence, the captured pawn's square will
         # be the file of the end square cross the rank of the start square.
         captured_square = end_square[0] + start_square[1]
 
-        self.pick_and_drop_action_chain(
+        if not self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[captured_square],
             end_down=DISCARD_WAYPOINT,
             start_up=WAYPOINT_TABLE[captured_square + UP_LABEL_SUFFIX],
             end_up=DISCARD_UP_WAYPOINT,
             start_home=HOME_WAYPOINT,
             end_home=None
-        )
+        ): return False
 
-        self.pick_and_drop_action_chain(
+        return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
             end_down=WAYPOINT_TABLE[end_square],
             start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
@@ -145,7 +147,13 @@ class Orchestrator:
             ]
 
             # Display proposed movement
-            animate_joint_vectors(ik_sequence)
+            time.sleep(2.0)
+            p = mp.Process(
+                target=animate_joint_vectors,
+                args=(ik_sequence,)
+            )
+            p.start()
+            time.sleep(2.0)
 
         if self.require_approval:
             print("\n\nPlease approve the proposed movement (y/n):")
@@ -154,41 +162,41 @@ class Orchestrator:
 
         # Move to home position to start
         if start_home is not None:
-            self.skeleton.issue_arm_command(
+            if not self.skeleton.issue_arm_command(
                 joint_vector=start_home.jv,
                 duration=self.std_duration
-            )
+            ): return False
 
         # Move to starting square, up position, open gripper
-        self.skeleton.issue_aggregated_command(
+        if not self.skeleton.issue_aggregated_command(
             joint_vector=start_up.jv,
             gripper_span=Skeleton.GRIPPER_OPEN_POSITION,
             duration=self.compute_duration(start_home, start_up, self.speed_meters_per_sec)
-        )
+        ): return False
 
         # Grab the piece
-        self.descend_grip_ascend_chain(
+        if not self.descend_grip_ascend_chain(
             up=start_up,
             down=start_down,
             new_gripper_span=Skeleton.GRIPPER_CLOSED_POSITION
-        )
+        ): return False
 
         # Move to destination, up position
-        self.skeleton.issue_arm_command(
+        if not self.skeleton.issue_arm_command(
             joint_vector=end_up.jv,
             duration=self.compute_duration(start_up, end_up, self.speed_meters_per_sec)
-        )
+        ): return False
 
         # Drop the piece
-        self.descend_grip_ascend_chain(
+        if not self.descend_grip_ascend_chain(
             up=end_up,
             down=end_down,
             new_gripper_span=Skeleton.GRIPPER_OPEN_POSITION
-        )
+        ): return False
 
         # Move back to home position to end
         if end_home is not None:
-            self.skeleton.issue_arm_command(
+            return self.skeleton.issue_arm_command(
                 joint_vector=end_home.jv,
                 duration=self.std_duration
             )
@@ -201,24 +209,22 @@ class Orchestrator:
         new_gripper_span: float
     ) -> bool:
         # Descend to down position
-        self.skeleton.issue_arm_command(
+        if not self.skeleton.issue_arm_command(
             joint_vector=down.jv,
             duration=self.std_duration
-        )
+        ): return False
 
         # Issue new gripper span
-        self.skeleton.issue_gripper_command(
+        if not self.skeleton.issue_gripper_command(
             gripper_span=new_gripper_span,
             speed=0.05
-        )
+        ): return False
 
         # Ascend back to up position
-        self.skeleton.issue_arm_command(
+        return self.skeleton.issue_arm_command(
             joint_vector=up.jv,
             duration=self.std_duration
         )
-
-        return True
 
     def compute_duration(self, start: Waypoint, end: Waypoint, speed: float) -> float:
         return np.clip(
@@ -231,9 +237,7 @@ class Orchestrator:
     def prompt_approval() -> bool:
         while True:
             res = input(">> ")
-            if res == "y":
+            if res.lower() == "y":
                 return True
-            elif res == "n":
-                return False
             else:
-                print("Unexpected response, try again...")
+                return False
