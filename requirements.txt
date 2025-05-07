@@ -6,7 +6,6 @@ mss~=9.0.2
 setuptools~=75.3.2
 pillow~=10.4.0
 pandas~=2.0.3
-mujoco~=3.2.3
 matplotlib~=3.7.5
 pupil_apriltags
 scipy
