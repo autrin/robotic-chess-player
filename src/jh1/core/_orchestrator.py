@@ -19,7 +19,7 @@ class Orchestrator:
         min_duration: float = 2.0,
         max_duration: float = 8.0,
         std_duration: float = 3.0,
-        angular_rads_per_second: float = 0.15
+        angular_rads_per_second: float = 0.3
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -148,17 +148,19 @@ class Orchestrator:
             ]
 
             # Display proposed movement
-            time.sleep(2.0)
+            time.sleep(1.0)
             p = mp.Process(
                 target=animate_joint_vectors,
                 args=(ik_sequence,)
             )
             p.start()
-            time.sleep(2.0)
+            time.sleep(1.0)
 
         if self.require_approval:
             print("\n\nPlease approve the proposed movement (y/n):")
-            if not Orchestrator.prompt_approval(): return False
+            if not Orchestrator.prompt_approval():
+                print("\nProposed movement has been rejected, please manually carry out the move.")
+                return False
             print("\nMovement approved, proceeding...")
 
         # Move to home position to start
@@ -229,10 +231,10 @@ class Orchestrator:
 
     def compute_duration(self, end: Waypoint, rads_per_second: float) -> float:
         if self.skeleton.configuration_vector is None: return self.std_duration
+        metric_d = np.linalg.norm(self.skeleton.configuration_vector.as_np() - end.jv.as_np())
+        print(f"[Orchestrator.compute_duration] Movement has a C-space distance of {metric_d=}")
         return np.clip(
-            a=np.linalg.norm(
-                self.skeleton.configuration_vector.as_np() - end.jv.as_np()
-            ) / rads_per_second,
+            a=metric_d / rads_per_second,
             a_min=self.min_duration,
             a_max=self.max_duration
         )
