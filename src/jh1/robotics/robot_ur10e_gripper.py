@@ -9,7 +9,7 @@ Description: This class defines methods to receive the joint states and
                 i) roslaunch ur_robot_driver ur10e_griper_bringup.launch
                 ii) roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
 
-Author: Ling Tang ling@iastate.edu
+Author: Ling Tang & updated by Autrin Hakimi
 Date: 2025-02-16
 Version: 1.0
 """
