@@ -43,7 +43,6 @@ class ChessMovementController:
         #     rospy.init_node('chess_movement_controller', anonymous=True)
 
         # Initialize the robot control interface
-        # self.robot = RobotUR10eGripper(is_gripper_up=True)
         self.robot: RobotUR10eGripper = orchestrator.skeleton.robot
         self.simulation_mode = simulation_mode
 
@@ -136,6 +135,7 @@ class ChessMovementController:
         self.robot_is_white = robot_is_white
         # Initialize robot position
         self._go_to_safe_position()
+        self.orchestrator.skeleton.configuration_vector = HOME_WAYPOINT.jv
         rospy.loginfo("ChessMovementController initialized and ready")
 
     def _go_to_safe_position(self):

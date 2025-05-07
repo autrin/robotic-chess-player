@@ -102,16 +102,6 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
-
-def is_capture(move: str, board: chess.Board) -> bool:
-    """Check if the move captures an opponent's piece"""
-    from_square = chess.parse_square(move[0:2])
-    to_square = chess.parse_square(move[2:4])
-
-    # Check if there's a piece at the destination square
-    return board.piece_at(to_square) is not None
-
-
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
     global ai_move, move_executed, robot_running
@@ -121,9 +111,9 @@ def robot_thread_function(robot: ChessMovementController):
         current_move = ai_move
         if current_move:
             try:
-                move_uci, is_capture = current_move  # Unpack move and capture info
+                move_uci, is_capture, is_en_passant = current_move  # Unpack move and capture info
                 rospy.loginfo(f"Robot executing move: {move_uci} (is_capture: {is_capture})")
-                success = robot.execute_move(move_uci, is_capture)
+                success = robot.execute_move(move_uci, is_capture, is_en_passant)
                 if success:
                     rospy.loginfo(f"Robot successfully executed move: {move_uci}")
                 else:
@@ -139,12 +129,12 @@ def robot_thread_function(robot: ChessMovementController):
     rospy.loginfo("Robot thread shutting down")
 
 
-def set_robot_move(move, is_captured: bool):
+def set_robot_move(move, is_captured: bool, is_en_passant: bool = False):
     """Set the move for the robot to execute and wait for completion"""
     global ai_move, move_executed
 
     # Signal the robot thread to execute the move
-    ai_move = (move, is_captured)
+    ai_move = (move, is_captured, is_en_passant)
     move_executed.clear()
 
     # Wait for the robot to complete the move
@@ -211,8 +201,8 @@ def main():
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 rospy.loginfo(f"Robot executing engine's move: {move}")
                 before = game.board.copy()
-                is_captured = is_capture(move, before)
-                success = set_robot_move(move, is_captured)
+                is_captured, is_en_passant = GameState.classify_move(move, before)
+                success = set_robot_move(move, is_captured, is_en_passant)
                 if success:
                     # Update the game state
                     game.offer_move(move, by_white=True)
@@ -236,8 +226,8 @@ def main():
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
-                        is_captured = is_capture(human_move, before)
-                        if set_robot_move(human_move, is_captured):
+                        is_captured, is_en_passant = GameState.classify_move(human_move, before)
+                        if set_robot_move(human_move, is_captured, is_en_passant):
                             game.print_board()
                             print(f"FEN: {game.get_fen()}")
                             print("Stockfish:", engine.get_eval_score())
@@ -259,8 +249,8 @@ def main():
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            is_captured = is_capture(engine_move, before)
-                            if set_robot_move(engine_move, is_captured):
+                            is_captured, is_en_passant = GameState.classify_move(engine_move, before)
+                            if set_robot_move(engine_move, is_captured, is_en_passant):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")
                                 print("Stockfish:", engine.get_eval_score())
@@ -288,9 +278,9 @@ def main():
                 move = game.get_engine_move()
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 before = game.board.copy()
-                is_captured = is_capture(move, before)
+                is_captured, is_en_passant = GameState.classify_move(move, before)
                 # Execute the move on the robot
-                success = set_robot_move(move, is_captured)
+                success = set_robot_move(move, is_captured, is_en_passant)
                 if success:
                     print("Robot completed the engine's move")
 
@@ -327,9 +317,9 @@ def main():
                     move = game.get_engine_move()
                     print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
                     before = game.board.copy()
-                    is_captured = is_capture(move, before)
+                    is_captured, is_en_passant = GameState.classify_move(move, before)
                     # Execute the move on the robot
-                    success = set_robot_move(move, is_captured)
+                    success = set_robot_move(move, is_captured, is_en_passant)
                     if success:
                         print("Robot completed the engine's move")
                     else:
