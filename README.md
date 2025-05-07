@@ -1,4 +1,5 @@
 # sd02_joseph-hoane_1
+## Setup
 
 ### Directory setup:
 	autrin@autrin-rog-zephyrus-g14-ga403ui:~/Desktop/402project/project/catkin_ws$ ls -a
@@ -19,25 +20,19 @@
 	catkin_make
 	
 	source ~/Desktop/402project/project/catkin_ws/devel/setup.bash
+
+	1. Run robot driver
+		roslaunch ur_robot_driver ur10e_griper_bringup.launch
+	2. Access external control
+
+	3. Run gripper driver (if not initialized don't do anyting)
+		roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
 	
-	• Run full (vision) in simulation (default):
-	roslaunch sd02_joseph-hoane_1 chess_robot.launch
+	4. Run main
+		rosrun sd02_joseph-hoane_1 main test
+		or 
+		rosrun sd02_joseph-hoane_1 main
 
-	• Run full (vision) with the real robot:
-	roslaunch sd02_joseph-hoane_1 chess_robot.launch sim:=false robot_ip:=192.168.1.100
-
-	• Run test mode (no vision) in simulation:
-	roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test
-
-	• Run test mode (no vision) with the real robot:
-	roslaunch sd02_joseph-hoane_1 chess_robot.launch chess_robot:=test sim:=false
-
-	In all cases:
-
-	– sim:=true|false toggles simulated vs. real‐hardware movement.
-	– chess_robot:=test tells the node to enter test mode (human enters moves on CLI).
-
-## Setup
 
 ### Install `jh1` as a python library
 
@@ -50,15 +45,3 @@ pip install -e ./src
 Google slides for progress: https://docs.google.com/presentation/d/1KjLXtcGOjq-ztTGnWDBwuNPuuBlknc9xajZgTyLYn-0/edit?usp=sharing
 
 
-
-##
-```
-roslaunch ur_robot_driver ur10e_griper_bringup.launch
-
-roslaunch robotiq_2f_gripper_control robotiq_action_server.launch
-```
-
-1. robot driver
-2. external control
-3. gripper (if not initialized don't do anyting)
-4. test (run code)
