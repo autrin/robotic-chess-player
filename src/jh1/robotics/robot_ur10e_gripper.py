@@ -132,9 +132,13 @@ class RobotUR10eGripper:
             self._command_gripper(joint_angles[6])
             rospy.loginfo(f"Finished command gripper")
             return True
-
-        rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
-        return False
+        else:
+            self.turnon_gripper()
+            self._command_gripper(joint_angles[6])
+            rospy.loginfo(f"Finished command gripper")
+            return True
+        # rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
+        # return False
 
     def _command_ur10e(self, joint_angles, duration) -> bool:
         rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
@@ -198,7 +202,7 @@ class RobotUR10eGripper:
 
     def _callback_gripper_status(self, data):
         self._is_ready = data.is_ready
-        self._is_reset = data.is_reset
+        self._is_reset = data.is_resetf
         self._is_moving = data.is_moving
         self.obj_detected = data.obj_detected
         self._requested_position = data.requested_position
@@ -253,3 +257,32 @@ class RobotUR10eGripper:
         srv.start_controllers = [target_controller]
         srv.strictness = SwitchControllerRequest.BEST_EFFORT
         self._switch_srv(srv)
+
+
+    def turnon_gripper(self):
+        """Re-initialize the gripper when connection is lost"""
+        rospy.loginfo("Turning on gripper again...")
+        if not self._gripper_status:
+            try:
+                # Initialize gripper subscribers and action client
+                rospy.Subscriber("/gripper_joint_states", JointState, 
+                                self._callback_gripper_joint_state)
+                self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action',
+                                                                CommandRobotiqGripperAction)
+                
+                # Wait for the action server to start
+                server_reached = self._robotiq_client.wait_for_server(timeout=rospy.Duration(5.0))
+                if server_reached:
+                    data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState, timeout=2.0)
+                    self._pos_gripper = data_gripper.position
+                    self._vel_gripper = data_gripper.velocity
+                    self._gripper_status = True
+                    rospy.loginfo("Gripper reconnected successfully")
+                    return True
+                else:
+                    rospy.logerr("Could not reconnect to gripper action server")
+                    return False
+            except Exception as e:
+                rospy.logerr(f"Error reconnecting to gripper: {str(e)}")
+                return False
+        return True
