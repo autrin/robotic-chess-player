@@ -1,6 +1,5 @@
 # from .robot_ur10e_gripper import RobotUR10eGripper
 from jh1.robotics.kinematics import *
-from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
 from jh1.typealias import *
 
 _STANDARD_INITIAL_GUESS = np.array([1.0066, -1.8421, 2.445])
@@ -12,8 +11,8 @@ class Skeleton:
     A wrapper around the base RobotUR10eGripper class
     """
 
-    def __init__(self, robot: Optional[RobotUR10eGripper] = None):
-        self.robot: RobotUR10eGripper = robot  # robot = None is understood to be testing mode
+    def __init__(self, robot: Optional['RobotUR10eGripper'] = None):
+        self.robot: 'RobotUR10eGripper' = robot  # robot = None is understood to be testing mode
         self.configuration_vector: Optional[JointVector] = None
 
     def issue_aggregated_command(

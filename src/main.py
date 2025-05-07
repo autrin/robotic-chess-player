@@ -7,7 +7,8 @@ import time
 import chess
 import rospy
 
-from jh1.core import Engine, GameState, ChessMovementController, Orchestrator
+from jh1.core import Engine, GameState, Orchestrator
+from jh1.core.ChessMovement import ChessMovementController
 from jh1.robotics import Skeleton
 from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
 from jh1.utils.visualize import board_overlay_plot
@@ -101,6 +102,7 @@ def verify_move(expected_move, game_state, cam, detector):
             return scanned_board
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
+
 
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
@@ -249,7 +251,8 @@ def main():
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            is_captured, is_en_passant = GameState.classify_move(engine_move, before)
+                            is_captured, is_en_passant = GameState.classify_move(engine_move,
+                                                                                 before)
                             if set_robot_move(engine_move, is_captured, is_en_passant):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")

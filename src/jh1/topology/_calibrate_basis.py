@@ -8,8 +8,8 @@ from ._waypoint import Waypoint
 
 ## --- EDIT THESE ---
 STANDARD_UP_HEIGHT = 0.08
-home_jv = JointVector.from_topic([2.449476, -1.842133, 1.006606, 0, 0, 0]).adaptive_leveling()
-discard_jv = JointVector.from_topic([3.449476, -1.642133, 1.006606, 0, 0, 0]).adaptive_leveling()
+home_jv = JointVector.from_topic([2.4494, -1.8421, 1.012, 0, 0, 0]).adaptive_leveling()
+discard_jv = JointVector.from_topic([1.5463, -0.9344, 0.4444, 0, 0, 0]).adaptive_leveling()
 
 a8 = Skeleton.forward_kinematics(JointVector.from_topic(
     [1.9908550421344202, -1.0797357720187684, 1.2676620483398438, -2.4606195888915003,
