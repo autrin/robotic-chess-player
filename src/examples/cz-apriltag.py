@@ -18,7 +18,7 @@ detector = apriltag.Detector(
 cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
-n_perturbs = 50
+n_perturbs = 96
 
 TARGET_FPS = 10
 FRAME_DELAY = 1.0 / TARGET_FPS
@@ -34,7 +34,7 @@ while True:
     print(np.shape(frame))
 
     current_time = time.time()
-    results = []
+    results = {}
     cluster_counts = []
     if current_time - last_time >= FRAME_DELAY:
         last_time = current_time

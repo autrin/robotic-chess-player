@@ -48,22 +48,25 @@ def _generate_image_perturbation() -> Tuple[float, ...]:
     # Generate small random perturbations:
     d_theta = np.random.uniform(-np.pi, np.pi)
     # scaling factor
-    d_scale = np.random.uniform(0.75, 1.25)
+    d_scale = np.random.uniform(0.85, 1.15)
     # shear factor (skew)
-    d_shear = np.random.uniform(-0.4, 0.4)
+    d_shear = np.random.uniform(-0.3, 0.3)
     # translation in x (pixels)
-    tx = np.random.uniform(-300, 300)
+    tx = np.random.uniform(-200, 200)
     # translation in y (pixels)
-    ty = np.random.uniform(-80, 80)
+    ty = np.random.uniform(-70, 70)
     # brightness adjustment
-    d_luma = np.random.uniform(-50, 50)
+    d_luma = np.random.uniform(-60, 60)
     # contrast adjustment
     d_contrast = np.random.uniform(0.4, 2.6)
     return d_theta, d_scale, d_shear, tx, ty, d_luma, d_contrast
 
 
-def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=50) -> Dict[
-    int, List[Vec2]]:
+def find_april_tags(
+    img: Array3D[uint8],
+    detector: apriltag.Detector,
+    n_random=96
+) -> Dict[int, List[Vec2]]:
     """
     Applies randomized affine transformations to detect AprilTags more robustly across augmented versions.
 
@@ -117,7 +120,7 @@ def find_april_tags(img: Array3D[uint8], detector: apriltag.Detector, n_random=5
         for td in tags_affine_sp:
             center_affine_sp: Vec3 = np.array([td.center[0], td.center[1], 1])
             center: Vec3 = mat_affine_inv @ center_affine_sp
-            detections.setdefault(td.tag_id, []).append(np.array(center[0], center[1]))
+            detections.setdefault(td.tag_id, []).append(np.array([center[0], center[1]]))
 
     return detections
 
