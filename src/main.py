@@ -1,12 +1,17 @@
 #! /usr/bin/env python3
-import chess
-import cv2
-import matplotlib as mpl
-import matplotlib.pyplot as plt
-import numpy as np
-import rospy
+import os
 import sys
-from jh1.core import Engine, GameState
+import threading
+import time
+
+import chess
+import rospy
+
+from jh1.core import Engine, GameState, Orchestrator
+from jh1.core.ChessMovement import ChessMovementController
+from jh1.robotics import Skeleton
+from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
+from jh1.utils.visualize import board_overlay_plot
 from jh1.visual import (
     instantiate_detector,
     find_april_tags,
@@ -14,12 +19,7 @@ from jh1.visual import (
     PIECE_TAG_IDS,
     HomographySolver,
 )
-from jh1.visual._homography_solver import GRID_SIZE
 from jh1.visual.video import WebcamSource
-from ChessMovement import ChessMovementController
-import threading
-import time
-import os
 
 """
 A standalone vision-based chess system
@@ -65,53 +65,7 @@ def capture_board_state(cam, detector):
     return img, solver, board_bins, certainty_grid
 
 
-def update_plot(img, solver, board_bins, certainty_grid):
-    fig, ax = plt.subplots(figsize=(12, 8))
-    ax.imshow(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-
-    def project(pt):
-        pt = np.array(pt, dtype=np.float32)
-        if solver.adjust:
-            center = np.array([5, 5], dtype=np.float32)
-            pt = (pt - center) * (9 / 8) + center
-        vec = np.array([pt[0], pt[1], 1.0])
-        img_pt_h = np.linalg.inv(solver.mat_homography) @ vec
-        return tuple(img_pt_h[:2] / img_pt_h[2])
-
-    for i in range(9):
-        ax.plot(*zip(project((i + 1, 1)), project((i + 1, 9))), color="tab:blue", linewidth=1)
-        ax.plot(*zip(project((1, i + 1)), project((9, i + 1))), color="tab:blue", linewidth=1)
-
-    cmap = mpl.colormaps.get_cmap("RdYlGn")
-    norm = mpl.colors.Normalize(vmin=0, vmax=1)
-
-    for i in range(GRID_SIZE):
-        for j in range(GRID_SIZE):
-            certainty = certainty_grid[i, j]
-            if certainty <= 0:
-                continue
-
-            corners = [(j + dx, i + dy) for dx, dy in [(1, 1), (2, 1), (2, 2), (1, 2)]]
-            img_corners = [project(c) for c in corners]
-            poly = plt.Polygon(img_corners, color=cmap(norm(certainty)), alpha=0.7)
-            ax.add_patch(poly)
-
-            tags = board_bins[i][j]
-            if tags:
-                label = ", ".join(PIECE_TAG_IDS.get(t.tag_id, str(t.tag_id)) for t in tags)
-                center = project((j + 1.5, i + 1.5))
-                ax.text(*center, label, fontsize=10, ha="center", va="center", weight="bold",
-                        color="black")
-
-    sm = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    fig.colorbar(sm, ax=ax, fraction=0.026, pad=0.04).set_label("certainty", fontsize=9)
-    ax.axis("off")
-    plt.tight_layout()
-    plt.show()
-
-
-def build_ocr_board(board_bins):
+def build_board(board_bins):
     return [
         [PIECE_TAG_IDS.get(tags[0].tag_id, "?") if tags else "." for tags in row]
         for row in reversed(board_bins[:8])
@@ -129,14 +83,14 @@ def prompt_for_move(game_state, cam, detector):
         if img is None:
             continue
 
-        update_plot(img, solver, board_bins, certainty_grid)
-        ocr_board = build_ocr_board(board_bins)
+        board_overlay_plot(img, solver, board_bins, certainty_grid)
+        board = build_board(board_bins)
         game_state.print_board()
-        print_board_array(ocr_board)
+        print_board_array(board)
 
-        move = GameState.get_move_diff(game_state, ocr_board)
+        move = GameState.get_move_diff(game_state, board)
         if move:
-            return move, ocr_board
+            return move, board
         print("No move detected. Adjust board and try again.")
 
 
@@ -149,13 +103,6 @@ def verify_move(expected_move, game_state, cam, detector):
         print(f"Mismatch. Expected {expected_move} ({game_state.get_algebraic(expected_move)}), "
               f"but detected {move_check} ({game_state.get_algebraic(move_check)}). Try again.")
 
-def is_capture(move: str, board: chess.Board) -> bool:
-    """Check if the move captures an opponent's piece"""
-    from_square = chess.parse_square(move[0:2])
-    to_square = chess.parse_square(move[2:4])
-    
-    # Check if there's a piece at the destination square
-    return board.piece_at(to_square) is not None
 
 def robot_thread_function(robot: ChessMovementController):
     """Thread that handles robot movement"""
@@ -166,9 +113,9 @@ def robot_thread_function(robot: ChessMovementController):
         current_move = ai_move
         if current_move:
             try:
-                move_uci, is_capture = current_move  # Unpack move and capture info
-                rospy.loginfo(f"Robot executing move: {move_uci} (is_capture: {is_capture})")
-                success = robot.execute_move(move_uci, is_capture)
+                move_uci, is_capture, is_en_passant = current_move  # Unpack move and capture info
+                rospy.loginfo(f"Robot executing move: {move_uci} ({is_capture=} {is_en_passant=})")
+                success = robot.execute_move(move_uci, is_capture, is_en_passant)
                 if success:
                     rospy.loginfo(f"Robot successfully executed move: {move_uci}")
                 else:
@@ -183,12 +130,13 @@ def robot_thread_function(robot: ChessMovementController):
 
     rospy.loginfo("Robot thread shutting down")
 
-def set_robot_move(move, is_captured: bool):
+
+def set_robot_move(move, is_captured: bool, is_en_passant: bool = False):
     """Set the move for the robot to execute and wait for completion"""
     global ai_move, move_executed
 
     # Signal the robot thread to execute the move
-    ai_move = (move, is_captured)
+    ai_move = (move, is_captured, is_en_passant)
     move_executed.clear()
 
     # Wait for the robot to complete the move
@@ -220,8 +168,19 @@ def main():
     )
     game = GameState(engine, engine_plays_white=engine_is_white)
 
+    skeleton: Skeleton = Skeleton(RobotUR10eGripper(is_gripper_up=True))
+    orchestrator: Orchestrator = Orchestrator(
+        skeleton=skeleton,
+        require_viz=True,
+        require_approval=True
+    )
+
     # Initialize robot movement controller - simulation mode is independent of test mode
-    robot = ChessMovementController(simulation_mode=simulation_mode, robot_is_white=engine_is_white)
+    robot = ChessMovementController(
+        orchestrator=orchestrator,
+        simulation_mode=simulation_mode,
+        robot_is_white=engine_is_white
+    )
 
     # Start robot movement thread
     robot_running = True
@@ -233,7 +192,10 @@ def main():
         # OPTION 1: TEST MODE - simple chess move testing without vision
         if test_mode:
             rospy.loginfo(f"Running in TEST mode (sim={simulation_mode})")
-            robot.test_board_calibration()
+
+            # !!!! TODO: temporarily comment for faster testing
+            # robot.test_board_calibration()
+            # !!!!
 
             # Engine plays first if it's white
             if engine_is_white:
@@ -241,8 +203,8 @@ def main():
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 rospy.loginfo(f"Robot executing engine's move: {move}")
                 before = game.board.copy()
-                is_captured = is_capture(move, before)
-                success = set_robot_move(move, is_captured)
+                is_captured, is_en_passant = GameState.classify_move(move, before)
+                success = set_robot_move(move, is_captured, is_en_passant)
                 if success:
                     # Update the game state
                     game.offer_move(move, by_white=True)
@@ -255,7 +217,7 @@ def main():
             # Test mode game loop
             while not game.board.is_game_over() and not rospy.is_shutdown():
                 try:
-                    human_move = input("Enter your move (e2e4) or 'quit': ").strip().lower()
+                    human_move = input("\nEnter your move (e2e4) or 'quit': \n>> ").strip().lower()
                     if human_move == 'quit':
                         break
 
@@ -266,8 +228,8 @@ def main():
                     before = game.board.copy()
                     if game.offer_move(human_move):
                         rospy.loginfo(f"Robot executing human move: {human_move}")
-                        is_captured = is_capture(human_move, before)
-                        if set_robot_move(human_move, is_captured):
+                        is_captured, is_en_passant = GameState.classify_move(human_move, before)
+                        if set_robot_move(human_move, is_captured, is_en_passant):
                             game.print_board()
                             print(f"FEN: {game.get_fen()}")
                             print("Stockfish:", engine.get_eval_score())
@@ -289,8 +251,9 @@ def main():
                         print(f"\nEngine move: {engine_move} ({game.get_algebraic(engine_move)})")
                         if game.offer_move(engine_move):
                             rospy.loginfo(f"Robot executing engine's move: {engine_move}")
-                            is_captured = is_capture(engine_move, before)
-                            if set_robot_move(engine_move, is_captured):
+                            is_captured, is_en_passant = GameState.classify_move(engine_move,
+                                                                                 before)
+                            if set_robot_move(engine_move, is_captured, is_en_passant):
                                 game.print_board()
                                 print(f"FEN: {game.get_fen()}")
                                 print("Stockfish:", engine.get_eval_score())
@@ -312,18 +275,18 @@ def main():
             rospy.loginfo(f"Running in FULL mode (sim={simulation_mode})")
             cam = WebcamSource(cam_id=0)
             detector = instantiate_detector()
-            
+
             # Engine plays first if it's white
             if engine_is_white:
                 move = game.get_engine_move()
                 print(f"\nEngine plays first as White: {move} ({game.get_algebraic(move)})")
                 before = game.board.copy()
-                is_captured = is_capture(move, before)
+                is_captured, is_en_passant = GameState.classify_move(move, before)
                 # Execute the move on the robot
-                success = set_robot_move(move, is_captured)
+                success = set_robot_move(move, is_captured, is_en_passant)
                 if success:
                     print("Robot completed the engine's move")
-                
+
                 # Verify the move was made correctly on the board
                 scanned_board = verify_move(move, game, cam, detector)
                 # Update the game state
@@ -339,7 +302,7 @@ def main():
             while not game.board.is_game_over():
                 # Wait for human player's move
                 move, scanned_board = prompt_for_move(game, cam, detector)
-                
+
                 # validate the move
                 board_before = game.board.copy()
                 if game.offer_move(move):
@@ -357,9 +320,9 @@ def main():
                     move = game.get_engine_move()
                     print(f"\nEngine move: {move} ({game.get_algebraic(move)})")
                     before = game.board.copy()
-                    is_captured = is_capture(move, before)
+                    is_captured, is_en_passant = GameState.classify_move(move, before)
                     # Execute the move on the robot
-                    success = set_robot_move(move, is_captured)
+                    success = set_robot_move(move, is_captured, is_en_passant)
                     if success:
                         print("Robot completed the engine's move")
                     else:
@@ -374,7 +337,7 @@ def main():
                     print("-" * 60)
 
             print("Game over.")
-            
+
     except KeyboardInterrupt:
         print("\nGame interrupted by user.")
     except Exception as e:

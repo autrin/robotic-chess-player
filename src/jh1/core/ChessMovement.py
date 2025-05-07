@@ -8,9 +8,12 @@ controlling movement for executing chess moves in the physical world.
 import traceback
 import rospy
 import time
-from typing import List
+from typing import List, Optional
 from geometry_msgs.msg import Pose
+
+from jh1.core import Orchestrator
 from jh1.robotics.robot_ur10e_gripper import RobotUR10eGripper
+from jh1.topology import *
 
 
 class ChessMovementController:
@@ -20,10 +23,10 @@ class ChessMovementController:
     This class translates chess board coordinates to physical robot 
     positions and handles the pick-and-place sequences needed to move pieces.
     """
-    GRIPPER_OPEN = 0.9   # Value when gripper is fully open
+    GRIPPER_OPEN = 0.9  # Value when gripper is fully open
     GRIPPER_CLOSED = 0.5  # TODO Default value when gripper is holding a piece
-    
-    def __init__(self, simulation_mode=True, robot_is_white=None):
+
+    def __init__(self, orchestrator: Orchestrator, simulation_mode=True, robot_is_white=None):
         """
         Initialize the chess movement controller.
         
@@ -31,12 +34,16 @@ class ChessMovementController:
             simulation_mode: Whether to run in simulation mode or with a real robot
         """
         rospy.loginfo("Initializing ChessMovementController...")
+
+        # Pass in an orchestrator (wrapper around IK and robot movement functions)
+        self.orchestrator: Orchestrator = orchestrator
+
         # Initialize ROS node if not already done
         # if not rospy.core.is_initialized():
         #     rospy.init_node('chess_movement_controller', anonymous=True)
 
         # Initialize the robot control interface
-        self.robot = RobotUR10eGripper(is_gripper_up=True)
+        self.robot: RobotUR10eGripper = orchestrator.skeleton.robot
         self.simulation_mode = simulation_mode
 
         # TODO
@@ -51,7 +58,7 @@ class ChessMovementController:
         """
         self.board_origin = [0.4, 0.3, 0.1]  # Bottom-left corner coordinates (x, y, z)
         self.square_size = 0.05715  # Square size in meters. 2 inches (50.8mm) per square
-        self.hover_height = 0.15  # Height above board for safety movements
+        self.hover_height = STANDARD_UP_HEIGHT  # Height above board for safety movements
         self.piece_height = 0.0254  # Height of chess pieces
         self.approach_height = 0.05  # Height from which to approach a piece. 2 inches - more clearance for safe approach
 
@@ -104,11 +111,17 @@ class ChessMovementController:
         When giving the player more space to interact with the board
         Between games or during pause
         """
-        self.positions = { # TODO
-            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453, -2.0474611721434535, -1.5897491613971155, 2.020841360092163, self.GRIPPER_OPEN], # Home position (gripper open)
-            "observe": [1.5139759222613733, -1.1724217695048829, 1.270115613937378, -1.9291945896544398, -1.569782559071676, 2.0213046073913574, self.GRIPPER_OPEN], # Position to observe the board. Adjust to see the entire large board
-            "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, self.GRIPPER_OPEN],# Preparation position
-            "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, self.GRIPPER_OPEN] # Position away from the board
+        self.positions = {  # TODO
+            "home": [2.2015607992755335, -1.7744752369322718, 1.1870899200439453,
+                     -2.0474611721434535, -1.5897491613971155, 2.020841360092163,
+                     self.GRIPPER_OPEN],  # Home position (gripper open)
+            "observe": [1.5139759222613733, -1.1724217695048829, 1.270115613937378,
+                        -1.9291945896544398, -1.569782559071676, 2.0213046073913574,
+                        self.GRIPPER_OPEN],
+            # Position to observe the board. Adjust to see the entire large board
+            "prepare": [0.2, -1.0, 0.7, -1.2, -1.57, 0, self.GRIPPER_OPEN],  # Preparation position
+            "retreat": [0.5, -0.8, 1.0, -1.5, -1.57, 0, self.GRIPPER_OPEN]
+            # Position away from the board
         }
 
         # TODO Define two storage areas for captured pieces
@@ -122,6 +135,7 @@ class ChessMovementController:
         self.robot_is_white = robot_is_white
         # Initialize robot position
         self._go_to_safe_position()
+        self.orchestrator.skeleton.configuration_vector = HOME_WAYPOINT.jv
         rospy.loginfo("ChessMovementController initialized and ready")
 
     def _go_to_safe_position(self):
@@ -144,16 +158,7 @@ class ChessMovementController:
             rospy.logerr(f"Invalid chess square: {square}")
             raise ValueError(f"Invalid chess square: {square}")
 
-        col = ord(square[0]) - ord('a')
-        row = int(square[1]) - 1
-
-        # Calculate position (adjust based on board orientation)
-        # In this setup, a1 is at board_origin, h8 is at the far corner
-        x = self.board_origin[0] + col * self.square_size + (self.square_size / 2)
-        y = self.board_origin[1] + row * self.square_size + (self.square_size / 2)
-        z = self.board_origin[2]  # Base height of the board
-
-        return [x, y, z]
+        return WAYPOINT_TABLE[square].pos.tolist()
 
     def joint_angles_for_position(self, position, gripper_open=True):
         """
@@ -166,69 +171,55 @@ class ChessMovementController:
             List of 7 joint angles (6 arm joints + gripper)
         """
         # Simple approximation for joint angles based on position
-        joint_values = [
-            -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
-            -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
-            0.7 + 0.3 * (position[2] - self.board_origin[2]),   # Elbow - adjust based on Z
-            -1.1,                                               # Wrist 1
-            -1.57,                                              # Wrist 2
-            0.0,                                                # Wrist 3
-            self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED
-        ]
+        # joint_values = [
+        #     -0.5 + 0.8 * (position[0] - self.board_origin[0]),  # Pan joint - adjust based on X
+        #     -1.2 - 0.8 * (position[1] - self.board_origin[1]),  # Shoulder - adjust based on Y
+        #     0.7 + 0.3 * (position[2] - self.board_origin[2]),  # Elbow - adjust based on Z
+        #     -1.1,  # Wrist 1
+        #     -1.57,  # Wrist 2
+        #     0.0,  # Wrist 3
+        #     self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED
+        # ]
+        joint_values = self.orchestrator.skeleton.partial_inverse_kinematics(position).as_command()
+        joint_values.append(self.GRIPPER_OPEN if gripper_open else self.GRIPPER_CLOSED)
         return joint_values
-    
-    def execute_move(self, move: str, is_capture: bool = None) -> bool:
+
+    def execute_move(
+        self,
+        move: str,
+        is_capture: Optional[bool] = None,
+        is_en_passant: Optional[bool] = None
+    ) -> bool:
         """
         Execute a chess move (e.g., 'e2e4').
-        
+
         Args:
             move: Chess move in algebraic notation (e.g. 'e2e4')
-            
+            is_capture: Whether a move was a capture
+            is_en_passant: Whether a move was an en-passant capture
         Returns:
             True if move was executed successfully, False otherwise
         """
         rospy.loginfo(f"Executing move: {move}")
+        if len(move) < 4:
+            rospy.logerr(f"Invalid move format: {move}")
+            return False
+
+        start, end = move[:2], move[2:4]
 
         try:
-            # Parse the move
-            if len(move) < 4:
-                rospy.logerr(f"Invalid move format: {move}")
-                return False
+            if start == 'e1' and end in ('g1', 'c1'):
+                return self.orchestrator.castling_sequence(True, (end == 'c1'))
+            if start == 'e8' and end in ('g8', 'c8'):
+                return self.orchestrator.castling_sequence(False, (end == 'c8'))
 
-            from_square = move[0:2]
-            to_square = move[2:4]
+            if is_en_passant:
+                return self.orchestrator.en_passant_sequence(start, end)
 
-            # Special case for castling
-            if from_square == 'e1' and to_square == 'g1':  # White kingside castling
-                success = self._execute_castling('white', 'kingside')
-                return success
-            elif from_square == 'e1' and to_square == 'c1':  # White queenside castling
-                success = self._execute_castling('white', 'queenside')
-                return success
-            elif from_square == 'e8' and to_square == 'g8':  # Black kingside castling
-                success = self._execute_castling('black', 'kingside')
-                return success
-            elif from_square == 'e8' and to_square == 'c8':  # Black queenside castling
-                success = self._execute_castling('black', 'queenside')
-                return success
-
-            # Get positions
-            from_pos = self.square_to_position(from_square)
-            to_pos = self.square_to_position(to_square)
-
-            # Check for capture - if there's a piece at the destination
-            # This would need to come from your chess engine/board state
-            # is_capture = False  # TODO You would determine this from the chess engine
-            
-            # Execute the standard move
-            success = self._move_piece(from_pos, to_pos, is_capture)
-
-            if success:
-                rospy.loginfo(f"Successfully completed move {move}")
+            if is_capture:
+                return self.orchestrator.capture_sequence(start, end)
             else:
-                rospy.logerr(f"Failed to complete move {move}")
-
-            return success
+                return self.orchestrator.free_movement_sequence(start, end)
 
         except Exception as e:
             rospy.logerr(f"Error executing move: {e}")
@@ -451,7 +442,7 @@ class ChessMovementController:
 
             # Keep the same arm position, just open the gripper
             gripper_open_position = tuple(list(current_pos)[:6] + [self.GRIPPER_OPEN])
-            
+
             rospy.loginfo("Opening gripper")
             self.robot.command_robot(gripper_open_position, 5.0)
             time.sleep(0.5)  # Give time for the gripper to open
@@ -461,8 +452,9 @@ class ChessMovementController:
         except Exception as e:
             rospy.logerr(f"Error opening gripper: {traceback.format_exc()}")
             return False
-    
-    def _close_gripper(self, position=None) -> bool: # TODO the closing is the piece size approximately
+
+    def _close_gripper(self,
+                       position=None) -> bool:  # TODO the closing is the piece size approximately
         """
         Close the gripper to grasp a piece.
         
@@ -476,15 +468,16 @@ class ChessMovementController:
             # Get current joint position
             current_pos = self.robot.get_joint_pos()
             rospy.loginfo(f"{current_pos=}  {position=}")
-            
+
             # Use provided position or default to GRIPPER_CLOSED
             grip_position = position if position is not None else self.GRIPPER_CLOSED
-        
+
             # Keep the same arm position, just close the gripper
             gripper_close_position = tuple(list(current_pos)[:6] + [grip_position])
-            
+
             rospy.loginfo(f"Closing gripper to position {grip_position}")
-            self.robot.command_robot(gripper_close_position, 5.0) #! might need to make this faster
+            self.robot.command_robot(gripper_close_position,
+                                     5.0)  # ! might need to make this faster
             time.sleep(0.5)  # Give time for the gripper to close
 
             return True
@@ -504,7 +497,7 @@ class ChessMovementController:
             rospy.loginfo("Testing board calibration...")
 
             # Move to the preparation position
-            self.robot.command_robot(self.positions["observe"], 5.0)
+            self.robot.command_robot(self.positions["observe"], 3.0)
 
             # Move to each corner with a slight hover
             for square in ['a1', 'a8', 'h8', 'h1']:

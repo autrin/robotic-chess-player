@@ -58,7 +58,7 @@ GUI = Tk()
 GUI.geometry("1000x500")
 GUI.title("Robotic Chess Player")
 
-programimage = Image.open("robo_arm.jpg")
+programimage = Image.open("../resources/robo_arm.jpg")
 iconimage = ImageTk.PhotoImage(programimage)
 GUI.iconphoto(True, iconimage)
 GUI.config()
