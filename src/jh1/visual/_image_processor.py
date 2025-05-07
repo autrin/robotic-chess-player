@@ -5,7 +5,7 @@ import cv2
 import pupil_apriltags as apriltag
 
 from jh1.utils.mathematics.affine import *
-from jh1.visual import VariCluster
+from ._vari_cluster import VariCluster
 
 
 def preprocess(frame: Array3D[uint8]) -> Array2D[uint8]:
