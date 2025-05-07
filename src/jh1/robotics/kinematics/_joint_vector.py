@@ -57,7 +57,7 @@ class JointVector:
             elbow,
             - np.pi / 2 - shoulder_lift - elbow,
             -np.pi / 2,
-            -np.pi / 2
+            0
         )
 
     @staticmethod

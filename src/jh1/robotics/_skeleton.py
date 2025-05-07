@@ -28,7 +28,7 @@ class Skeleton:
         # noinspection PyProtectedMember
         return self.robot._command_ur10e(joint_vector.as_command(), duration)
 
-    def issue_gripper_command(self, gripper_span: float, speed=0.05, force=0) -> bool:
+    def issue_gripper_command(self, gripper_span: float, speed=0.05, force=0.01) -> bool:
         if self.robot is None:
             return Skeleton.none_type_robot_print()
         # noinspection PyProtectedMember
@@ -56,5 +56,5 @@ class Skeleton:
             bone_joints_upper_bounds=[_2pi, _EPSILON, np.pi]
         )
 
-    GRIPPER_OPEN_POSITION = 0.025
-    GRIPPER_CLOSED_POSITION = 0.005
+    GRIPPER_OPEN_POSITION = 0.90
+    GRIPPER_CLOSED_POSITION = 0.0385
