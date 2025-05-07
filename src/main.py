@@ -2,6 +2,7 @@
 import os
 import sys
 import threading
+import multiprocessing as mp
 import time
 
 import chess
@@ -20,6 +21,11 @@ from jh1.visual import (
     HomographySolver,
 )
 from jh1.visual.video import WebcamSource
+
+from _environment import setup_environment
+
+# Random misc environment setup
+setup_environment()
 
 """
 A standalone vision-based chess system
@@ -71,11 +77,6 @@ def build_board(board_bins):
         for row in reversed(board_bins[:8])
     ]
 
-
-def print_board_array(board):
-    print("\n".join(" ".join(row) for row in board))
-
-
 def prompt_for_move(game_state, cam, detector):
     while True:
         input("Press Enter after move has been made...")
@@ -83,15 +84,22 @@ def prompt_for_move(game_state, cam, detector):
         if img is None:
             continue
 
-        board_overlay_plot(img, solver, board_bins, certainty_grid)
-        board = build_board(board_bins)
+        p = mp.Process(
+            target=board_overlay_plot,
+            args=(img, solver, board_bins, certainty_grid)
+        )
+        p.start()
+
+        print("Current board:")
         game_state.print_board()
-        print_board_array(board)
+        print("Detected new board:")
+        board = build_board(board_bins)
+        print(GameState.prettify(board))
 
         move = GameState.get_move_diff(game_state, board)
         if move:
             return move, board
-        print("No move detected. Adjust board and try again.")
+        print("No move or illegal move detected. Adjust board and try again.")
 
 
 def verify_move(expected_move, game_state, cam, detector):

@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Union
 
 import chess
 
@@ -116,7 +116,8 @@ class GameState:
         """
         Print the current board in ASCII format.
         """
-        print(self.board)
+        # print(self.board)
+        print(GameState.prettify(self.board))
 
     def get_algebraic(self, uci: str) -> str:
         try:
@@ -148,6 +149,44 @@ class GameState:
                 col = square % 8
                 board_array[row][col] = piece.symbol()
         return board_array
+
+    @staticmethod
+    def prettify(board: Union[chess.Board, List2D[str]]) -> str:
+        unicode_pieces = {
+            'P': '♟', 'N': '♞', 'B': '♝', 'R': '♜', 'Q': '♛', 'K': '♚',
+            'p': '♙', 'n': '♘', 'b': '♗', 'r': '♖', 'q': '♕', 'k': '♔',
+        }
+
+        board_array: List2D[str]
+
+        if isinstance(board, chess.Board):
+            board_array = [[' ' for _ in range(8)] for _ in range(8)]
+            for square in chess.SQUARES:
+                piece = board.piece_at(square)
+                if piece:
+                    row = 7 - (square // 8)
+                    col = square % 8
+                    board_array[row][col] = unicode_pieces[piece.symbol()]
+        else:
+            board_array = [[unicode_pieces.get(cell, " ") for cell in row] for row in board]
+
+        top = "  ┌───" + "┬───" * 7 + "┐"
+        mid = "  ├───" + "┼───" * 7 + "┤"
+        bot = "  └───" + "┴───" * 7 + "┘"
+        rows = [top]
+
+        for i, row in enumerate(board_array):
+            rank = 8 - i
+            line = [f"{rank} │"]
+            for cell in row:
+                line.append(f" {cell} │")
+            rows.append(''.join(line))
+            if i != 7:
+                rows.append(mid)
+
+        rows.append(bot)
+        rows.append("    a   b   c   d   e   f   g   h")
+        return "\n".join(rows)
 
     @staticmethod
     def classify_move(move: str, board: chess.Board) -> Tuple[bool, bool]:

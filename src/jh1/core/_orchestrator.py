@@ -135,7 +135,7 @@ class Orchestrator:
         end_home: Optional[Waypoint] = HOME_WAYPOINT,
     ) -> bool:
         if self.require_viz:
-            print("\n\nDisplaying proposed robot movement sequence")
+            print("Displaying proposed robot movement sequence")
             ik_sequence = [w.jv for w in [
                 start_home,
                 start_up,
@@ -148,16 +148,14 @@ class Orchestrator:
             ] if w is not None]
 
             # Display proposed movement
-            time.sleep(1.0)
             p = mp.Process(
                 target=animate_joint_vectors,
                 args=(ik_sequence,)
             )
             p.start()
-            time.sleep(1.0)
 
         if self.require_approval:
-            print("\n\nPlease approve the proposed movement (y/n):")
+            print("\nPlease approve the proposed movement (y/n):")
             if not Orchestrator.prompt_approval():
                 print("\nProposed movement has been rejected, please manually carry out the move.")
                 return False
