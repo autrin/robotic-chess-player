@@ -1,3 +1,3 @@
 * text=auto eol=lf
-*.ipynb linguist-detectable=false
+*.ipynb linguist-vendored
 Document/Final-Demo-SD02.pptx filter=lfs diff=lfs merge=lfs -text
