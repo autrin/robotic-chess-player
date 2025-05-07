@@ -16,10 +16,10 @@ class Orchestrator:
         skeleton: Skeleton,
         require_viz: bool = True,
         require_approval: bool = True,
-        min_duration: float = 2.0,
+        min_duration: float = 1.0,
         max_duration: float = 8.0,
-        std_duration: float = 3.0,
-        angular_rads_per_second: float = 0.36
+        std_duration: float = 2.0,
+        angular_rads_per_second: float = 0.75
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -215,6 +215,7 @@ class Orchestrator:
             duration=self.std_duration
         ): return False
 
+        time.sleep(1.0)
         # Issue new gripper span
         if not self.skeleton.issue_gripper_command(
             gripper_span=new_gripper_span,

@@ -179,8 +179,8 @@ def main():
     skeleton: Skeleton = Skeleton(RobotUR10eGripper(is_gripper_up=True))
     orchestrator: Orchestrator = Orchestrator(
         skeleton=skeleton,
-        require_viz=True,
-        require_approval=True
+        require_viz=False,
+        require_approval=False
     )
 
     # Initialize robot movement controller - simulation mode is independent of test mode
