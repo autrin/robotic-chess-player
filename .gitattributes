@@ -1,2 +1,2 @@
 * text=auto eol=lf
-*.ipynb linguist-detectable=false
+*.ipynb linguist-vendored
