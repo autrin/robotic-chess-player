@@ -17,7 +17,8 @@ import sys
 import rospy
 import actionlib
 from sensor_msgs.msg import JointState
-
+import subprocess
+import time
 from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, \
     CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
 
@@ -132,8 +133,11 @@ class RobotUR10eGripper:
             self._command_gripper(joint_angles[6])
             rospy.loginfo(f"Finished command gripper")
             return True
-        rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
-        return False
+        else:
+            self.turnon_gripper()
+            return True
+        # rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
+        # return False
 
     def _command_ur10e(self, joint_angles, duration) -> bool:
         rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
@@ -252,3 +256,50 @@ class RobotUR10eGripper:
         srv.start_controllers = [target_controller]
         srv.strictness = SwitchControllerRequest.BEST_EFFORT
         self._switch_srv(srv)
+
+    def turnon_gripper(self):
+        if not self._gripper_status:
+            rospy.loginfo("Gripper is offline. Attempting to restart it...")
+            try:
+                # Start the launch file in background
+                subprocess.Popen(
+                    ["roslaunch", "robotiq_2f_gripper_control", "robotiq_action_server.launch"],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                
+                # Give it time to start up
+                rospy.loginfo("Waiting for gripper action server to start...")
+                time.sleep(5)
+                
+                # Reinitialize the gripper connections
+                try:
+                    # Wait for gripper joint states
+                    data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState)
+                    self._pos_gripper = data_gripper.position
+                    self._vel_gripper = data_gripper.velocity
+                    rospy.Subscriber("/gripper_joint_states", JointState, self._callback_gripper_joint_state)
+                    # Recreate the action client
+                    self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action',
+                                                                    CommandRobotiqGripperAction)
+                    
+                    # Wait for the action server
+                    server_connected = self._robotiq_client.wait_for_server(timeout=rospy.Duration(10.0))
+                    
+                    if server_connected:
+                        self._gripper_status = True
+                        rospy.loginfo("Successfully reconnected to gripper!")
+                        return True
+                    else:
+                        rospy.logerr("Timed out waiting for gripper action server")
+                        return False
+                    
+                except rospy.ROSException as e:
+                    rospy.logerr(f"Failed to reconnect to gripper: {str(e)}")
+                    return False
+                    
+            except Exception as e:
+                rospy.logerr(f"Failed to restart gripper action server: {str(e)}")
+                return False
+        
+        return True  # Gripper is already online
