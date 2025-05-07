@@ -4,6 +4,7 @@ import numpy as np
 import multiprocessing as mp
 import time
 
+from jh1.robotics.kinematics import JointVector
 from jh1.topology import *
 from jh1.robotics import Skeleton
 from jh1.utils.visualize import animate_joint_vectors
@@ -15,10 +16,10 @@ class Orchestrator:
         skeleton: Skeleton,
         require_viz: bool = True,
         require_approval: bool = True,
-        min_duration: float = 1.25,
+        min_duration: float = 2.0,
         max_duration: float = 8.0,
         std_duration: float = 3.0,
-        speed_meters_per_sec: float = 0.1397
+        angular_rads_per_second: float = 0.15
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -26,7 +27,7 @@ class Orchestrator:
         self.min_duration = min_duration
         self.max_duration = max_duration
         self.std_duration = std_duration
-        self.speed_meters_per_sec = speed_meters_per_sec
+        self.angular_rads_per_second = angular_rads_per_second
 
     def set_minimum_duration(self, min_duration_secs: float) -> 'Orchestrator':
         self.min_duration = min_duration_secs
@@ -171,7 +172,7 @@ class Orchestrator:
         if not self.skeleton.issue_aggregated_command(
             joint_vector=start_up.jv,
             gripper_span=Skeleton.GRIPPER_OPEN_POSITION,
-            duration=self.compute_duration(start_home, start_up, self.speed_meters_per_sec)
+            duration=self.compute_duration(start_up, self.angular_rads_per_second)
         ): return False
 
         # Grab the piece
@@ -184,7 +185,7 @@ class Orchestrator:
         # Move to destination, up position
         if not self.skeleton.issue_arm_command(
             joint_vector=end_up.jv,
-            duration=self.compute_duration(start_up, end_up, self.speed_meters_per_sec)
+            duration=self.compute_duration(end_up, self.angular_rads_per_second)
         ): return False
 
         # Drop the piece
@@ -226,9 +227,12 @@ class Orchestrator:
             duration=self.std_duration
         )
 
-    def compute_duration(self, start: Waypoint, end: Waypoint, speed: float) -> float:
+    def compute_duration(self, end: Waypoint, rads_per_second: float) -> float:
+        if self.skeleton.configuration_vector is None: return self.std_duration
         return np.clip(
-            a=np.linalg.norm(start.pos - end.pos) / speed,
+            a=np.linalg.norm(
+                self.skeleton.configuration_vector.as_np() - end.jv.as_np()
+            ) / rads_per_second,
             a_min=self.min_duration,
             a_max=self.max_duration
         )

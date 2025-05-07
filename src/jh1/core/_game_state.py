@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Tuple
 
 import chess
 
@@ -148,3 +148,8 @@ class GameState:
                 col = square % 8
                 board_array[row][col] = piece.symbol()
         return board_array
+
+    @staticmethod
+    def classify_move(move: str, board: chess.Board) -> Tuple[bool, bool]:
+        m = chess.Move.from_uci(move)
+        return board.is_capture(m), board.is_en_passant(m)

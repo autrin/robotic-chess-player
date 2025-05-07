@@ -107,7 +107,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
     )
 
     def init():
-        plt.title("Proposed motion", fontsize=16, pad=20)
+        plt.title("Proposed motion (sped up, uniform lerp in C-space)", fontsize=16, pad=20)
         line.set_data([], [])
         line.set_3d_properties([])
         ee_trail_line.set_data([], [])
@@ -138,7 +138,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
             prev_pos = positions_list[i]
             tline = ax.plot(
                 prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
-                color="tab:purple", linewidth=1, alpha=0.13
+                color="tab:purple", linewidth=1, alpha=0.35
             )[0]
             trail_lines.append(tline)
 
