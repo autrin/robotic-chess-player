@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from jh1.topology import WAYPOINT_TABLE
+from jh1.topology import WAYPOINT_TABLE, HOME_WAYPOINT, DISCARD_WAYPOINT, DISCARD_UP_WAYPOINT
 from jh1.robotics import Skeleton
 from jh1.robotics.kinematics import JointVector
 from jh1.typealias import Mat4x4
@@ -92,9 +92,16 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
     ee_trail_x, ee_trail_y, ee_trail_z = [], [], []
     ee_trail_line, = ax.plot([], [], [], color="tab:orange", linewidth=3, alpha=0.8)
 
+    ax.scatter(*HOME_WAYPOINT.pos, marker='x', s=160, color='blue', alpha=0.7)
+    ax.text(*HOME_WAYPOINT.pos, "home", fontsize=8, color='k')
+    ax.scatter(*DISCARD_WAYPOINT.pos, marker='x', s=100, color='blue', alpha=0.7)
+    ax.text(*DISCARD_WAYPOINT.pos, "discard", fontsize=8, color='k')
+    ax.scatter(*DISCARD_UP_WAYPOINT.pos, marker='x', s=100, color='blue', alpha=0.7)
+    ax.text(*DISCARD_UP_WAYPOINT.pos, "discard_up", fontsize=8, color='k')
+
     ax.set_box_aspect([1, 1, 1])
     reach = 1.4
-    ax.view_init(elev=25, azim=-150)
+    ax.view_init(elev=35, azim=-150)
     ax.set_xlim(-reach * 0.6, 0)
     ax.set_ylim(-reach * 0.8, -reach * 0.2)
     ax.set_zlim(0, reach * 0.6)
@@ -105,6 +112,11 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
         a8=WAYPOINT_TABLE["a8"].pos,
         h1=WAYPOINT_TABLE["h1"].pos,
     )
+
+    for i, file in enumerate("abcdefgh"):
+        for rank in range(1, 9):
+            sq = f"{file}{rank}"
+            ax.text(*WAYPOINT_TABLE[sq].pos, sq, fontsize=7, color='k', alpha=0.6)
 
     def init():
         plt.title("Proposed motion (sped up, uniform lerp in C-space)", fontsize=16, pad=20)
@@ -131,7 +143,7 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
         line.set_3d_properties(pos[:, 2])
 
         # Phantom trail of past robot poses
-        prev_pos = positions_list[max(0, frame-1)]
+        prev_pos = positions_list[max(0, frame - 1)]
         tline = ax.plot(
             prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
             color="tab:purple", linewidth=1, alpha=0.35
