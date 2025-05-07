@@ -131,16 +131,12 @@ def animate_joint_vectors(joint_vectors, steps_per_segment=8, interval_ms=100):
         line.set_3d_properties(pos[:, 2])
 
         # Phantom trail of past robot poses
-        for tline in trail_lines:
-            tline.remove()
-        trail_lines.clear()
-        for i in range(frame):
-            prev_pos = positions_list[i]
-            tline = ax.plot(
-                prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
-                color="tab:purple", linewidth=1, alpha=0.35
-            )[0]
-            trail_lines.append(tline)
+        prev_pos = positions_list[max(0, frame-1)]
+        tline = ax.plot(
+            prev_pos[:, 0], prev_pos[:, 1], prev_pos[:, 2],
+            color="tab:purple", linewidth=1, alpha=0.35
+        )[0]
+        trail_lines.append(tline)
 
         # Update joint texts
         for idx, joint_idx in enumerate(ctrl_indices):
