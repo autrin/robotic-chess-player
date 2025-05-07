@@ -19,7 +19,7 @@ class Orchestrator:
         min_duration: float = 2.0,
         max_duration: float = 8.0,
         std_duration: float = 3.0,
-        angular_rads_per_second: float = 0.3
+        angular_rads_per_second: float = 0.36
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -136,16 +136,16 @@ class Orchestrator:
     ) -> bool:
         if self.require_viz:
             print("\n\nDisplaying proposed robot movement sequence")
-            ik_sequence = [
-                start_home.jv,
-                start_up.jv,
-                start_down.jv,
-                start_up.jv,
-                end_up.jv,
-                end_down.jv,
-                end_up.jv,
-                start_home.jv,
-            ]
+            ik_sequence = [w.jv for w in [
+                start_home,
+                start_up,
+                start_down,
+                start_up,
+                end_up,
+                end_down,
+                end_up,
+                end_home,
+            ] if w is not None]
 
             # Display proposed movement
             time.sleep(1.0)

@@ -114,7 +114,7 @@ def robot_thread_function(robot: ChessMovementController):
         if current_move:
             try:
                 move_uci, is_capture, is_en_passant = current_move  # Unpack move and capture info
-                rospy.loginfo(f"Robot executing move: {move_uci} (is_capture: {is_capture})")
+                rospy.loginfo(f"Robot executing move: {move_uci} ({is_capture=} {is_en_passant=})")
                 success = robot.execute_move(move_uci, is_capture, is_en_passant)
                 if success:
                     rospy.loginfo(f"Robot successfully executed move: {move_uci}")
@@ -217,7 +217,7 @@ def main():
             # Test mode game loop
             while not game.board.is_game_over() and not rospy.is_shutdown():
                 try:
-                    human_move = input("Enter your move (e2e4) or 'quit': ").strip().lower()
+                    human_move = input("\nEnter your move (e2e4) or 'quit': \n>> ").strip().lower()
                     if human_move == 'quit':
                         break
 
