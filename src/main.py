@@ -29,16 +29,16 @@ OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 # 2500: masters
 # 3000: superhuman
 # 3500+: max power
-ENGINE_ELO = 1000
+ENGINE_ELO = 1200
 
 # Lower = faster evaluation
-ENGINE_MIN_SEARCH_DEPTH = 17
-ENGINE_MAX_SEARCH_DEPTH = 27
+ENGINE_MIN_SEARCH_DEPTH = 18
+ENGINE_MAX_SEARCH_DEPTH = 31
 
 # Verification features
 REQUIRE_VERIFY_ENGINE_MOVE = False
 REQUIRE_MOVE_APPROVAL = False
-REQUIRE_MOVE_VISUALIZATION = True
+REQUIRE_MOVE_VISUALIZATION = False
 REQUIRE_BOARD_TAG_VISUALIZATION = False
 
 if __name__ == '__main__':
