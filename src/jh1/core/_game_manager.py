@@ -224,31 +224,32 @@ class GameManager:
             self.handle_engine_move()
 
         while not self.game.board.is_game_over() and not rospy.is_shutdown():
-            try:
-                human_move = input("\nEnter your move (e2e4) or 'quit':\n>> ").strip().lower()
-                if human_move == 'quit':
-                    break
-
-                before = self.game.board.copy()
-                if self.game.offer_move(human_move):
-                    is_cap, is_ep = GameState.classify_move(human_move, before)
-                    if self.set_robot_move(human_move, is_cap, is_ep):
-                        self.game.print_board()
-                        print(f"FEN: {self.game.get_fen()}")
-                    else:
-                        self.game.board = before
-                        rospy.logerr("Robot failed human move")
-                        continue
-                else:
-                    print("Illegal move; try again.")
-                    continue
-
-                # Engine's reply
-                if self.game.is_engine_turn():
-                    self.handle_engine_move()
-
-            except KeyboardInterrupt:
+            human_move = input("\nEnter your move (e2e4) or 'quit':\n>> ").strip().lower()
+            if human_move == 'quit':
                 break
+
+            before = self.game.board.copy()
+            if self.game.offer_move(human_move):
+                is_cap, is_ep = GameState.classify_move(human_move, before)
+                if self.set_robot_move(human_move, is_cap, is_ep):
+                    self.game.print_board()
+                    print(f"FEN: {self.game.get_fen()}")
+                else:
+                    self.game.board = before
+                    rospy.logerr("Robot failed human move")
+                    continue
+            else:
+                print("Illegal move; try again.")
+                continue
+
+            # Engine's reply
+            if self.game.is_engine_turn():
+                self.handle_engine_move()
+
+        print("\n\nGame over.\n")
+        time.sleep(3)
+        print(self.game.get_pgn())
+        print()
 
     def full_loop(self):
         """
@@ -264,6 +265,15 @@ class GameManager:
         print("-" * 60)
         print("Human player's turn.\n")
         while not self.game.board.is_game_over():
+            # Adjust search depth at start of double-ply
+            self.engine.set_depth(
+                depth=Engine.get_adaptive_depth(
+                    num_pieces=len(self.game.board.piece_map()),
+                    min_depth=self.engine_min_depth,
+                    max_depth=self.engine_max_depth
+                )
+            )
+
             move, _ = self.prompt()
             self.game.board.copy()
             if self.game.offer_move(move):
@@ -275,15 +285,19 @@ class GameManager:
 
             if self.game.is_engine_turn():
                 self.handle_engine_move()
+
             print("-" * 60)
             print("Human player's turn.\n")
 
-        print("Game over.")
+        print("\n\nGame over.\n")
+        time.sleep(3)
+        print(self.game.get_pgn())
+        print()
 
     def dump_game_state(self):
         self.game.print_board()
-        print(f"Stockfish evaluation (depth {self.engine_search_depth}): ", end="")
-        print(self.game.engine.get_eval_score())
+        print(f"Stockfish evaluation (depth {self.engine.current_depth}): ", end="")
+        print(self.engine.get_eval_score())
 
     def run(self):
         """
@@ -314,22 +328,34 @@ class GameManager:
         # Init engine and game state
         self.engine = Engine(
             engine_path=self.engine_path,
-            search_depth=self.engine_search_depth,
+            search_depth=self.engine_min_depth,
             force_elo=self.engine_elo,
             opening_book_path=self.opening_book_path
         )
         self.engine.set_position(starting_fen)
 
+        # Must init game after engine
         self.game = GameState(self.engine, engine_plays_white=self.engine_is_white)
         self.game.set_fen(starting_fen)
 
-        # Setup robot controller
-        skel = Skeleton(RobotUR10eGripper(is_gripper_up=True))
-        orch = Orchestrator(
-            skeleton=skel,
-            require_viz=False,
-            require_approval=False
+        # Set depth to an appropriate level for the current board
+        self.engine.set_depth(
+            depth=Engine.get_adaptive_depth(
+                num_pieces=len(self.game.board.piece_map()),
+                min_depth=self.engine_min_depth,
+                max_depth=self.engine_max_depth
+            )
         )
+
+        print(f"Engine is set to {self.engine_elo} ELO, current depth {self.engine.current_depth}")
+
+        # Setup robot controller
+        orch = Orchestrator(
+            skeleton=Skeleton(RobotUR10eGripper(is_gripper_up=True)),
+            require_viz=self.require_move_viz,
+            require_approval=self.require_move_approval
+        )
+
         self.robot = ChessMovementController(
             orchestrator=orch,
             simulation_mode=rospy.get_param('sim', True),
