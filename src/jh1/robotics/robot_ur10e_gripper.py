@@ -122,6 +122,9 @@ class RobotUR10eGripper:
             FollowJointTrajectoryAction,
         )
 
+    def __del__(self):
+        self._gripper_launcher.shutdown()
+        
     def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
         if self._gripper_status:
@@ -330,7 +333,7 @@ class RobotUR10eGripper:
             self._uuid, ["robotiq_2f_gripper_control/robotiq_action_server.launch"])
         self._gripper_launcher.start()
 
-        # 4) resubscribe to join states
+        # 4) resubscribe to joint states
         rospy.Subscriber("/gripper_joint_states", JointState,
                          self._callback_gripper_joint_state)
         
