@@ -341,3 +341,10 @@ class RobotUR10eGripper:
         if not self._robotiq_client.wait_for_server(rospy.Duration(15.0)):
             rospy.logerr("Gripper action server never appeared")
             return False
+        
+        # 6) sanity check by waiting for first join state
+        try:
+            data = rospy.wait_for_message("/gripper_joint_states", JointState, timeout=5.0)
+        except rospy.ROSException:
+            rospy.logerr("Gripper join_states never came back")
+            return False
