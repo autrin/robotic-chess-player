@@ -2,6 +2,7 @@ from random import random
 from typing import Optional
 
 import chess
+import numpy as np
 from stockfish import Stockfish
 
 
@@ -21,9 +22,14 @@ class Engine:
         :param opening_book_path: Path to the Polyglot opening book file.
         """
         self.stockfish: Stockfish = Stockfish(engine_path)
+        self.current_depth = search_depth
         self.stockfish.set_depth(search_depth)
         self.stockfish.set_elo_rating(force_elo)
         self.book_path = opening_book_path
+
+    def set_depth(self, depth):
+        self.current_depth = depth
+        self.stockfish.set_depth(depth)
 
     def set_position(self, fen: str) -> None:
         """
@@ -74,3 +80,11 @@ class Engine:
             sign = 1 if info["value"] > 0 else -1
             return sign * 100.0  # convention for mate in N
         return None
+
+    @staticmethod
+    def get_adaptive_depth(num_pieces, min_depth, max_depth) -> int:
+        # Clamped ramp
+        scl = (min_depth - max_depth) / 18.75
+        dx = num_pieces - 4
+        up = max_depth * 1.05
+        return int(np.clip(scl * dx + up, min_depth, max_depth))

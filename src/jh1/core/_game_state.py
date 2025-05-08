@@ -35,6 +35,8 @@ class GameState:
         """
         self.board.set_fen(fen)
         self.engine.set_position(fen)
+        self.pgn_tree.setup(fen)
+        self.node = self.pgn_tree
 
     def get_fen(self) -> str:
         """
