@@ -1,12 +1,11 @@
+import multiprocessing as mp
+import time
 from typing import Optional
 
 import numpy as np
-import multiprocessing as mp
-import time
 
-from jh1.robotics.kinematics import JointVector
-from jh1.topology import *
 from jh1.robotics import Skeleton
+from jh1.topology import *
 from jh1.utils.visualize import animate_joint_vectors
 
 
@@ -14,12 +13,12 @@ class Orchestrator:
     def __init__(
         self,
         skeleton: Skeleton,
-        require_viz: bool = True,
-        require_approval: bool = True,
-        min_duration: float = 1.0,
+        require_viz: bool,
+        require_approval: bool,
+        min_duration: float = 0.8,
         max_duration: float = 8.0,
-        std_duration: float = 2.0,
-        angular_rads_per_second: float = 0.75
+        std_duration: float = 1.65,
+        angular_rads_per_second: float = 0.95
     ):
         self.skeleton: Skeleton = skeleton
         self.require_viz = require_viz
@@ -37,7 +36,7 @@ class Orchestrator:
         # Simply move the piece to the desired end square
         return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
-            end_down=WAYPOINT_TABLE[end_square],
+            end_down=WAYPOINT_TABLE[end_square + DROP_LABEL_SUFFIX],
             start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
             end_up=WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX],
             start_home=HOME_WAYPOINT,
@@ -46,7 +45,7 @@ class Orchestrator:
 
     def capture_sequence(self, start_square: str, end_square: str) -> bool:
         start_w_down = WAYPOINT_TABLE[start_square]
-        end_w_down = WAYPOINT_TABLE[end_square]
+        end_w_down = WAYPOINT_TABLE[end_square + DROP_LABEL_SUFFIX]
         start_w_up = WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX]
         end_w_up = WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX]
 
@@ -81,7 +80,7 @@ class Orchestrator:
 
         if not self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[king_start_sq],
-            end_down=WAYPOINT_TABLE[king_end_sq],
+            end_down=WAYPOINT_TABLE[king_end_sq + DROP_LABEL_SUFFIX],
             start_up=WAYPOINT_TABLE[king_start_sq + UP_LABEL_SUFFIX],
             end_up=WAYPOINT_TABLE[king_end_sq + UP_LABEL_SUFFIX],
             start_home=HOME_WAYPOINT,
@@ -90,7 +89,7 @@ class Orchestrator:
 
         return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[rook_start_sq],
-            end_down=WAYPOINT_TABLE[rook_end_sq],
+            end_down=WAYPOINT_TABLE[rook_end_sq + DROP_LABEL_SUFFIX],
             start_up=WAYPOINT_TABLE[rook_start_sq + UP_LABEL_SUFFIX],
             end_up=WAYPOINT_TABLE[rook_end_sq + UP_LABEL_SUFFIX],
             start_home=None,
@@ -118,7 +117,7 @@ class Orchestrator:
 
         return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
-            end_down=WAYPOINT_TABLE[end_square],
+            end_down=WAYPOINT_TABLE[end_square + DROP_LABEL_SUFFIX],
             start_up=WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX],
             end_up=WAYPOINT_TABLE[end_square + UP_LABEL_SUFFIX],
             start_home=None,
