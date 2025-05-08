@@ -330,4 +330,8 @@ class RobotUR10eGripper:
             self.uuid, ["robotiq_2f_gripper_control/robotiq_action_server.launch"])
         self._gripper_launcher.start()
 
-    
+        # 4) resubscribe to join states
+        rospy.Subscriber("/gripper_joint_states", JointState,
+                         self._callback_gripper_joint_state)
+        
+        
