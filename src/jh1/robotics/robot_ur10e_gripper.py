@@ -312,3 +312,10 @@ class RobotUR10eGripper:
                 return False
         
         return True  # Gripper is already online
+    
+    def turnon_gripper_using_ros(self):
+        # 1) kill any stale node
+        try:
+            rosnode.kill_nodes(['/robotiq_action_server'])
+        except rosnode.ROSNodeIOException:
+            pass
