@@ -324,4 +324,10 @@ class RobotUR10eGripper:
             self._gripper_launcher.shutdown()
             self._gripper_launcher = None
 
-        
+        # 3) start fresh
+        rospy.loginfo("Restarting gripper driver...")
+        self._gripper_launcher = roslaunch.parent.ROSLaunchParent(
+            self.uuid, ["robotiq_2f_gripper_control/robotiq_action_server.launch"])
+        self._gripper_launcher.start()
+
+    
