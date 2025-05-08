@@ -128,30 +128,41 @@ class RobotUR10eGripper:
             self._gripper_launcher.shutdown()
 
     def command_robot(self, joint_angles, duration) -> bool:
-        # check if joint_angles is valid
-        if self._gripper_status:
-            if len(joint_angles) != 7:
-                rospy.logerr("Joint angles should have 7 elements: 6 for UR10e and 1 for gripper")
-                return False
-        else:
-            if len(joint_angles) != 6:
-                rospy.logerr("Joint angles should have 6 elements: 6 for UR10e")
+        # if they passed 7 angles (gripper included) but it’s offline, try to restart
+        if len(joint_angles) == 7 and not self._gripper_status:
+            rospy.logwarn("Gripper down at command time. Trying to restart…")
+            if not self.turnon_gripper_using_ros():
+                rospy.logerr("Could not bring up gripper; aborting command_robot()")
                 return False
 
-        self._command_ur10e(joint_angles[:6], duration)
-        if self._gripper_status:
-            self._command_gripper(joint_angles[6])
-            rospy.loginfo(f"Finished command gripper")
-            return True
-        else:
-            gripper_on = self.turnon_gripper()
-            if gripper_on: 
-                self._command_gripper(joint_angles[6])
-                rospy.loginfo(f"Finished command gripper")
-                return True
-            else:
-                rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
-                return False
+        # now validate length
+        expected_joint_length = 7 if self._gripper_status else 6
+        if len(joint_angles) != expected_joint_length:
+            rospy.logerr(f"Expected {expected_joint_length} joint angles, got {len(joint_angles)}")
+            return False
+
+        if not self._command_ur10e(joint_angles[:6], duration):
+            return False
+        
+        # If there is a gripper angle, send it now
+        if len(joint_angles) == 7:
+            return self._command_gripper(joint_angles[6])
+        return True
+    
+        # if self._gripper_status:
+        #     self._command_gripper(joint_angles[6])
+        #     rospy.loginfo("Finished command gripper")
+        #     return True
+        # else:
+        #     # gripper_on = self.turnon_gripper()
+        #     gripper_on = self.turnon_gripper_using_ros()
+        #     if gripper_on: 
+        #         self._command_gripper(joint_angles[6])
+        #         rospy.loginfo(f"Finished command gripper")
+        #         return True
+        #     else:
+        #         rospy.logwarn(f"[command_robot] command_ur10e was successful, but gripper status was false")
+        #         return False
 
     def _command_ur10e(self, joint_angles, duration) -> bool:
         # rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
