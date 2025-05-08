@@ -124,7 +124,8 @@ class RobotUR10eGripper:
         )
 
     def __del__(self):
-        self._gripper_launcher.shutdown()
+        if self._gripper_launcher:
+            self._gripper_launcher.shutdown()
 
     def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
