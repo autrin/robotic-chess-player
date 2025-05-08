@@ -61,7 +61,6 @@ class GameManager:
         while self.robot_running:
             if self.ai_move:
                 uci, is_cap, is_ep = self.ai_move
-                rospy.loginfo(f"Executing move: {uci} capture={is_cap} en_passant={is_ep}")
                 success = self.robot.execute_move(uci, is_cap, is_ep)
                 if not success:
                     rospy.logerr(f"Robot failed move: {uci}")
@@ -126,6 +125,7 @@ class GameManager:
         ]
 
     # noinspection PyTypeChecker,PyInconsistentReturns
+    # TODO: This is where we can integrate the UI's confirm turn action
     def prompt_for_move(self) -> Tuple[str, list]:
         """
         Prompt user to move a piece on the real board, then detect and return the UCI move.
@@ -195,6 +195,9 @@ class GameManager:
             self.verify_move(move)
 
         self.game.offer_move(move, by_white=self.engine_is_white)
+        print(f"Expected current board configuration (after {algebraic})")
+        self.game.print_board()
+        print("Stockfish evaluation: ", self.game.engine.get_eval_score())
         time.sleep(1)
 
     def test_loop(self):
@@ -245,17 +248,23 @@ class GameManager:
         if self.engine_is_white:
             self.handle_engine_move()
 
+        print("\n-" * 60)
+        print("Human player's turn.\n")
         while not self.game.board.is_game_over():
             move, _ = self.prompt_for_move()
-            before = self.game.board.copy()
+            self.game.board.copy()
             if self.game.offer_move(move):
                 print(f"Detected move: {move}")
+                self.game.print_board()
+                print("Stockfish evaluation: ", self.game.engine.get_eval_score())
             else:
                 print("Move rejected; try again.")
                 continue
 
             if self.game.board.turn == (chess.WHITE if self.engine_is_white else chess.BLACK):
                 self.handle_engine_move()
+            print("\n-" * 60)
+            print("Human player's turn.\n")
 
         print("Game over.")
 

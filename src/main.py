@@ -6,8 +6,8 @@ import os
 
 import rospy
 
-from _environment import setup_environment
 from jh1.core import GameManager
+from _environment import setup_environment
 
 # Configure engine and resource paths
 resources_dir = os.path.join(
