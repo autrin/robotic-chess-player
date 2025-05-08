@@ -97,8 +97,8 @@ class RobotUR10eGripper:
         # gripper setup
         self._gripper_status = is_gripper_up
         # prepare a launcher UUID for restart
-        self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
-        roslaunch.configure_logging(self.uuid)
+        self._uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        roslaunch.configure_logging(self._uuid)
         self._gripper_launcher = None
         # Initialize the joint states by waiting for the first message
         if self._gripper_status:
@@ -327,7 +327,7 @@ class RobotUR10eGripper:
         # 3) start fresh
         rospy.loginfo("Restarting gripper driver...")
         self._gripper_launcher = roslaunch.parent.ROSLaunchParent(
-            self.uuid, ["robotiq_2f_gripper_control/robotiq_action_server.launch"])
+            self._uuid, ["robotiq_2f_gripper_control/robotiq_action_server.launch"])
         self._gripper_launcher.start()
 
         # 4) resubscribe to join states
