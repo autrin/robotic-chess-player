@@ -319,3 +319,9 @@ class RobotUR10eGripper:
             rosnode.kill_nodes(['/robotiq_action_server'])
         except rosnode.ROSNodeIOException:
             pass
+        # 2) tear down old launcher
+        if self._gripper_launcher:
+            self._gripper_launcher.shutdown()
+            self._gripper_launcher = None
+
+        
