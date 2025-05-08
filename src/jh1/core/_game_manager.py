@@ -22,6 +22,7 @@ from .ChessMovement import ChessMovementController
 from ._engine import Engine
 from ._game_state import GameState
 from ._orchestrator import Orchestrator
+from ..typealias import List2D
 
 
 class GameManager:
@@ -29,20 +30,24 @@ class GameManager:
         self,
         engine_path: str,
         opening_book_path: str,
-        engine_search_depth: int,
+        engine_min_depth: int,
+        engine_max_depth: int,
         engine_elo: int,
         require_verify_engine_move: bool,
         require_move_approval: bool,
         require_move_viz: bool,
+        require_board_tag_viz: bool,
     ):
         # Arguments
         self.engine_path: str = engine_path
         self.opening_book_path: str = opening_book_path
-        self.engine_search_depth: int = engine_search_depth
+        self.engine_min_depth: int = engine_min_depth
+        self.engine_max_depth: int = engine_max_depth
         self.engine_elo: int = engine_elo
         self.require_verify_engine_move: bool = require_verify_engine_move
         self.require_move_approval: bool = require_move_approval
         self.require_move_viz: bool = require_move_viz
+        self.require_board_tag_viz: bool = require_board_tag_viz
 
         self.engine_is_white = False
         self.engine: Optional[Engine] = None
@@ -85,16 +90,15 @@ class GameManager:
             self.cam.release()
         print("Resources cleaned up.")
 
-    @staticmethod
-    def capture_board_state(camera: WebcamSource, detector_obj) -> Tuple:
+    def capture_board_state(self) -> Tuple:
         """
         Capture an image, detect AprilTags, and compute board homography.
         Returns (img, solver, board_bins, certainty_grid).
         """
         print("Reading frame...")
-        img = camera.read_frame()
+        img = self.cam.read_frame()
         print("Detecting tags")
-        detections = find_april_tags(img, detector_obj)
+        detections = find_april_tags(img, self.detector)
         print("Computing tag clusters")
         clusters = count_clusters(detections)
 
@@ -116,37 +120,41 @@ class GameManager:
         solver = HomographySolver(corners)
         board_bins = solver.bin_pieces(pieces)
         grid = HomographySolver.get_certainty_grid(board_bins)
-        return img, solver, board_bins, grid
 
-    @staticmethod
-    def build_board(board_bins) -> list:
-        """
-        Convert clusters into a 2D array of piece symbols.
-        """
-        return [
-            [PIECE_TAG_IDS.get(cell[0].tag_id, "?") if cell else "." for cell in row]
-            for row in reversed(board_bins[:8])
-        ]
+        if self.require_board_tag_viz:
+            mp.Process(target=board_overlay_plot, args=(img, solver, board_bins, grid)).start()
+        else:
+            print("Skipping board tag visualization...")
+
+        return img, solver, board_bins, grid
 
     # noinspection PyTypeChecker,PyInconsistentReturns
     # TODO: This is where we can integrate the UI's confirm turn action
-    def prompt_for_move(self) -> Tuple[str, list]:
+    def prompt(self) -> Tuple[str, list]:
         """
         Prompt user to move a piece on the real board, then detect and return the UCI move.
         """
         while True:
-            input("Press Enter after move has been made...")
-            img, solver, bins, grid = self.capture_board_state(self.cam, self.detector)
+            # Right here:
+            while True:
+                cmd = input("Press Enter after move has been made...\n>> ").strip().lower()
+
+                # TODO: temporary only, replace with UI
+                if cmd == "pgn":
+                    print(self.game.get_pgn())
+                else:
+                    break
+
+            img, solver, bins, grid = self.capture_board_state()
             if img is None:
                 continue
 
             # Overlay visualization in subprocess
-            mp.Process(target=board_overlay_plot, args=(img, solver, bins, grid)).start()
 
             print("Current board:")
             self.game.print_board()
             print("Detected new board:")
-            new_board = self.build_board(bins)
+            new_board = GameState.build_board(bins)
             print(GameState.prettify(new_board))
 
             found_move = GameState.get_move_diff(self.game, new_board)
@@ -160,7 +168,7 @@ class GameManager:
         Ask user to re-scan until the detected move matches expected_move.
         """
         while True:
-            detected_move, _ = self.prompt_for_move()
+            detected_move, _ = self.prompt()
             if detected_move == expected_move:
                 print("Engine move verified.")
                 return
@@ -184,6 +192,9 @@ class GameManager:
         Ask engine for a move, execute it on robot, (optionally verify), and update game state.
         """
         move = self.game.get_engine_move()
+        if move is None:  # Checkmate
+            return
+
         algebraic = self.game.get_algebraic(move)
         before = self.game.board.copy()
         is_cap, is_ep = GameState.classify_move(move, before)
@@ -199,9 +210,8 @@ class GameManager:
             self.verify_move(move)
 
         self.game.offer_move(move, by_white=self.engine_is_white)
-        print(f"Expected current board configuration (after {algebraic})")
-        self.game.print_board()
-        print("Stockfish evaluation: ", self.game.engine.get_eval_score())
+        print(f"\nExpected current board configuration (after engine's {algebraic}):")
+        self.dump_game_state()
         time.sleep(1)
 
     def test_loop(self):
@@ -234,7 +244,7 @@ class GameManager:
                     continue
 
                 # Engine's reply
-                if self.game.board.turn == (chess.WHITE if self.engine_is_white else chess.BLACK):
+                if self.game.is_engine_turn():
                     self.handle_engine_move()
 
             except KeyboardInterrupt:
@@ -248,35 +258,55 @@ class GameManager:
         self.cam = WebcamSource(cam_id=0)
         self.detector = instantiate_detector()
 
-        # If engine is white, play first
-        if self.engine_is_white:
+        if self.game.is_engine_turn():
             self.handle_engine_move()
 
         print("-" * 60)
         print("Human player's turn.\n")
         while not self.game.board.is_game_over():
-            move, _ = self.prompt_for_move()
+            move, _ = self.prompt()
             self.game.board.copy()
             if self.game.offer_move(move):
-                print(f"Detected move: {move}")
-                self.game.print_board()
-                print("Stockfish evaluation: ", self.game.engine.get_eval_score())
+                print(f"\nDetected move: {move}")
+                self.dump_game_state()
             else:
                 print("Move rejected; try again.")
                 continue
 
-            if self.game.board.turn == (chess.WHITE if self.engine_is_white else chess.BLACK):
+            if self.game.is_engine_turn():
                 self.handle_engine_move()
             print("-" * 60)
             print("Human player's turn.\n")
 
         print("Game over.")
 
+    def dump_game_state(self):
+        self.game.print_board()
+        print(f"Stockfish evaluation (depth {self.engine_search_depth}): ", end="")
+        print(self.game.engine.get_eval_score())
+
     def run(self):
         """
         Initialize engine, robot, and start appropriate game loop.
         """
         # Choose sides
+
+        starting_fen: str = chess.STARTING_FEN
+
+        res = input(
+            f"\nBegin new game from scratch (Enter) "
+            f"or input FEN string to start from."
+            f"\n>> "
+        ).strip()
+
+        if len(res) != 0:
+            try:
+                print(GameState.prettify(chess.Board(res)))  # See if the FEN string is valid
+                starting_fen = res
+            except ValueError:
+                print("Invalid input, starting from new board")
+                pass
+
         self.engine_is_white = input(
             "\nShould the engine play as White? (y/n): "
         ).strip().lower() == 'y'
@@ -288,7 +318,10 @@ class GameManager:
             force_elo=self.engine_elo,
             opening_book_path=self.opening_book_path
         )
+        self.engine.set_position(starting_fen)
+
         self.game = GameState(self.engine, engine_plays_white=self.engine_is_white)
+        self.game.set_fen(starting_fen)
 
         # Setup robot controller
         skel = Skeleton(RobotUR10eGripper(is_gripper_up=True))

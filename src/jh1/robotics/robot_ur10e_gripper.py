@@ -142,7 +142,7 @@ class RobotUR10eGripper:
         # return False
 
     def _command_ur10e(self, joint_angles, duration) -> bool:
-        rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
+        # rospy.loginfo(f"Attempting to command ur10e at {joint_angles=} {duration=}")
         if len(joint_angles) != 6:
             rospy.logerr("Joint angles should have 6 for UR10e")
             return False
@@ -171,7 +171,7 @@ class RobotUR10eGripper:
         return success
 
     def _command_gripper(self, position, speed=0.05, force=0) -> bool:
-        rospy.loginfo(f"Attempting to command gripper at {position=}")
+        # rospy.loginfo(f"Attempting to command gripper at {position=}")
         goal = CommandRobotiqGripperGoal()
         goal.position = position
         goal.emergency_release = False

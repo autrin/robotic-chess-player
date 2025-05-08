@@ -33,11 +33,11 @@ class Engine:
         """
         self.stockfish.set_fen_position(fen)
 
-    def get_best_move(self) -> str:
+    def get_best_move(self) -> Optional[str]:
         """
-        Get the best move from the engine.
+        Get the best move from the engine, or None if mate
 
-        :return: Move in UCI format.
+        :return: Move in UCI format, or None if mate
         """
         return self.stockfish.get_best_move()
 

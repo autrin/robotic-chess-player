@@ -1,9 +1,11 @@
 from typing import Optional, Tuple, Union
 
 import chess
+import chess.pgn
 
 from ._engine import Engine
 from jh1.typealias import List2D
+from ..visual import PIECE_TAG_IDS
 
 
 class GameState:
@@ -21,6 +23,9 @@ class GameState:
         self.engine = engine
         self.board: chess.Board = chess.Board()
         self.engine_plays_white = engine_plays_white
+
+        self.pgn_tree = chess.pgn.Game()
+        self.node = self.pgn_tree
 
     def set_fen(self, fen: str) -> None:
         """
@@ -43,7 +48,7 @@ class GameState:
         """
         Get the engine's move (opening book or computed), but do not play it.
 
-        :return: Move in UCI format, or None if no move found.
+        :return: Move in UCI format, or None if mate found.
         """
         book_move = self.engine.get_book_move(self.board)
         if book_move:
@@ -64,9 +69,14 @@ class GameState:
         if not move:
             raise RuntimeError("[Gameplay.make_engine_move()]: Engine did not return a move")
 
-        self.board.push_uci(move)
+        m = chess.Move.from_uci(move)
+        self.board.push(m)
+        self.node = self.node.add_variation(m)
         self.engine.set_position(self.board.fen())
         return move
+
+    def is_engine_turn(self) -> bool:
+        return self.board.turn == (chess.WHITE if self.engine_plays_white else chess.BLACK)
 
     def offer_move(self, move: str, by_white: Optional[bool] = None) -> bool:
         """
@@ -87,6 +97,7 @@ class GameState:
 
         self.board.push(m)
         self.engine.set_position(self.board.fen())
+        self.node = self.node.add_variation(m)
         return True
 
     def is_white_turn(self) -> bool:
@@ -118,14 +129,17 @@ class GameState:
         """
         # print(self.board)
         print()
+        print(f"FEN: " + self.get_fen())
         print(GameState.prettify(self.board))
-
 
     def get_algebraic(self, uci: str) -> str:
         try:
             return self.board.san(chess.Move.from_uci(uci))
         except (AssertionError, ValueError):
             return "<Illegal>"
+
+    def get_pgn(self) -> str:
+        return str(self.pgn_tree)
 
     @staticmethod
     def get_move_diff(game_state, new_board_array: List2D[str]) -> Optional[str]:
@@ -175,7 +189,7 @@ class GameState:
         top = "      ┌───" + "┬───" * 7 + "┐"
         mid = "      ├───" + "┼───" * 7 + "┤"
         bot = "      └───" + "┴───" * 7 + "┘"
-        rows = [top]
+        rows = ["", top]
 
         for i, row in enumerate(board_array):
             rank = 8 - i
@@ -188,9 +202,21 @@ class GameState:
 
         rows.append(bot)
         rows.append("        a   b   c   d   e   f   g   h")
+        rows.append("")
         return "\n".join(rows)
 
     @staticmethod
     def classify_move(move: str, board: chess.Board) -> Tuple[bool, bool]:
         m = chess.Move.from_uci(move)
         return board.is_capture(m), board.is_en_passant(m)
+
+
+    @staticmethod
+    def build_board(board_bins) -> List2D[str]:
+        """
+        Convert clusters into a 2D array of piece symbols.
+        """
+        return [
+            [PIECE_TAG_IDS.get(cell[0].tag_id, "?") if cell else "." for cell in row]
+            for row in reversed(board_bins[:8])
+        ]
