@@ -100,13 +100,14 @@ class RobotUR10eGripper:
         self._uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
         roslaunch.configure_logging(self._uuid)
         self._gripper_launcher = None
+        # always listen for gripper joint states
+        rospy.Subscriber("/gripper_joint_states", JointState,
+                            self._callback_gripper_joint_state)
         # Initialize the joint states by waiting for the first message
         if self._gripper_status:
             data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState)
             self._pos_gripper = data_gripper.position
             self._vel_gripper = data_gripper.velocity
-            rospy.Subscriber("/gripper_joint_states", JointState,
-                             self._callback_gripper_joint_state)
             # rospy.Subscriber("/robotiq_2f_gripper_msgs/RobotiqGripperStatus" , RobotiqGripperStatus, self._callback_gripper_status)
             self._robotiq_client = actionlib.SimpleActionClient('command_robotiq_action',
                                                                 CommandRobotiqGripperAction)
@@ -124,7 +125,7 @@ class RobotUR10eGripper:
 
     def __del__(self):
         self._gripper_launcher.shutdown()
-        
+
     def command_robot(self, joint_angles, duration) -> bool:
         # check if joint_angles is valid
         if self._gripper_status:
@@ -334,8 +335,8 @@ class RobotUR10eGripper:
         self._gripper_launcher.start()
 
         # 4) resubscribe to joint states
-        rospy.Subscriber("/gripper_joint_states", JointState,
-                         self._callback_gripper_joint_state)
+        # rospy.Subscriber("/gripper_joint_states", JointState,
+        #                  self._callback_gripper_joint_state)
         
         # 5) wait for action server
         self._robotiq_client = actionlib.SimpleActionClient(
