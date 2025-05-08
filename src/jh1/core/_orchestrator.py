@@ -33,6 +33,7 @@ class Orchestrator:
         return self
 
     def free_movement_sequence(self, start_square: str, end_square: str) -> bool:
+        print(f"[Orchestrator.free_movement_sequence] between {start_square} and {end_square}")
         # Simply move the piece to the desired end square
         return self.pick_and_drop_action_chain(
             start_down=WAYPOINT_TABLE[start_square],
@@ -44,6 +45,7 @@ class Orchestrator:
         )
 
     def capture_sequence(self, start_square: str, end_square: str) -> bool:
+        print(f"[Orchestrator.capture_sequence] between {start_square} and {end_square}")
         start_w_down = WAYPOINT_TABLE[start_square]
         end_w_down = WAYPOINT_TABLE[end_square + DROP_LABEL_SUFFIX]
         start_w_up = WAYPOINT_TABLE[start_square + UP_LABEL_SUFFIX]
@@ -70,6 +72,12 @@ class Orchestrator:
         )
 
     def castling_sequence(self, is_white: bool, is_long_castles: bool) -> bool:
+        print(
+            f"[Orchestrator.castling_sequence] for",
+            "WHITE" if is_white else "BLACK",
+            "on",
+            "QUEENSIDE (LONG)" if is_long_castles else "KINGSIDE (SHORT)"
+        )
         rank = 1 if is_white else 8
         if is_long_castles:
             king_start_sq, king_end_sq = f"e{rank}", f"c{rank}"
@@ -101,6 +109,7 @@ class Orchestrator:
         start_square: str,
         end_square: str
     ) -> bool:
+        print(f"[Orchestrator.en_passant_sequence] from {start_square} to {end_square}")
         # In en passant, the captured pawn previously moved from rank 2 to 4 or 7 to 5, the pawn
         # capturing it will move from rank 4 to 3 or 5 to 6. Hence, the captured pawn's square will
         # be the file of the end square cross the rank of the start square.
@@ -133,6 +142,8 @@ class Orchestrator:
         start_home: Optional[Waypoint] = HOME_WAYPOINT,
         end_home: Optional[Waypoint] = HOME_WAYPOINT,
     ) -> bool:
+        print(
+            f"[Orchestrator.pick_and_drop_action_chain] from {start_down.label} to {end_down.label}")
         if self.require_viz:
             print("Displaying proposed robot movement sequence")
             ik_sequence = [w.jv for w in [
@@ -230,7 +241,7 @@ class Orchestrator:
     def compute_duration(self, end: Waypoint, rads_per_second: float) -> float:
         if self.skeleton.configuration_vector is None: return self.std_duration
         metric_d = np.linalg.norm(self.skeleton.configuration_vector.as_np() - end.jv.as_np())
-        print(f"[Orchestrator.compute_duration] Movement has a C-space distance of {metric_d=}")
+        # print(f"[Orchestrator.compute_duration] Movement has a C-space distance of {metric_d=}")
         return np.clip(
             a=metric_d / rads_per_second,
             a_min=self.min_duration,
