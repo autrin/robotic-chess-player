@@ -200,7 +200,7 @@ class ChessMovementController:
         Returns:
             True if move was executed successfully, False otherwise
         """
-        rospy.loginfo(f"Executing move: {move}")
+        rospy.loginfo(f"Executing move: {move} (capture={is_capture} en_passant={is_en_passant})")
         if len(move) < 4:
             rospy.logerr(f"Invalid move format: {move}")
             return False
