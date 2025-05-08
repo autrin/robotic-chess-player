@@ -21,6 +21,11 @@ ENGINE_PATH = "/usr/games/stockfish"
 # Opening book contains various chess openings from masters' games
 OPENING_BOOK_PATH = os.path.join(resources_dir, "baron30.bin")
 
+# Configure engine difficulty
+ENGINE_ELO = 800
+ENGINE_SEARCH_DEPTH = 20
+
+# Verification features
 REQUIRE_VERIFY_ENGINE_MOVE = False
 REQUIRE_MOVE_APPROVAL = False
 REQUIRE_MOVE_VISUALIZATION = False
@@ -30,6 +35,8 @@ if __name__ == '__main__':
     manager = GameManager(
         engine_path=ENGINE_PATH,
         opening_book_path=OPENING_BOOK_PATH,
+        engine_search_depth=ENGINE_SEARCH_DEPTH,
+        engine_elo=ENGINE_ELO,
         require_verify_engine_move=REQUIRE_VERIFY_ENGINE_MOVE,
         require_move_approval=REQUIRE_MOVE_APPROVAL,
         require_move_viz=REQUIRE_MOVE_VISUALIZATION

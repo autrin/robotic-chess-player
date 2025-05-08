@@ -29,6 +29,8 @@ class GameManager:
         self,
         engine_path: str,
         opening_book_path: str,
+        engine_search_depth: int,
+        engine_elo: int,
         require_verify_engine_move: bool,
         require_move_approval: bool,
         require_move_viz: bool,
@@ -36,6 +38,8 @@ class GameManager:
         # Arguments
         self.engine_path: str = engine_path
         self.opening_book_path: str = opening_book_path
+        self.engine_search_depth: int = engine_search_depth
+        self.engine_elo: int = engine_elo
         self.require_verify_engine_move: bool = require_verify_engine_move
         self.require_move_approval: bool = require_move_approval
         self.require_move_viz: bool = require_move_viz
@@ -248,7 +252,7 @@ class GameManager:
         if self.engine_is_white:
             self.handle_engine_move()
 
-        print("\n-" * 60)
+        print("-" * 60)
         print("Human player's turn.\n")
         while not self.game.board.is_game_over():
             move, _ = self.prompt_for_move()
@@ -263,7 +267,7 @@ class GameManager:
 
             if self.game.board.turn == (chess.WHITE if self.engine_is_white else chess.BLACK):
                 self.handle_engine_move()
-            print("\n-" * 60)
+            print("-" * 60)
             print("Human player's turn.\n")
 
         print("Game over.")
@@ -274,14 +278,14 @@ class GameManager:
         """
         # Choose sides
         self.engine_is_white = input(
-            "Should the engine play as White? (y/n): "
+            "\nShould the engine play as White? (y/n): "
         ).strip().lower() == 'y'
 
         # Init engine and game state
         self.engine = Engine(
             engine_path=self.engine_path,
-            search_depth=12,
-            force_elo=1500,
+            search_depth=self.engine_search_depth,
+            force_elo=self.engine_elo,
             opening_book_path=self.opening_book_path
         )
         self.game = GameState(self.engine, engine_plays_white=self.engine_is_white)

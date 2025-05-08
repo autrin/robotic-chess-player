@@ -117,7 +117,9 @@ class GameState:
         Print the current board in ASCII format.
         """
         # print(self.board)
+        print()
         print(GameState.prettify(self.board))
+
 
     def get_algebraic(self, uci: str) -> str:
         try:
@@ -170,22 +172,22 @@ class GameState:
         else:
             board_array = [[unicode_pieces.get(cell, " ") for cell in row] for row in board]
 
-        top = "  ┌───" + "┬───" * 7 + "┐"
-        mid = "  ├───" + "┼───" * 7 + "┤"
-        bot = "  └───" + "┴───" * 7 + "┘"
+        top = "      ┌───" + "┬───" * 7 + "┐"
+        mid = "      ├───" + "┼───" * 7 + "┤"
+        bot = "      └───" + "┴───" * 7 + "┘"
         rows = [top]
 
         for i, row in enumerate(board_array):
             rank = 8 - i
-            line = [f"{rank} │"]
+            line = [f"    {rank} │"]
             for cell in row:
                 line.append(f" {cell} │")
-            rows.append(''.join(line))
+            rows.append("".join(line))
             if i != 7:
                 rows.append(mid)
 
         rows.append(bot)
-        rows.append("    a   b   c   d   e   f   g   h")
+        rows.append("        a   b   c   d   e   f   g   h")
         return "\n".join(rows)
 
     @staticmethod
