@@ -18,6 +18,8 @@ import rospy
 import actionlib
 from sensor_msgs.msg import JointState
 import subprocess
+import roslaunch
+import rosnode
 import time
 from robotiq_2f_gripper_msgs.msg import RobotiqGripperStatus, CommandRobotiqGripperFeedback, \
     CommandRobotiqGripperResult, CommandRobotiqGripperAction, CommandRobotiqGripperGoal
@@ -94,7 +96,10 @@ class RobotUR10eGripper:
 
         # gripper setup
         self._gripper_status = is_gripper_up
-
+        # prepare a launcher UUID for restart
+        self.uuid = roslaunch.rlutil.get_or_generate_uuid(None, False)
+        roslaunch.configure_logging(self.uuid)
+        self._gripper_launcher = None
         # Initialize the joint states by waiting for the first message
         if self._gripper_status:
             data_gripper = rospy.wait_for_message("/gripper_joint_states", JointState)
@@ -274,7 +279,7 @@ class RobotUR10eGripper:
                 
                 # Give it time to start up
                 rospy.loginfo("Waiting for gripper action server to start...")
-                time.sleep(5)
+                time.sleep(7)
                 
                 # Reinitialize the gripper connections
                 try:
