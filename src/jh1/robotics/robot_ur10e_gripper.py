@@ -348,3 +348,10 @@ class RobotUR10eGripper:
         except rospy.ROSException:
             rospy.logerr("Gripper join_states never came back")
             return False
+        
+        # 7) finally mark online
+        self._pos_gripper = data.position
+        self._vel_gripper = data.velocity
+        self._gripper_status = True
+        rospy.loginfo("Gripper is back online!")
+        return True
