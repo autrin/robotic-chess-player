@@ -334,4 +334,10 @@ class RobotUR10eGripper:
         rospy.Subscriber("/gripper_joint_states", JointState,
                          self._callback_gripper_joint_state)
         
-        
+        # 5) wait for action server
+        self._robotiq_client = actionlib.SimpleActionClient(
+            'command_robotiq_action', CommandRobotiqGripperAction
+        )
+        if not self._robotiq_client.wait_for_server(rospy.Duration(15.0)):
+            rospy.logerr("Gripper action server never appeared")
+            return False
