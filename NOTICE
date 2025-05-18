@@ -1,0 +1,15 @@
+NOTICE
+
+This project contains code developed by Team SD02 (Spring 2025) at Iowa State University:
+- Autrin Hakimi
+- Junhyung Shim
+- Thanh Mai
+- Cal Hokanson-Fuchs
+- Nat Bui
+
+Any use of this software must include this attribution notice.
+
+This project incorporates components from:
+- Universal Robots ROS Driver (Apache License 2.0)
+- Robotiq Drivers (BSD 2-Clause License)
+- UR-Series MJCF files (BSD 3-Clause License)
