@@ -42,7 +42,7 @@ This repository contains a complete ROS workspace for a robotic chess player usi
 ## System Components
 | Component | Description |
 |-----------|-------------|
-| **Hardware** | UR10e robotic arm, Hand-e gripper, RGB camera, standard chessboard |
+| **Hardware** | UR10e robotic arm, Hand-e gripper, camera, standard chessboard |
 | **Software** | Ubuntu 20.04, ROS Noetic, Python 3.8+, OpenCV, Stockfish |
 
 ## Demo
