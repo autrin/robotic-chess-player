@@ -2,7 +2,7 @@
 [![ROS](https://img.shields.io/badge/ROS-Noetic-blue)](http://wiki.ros.org/noetic)
 [![Python](https://img.shields.io/badge/Python-3.8+-green)](https://www.python.org/)
 [![Ubuntu](https://img.shields.io/badge/Ubuntu-20.04-orange)](https://releases.ubuntu.com/20.04/)
-[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](#license)
 
 ## Table of Contents
 - [Overview](#overview)
