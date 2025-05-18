@@ -160,12 +160,12 @@ source devel/setup.bash
 For development, you can install the Python package in development mode:
 
 ```bash
-pip install -e ./src
+pip install -e ./src/sd02_joseph-hoane_1
 ```
 
 ## Documentation
 
-For more information, see the [Final Report](Document/SD02-Final-Report.pdf)
+For more information, see the [Final Report](src/sd02_joseph-hoane_1/Document/SD02-Final-Report.pdf)
 
 ## License
 
